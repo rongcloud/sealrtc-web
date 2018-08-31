@@ -1,0 +1,934 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<title>SealRTC</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="icon" href="images/app_57x57.png" type="image/x-icon"/>
+<link href="style/common.css" rel="stylesheet" type="text/css" />
+<link href="style/video.css" rel="stylesheet" type="text/css" />
+<link href="style/sweetalert.css" rel="stylesheet" type="text/css" />
+
+<script type="text/javascript" src="js/jquery-2.1.3.min.js"></script>
+<script type="text/javascript" src="js/sweetalert.min.js"></script>
+<script type="text/javascript" src="config.js?v=20180817"></script>
+<script type="text/javascript" src="js/common.js?v=20180412"></script>
+<script type="text/javascript" src="js/rongrtc/adapter.js"></script>
+<script type="text/javascript" src="js/rongrtc/rongRTCEngine.js?v=20180704"></script>
+<script type="text/javascript">
+	var tokenUrl = global_config.TOKEN_URL;
+	var wsNavUrl = global_config.WS_NAV_URL;
+	var isShowWB = global_config.IS_SHOW_WB;
+    var downloadUrl = global_config.DOWNLOAD_SHARE_PLUGIN_URL;
+	/* var convId = getCookie("convId");
+	var isCameraClose = getCookie("isCameraClose") == 1 ? true : false;
+	var selfUserType = getCookie("userType") == null ? "1" : getCookie("userType");
+	var resolution = getCookie("resolution")
+	var selfUserId = getCookie("userId");
+	var appId = getCookie("appId"); */
+	var convId = getParameterByName("convId");
+	var isCameraClose = getParameterByName("isCameraClose") == "1" ? true : false;
+	var selfUserType = getParameterByName("userType") == null ? 1 : getParameterByName("userType");
+	var resolution = getParameterByName("resolution")
+	var selfUserId = getParameterByName("userId");
+	var appId = getParameterByName("appId");
+	var isMute = false;
+	var isAudioClose = false;
+	var isScreenSharing = false;
+	var rongRTCEngine;
+	$(document).ready(
+			function() {
+                rongRTCEngine = initRongRTCEngine();
+				if (convId == null || convId == "") {
+					swal("请输入会议ID!");
+					window.location.href = 'login.html';
+				}
+				if (selfUserType == 2) { // 本地观察者模式
+					// 不开启本地摄像头
+					isCameraClose = true;
+					$("#btn_camera").addClass("btn_camera_close");
+					// 没有静音功能
+					$("#btn_mute").addClass("btn_mute_close");
+				}
+
+				$("#room").text("会议ID : " + convId);
+				initTimer();
+
+				if (selfUserType == 1) { // 本地观察者模式没有开启/关闭本地摄像头事件
+					// 关闭本地摄像头按钮点击事件
+					$("#btn_camera").click(function() {
+						rongRTCEngine.closeLocalVideo(!isCameraClose);
+						isCameraClose = !isCameraClose;
+						if (isCameraClose) {
+							$(this).addClass("btn_camera_close");
+							addCloseVideoCover(selfUserId);
+						} else {
+							$(this).removeClass("btn_camera_close");
+							removeCloseVideoCover(selfUserId);
+						}
+					});
+				}
+				if (selfUserType == 1) { // 本地观察者模式没有开启/关闭本地静音事件
+					// 本地静音按钮点击事件
+					$("#btn_mute").click(function() {
+						rongRTCEngine.muteMicrophone(!isMute);
+						isMute = !isMute;
+						if (isMute) {
+							$(this).addClass("btn_mute_close");
+						} else {
+							$(this).removeClass("btn_mute_close");
+						}
+					});
+				}
+				// 挂断按钮点击事件
+				$("#btn_hangup").click(function() {
+					leaveConv(convId);
+				});
+				// 关闭远端音频按钮点击事件
+				$("#btn_voice").click(function() {
+					rongRTCEngine.closeRemoteAudio(!isAudioClose);
+					isAudioClose = !isAudioClose;
+					if (isAudioClose) {
+						$(this).addClass("btn_voice_close");
+					} else {
+						$(this).removeClass("btn_voice_close");
+					}
+				});
+				if (isShowWB) { // 如果显示白板功能
+					// 白板按钮
+					$(".btnarea ul:first").append('<li><a id="btn_wb" class="btn_wb"></a></li>');
+					// 白板区域
+					$(".main").append('\
+						<div id="wbarea">\
+							<div><a id="btn_wb_close" class="btn_wb_close"></a></div>\
+							<div id="wb" style="width:100%;height:100%"></div>\
+						</div>\
+					');
+					// 打开白板按钮点击事件
+					$("#btn_wb").click(function() {
+						rongRTCEngine.requestWhiteBoardURL();
+					});
+					// 关闭白板按钮点击事件
+					$("#btn_wb_close").click(function() {
+						$("#videoarea").css("display", "block");
+						$("#wbarea").css("display", "none");
+                        $("#wb").html("");
+					});
+				}
+				// 下一个
+				$(".next").click(function() {
+					next();
+				})
+				// 上一个
+				$(".prev").click(function() {
+					prev();
+				})
+                // 屏幕共享
+                if (selfUserType == 2) { // 观察者
+                    $("#btn_share").removeClass("btn_share").addClass("shareClose");
+                } else {
+                    $('#btn_share').click(function () {
+                    	if (!isScreenSharing) { // 开启
+                    		rongRTCEngine.startScreenShare();
+                    	} else { // 关闭
+                    		rongRTCEngine.stopScreenShare();
+                    	}
+                    });
+                }
+                getToken (tokenUrl, selfUserId, appId, async function(data) {
+                	var token = data;
+                	try {
+                		if (selfUserType == 1) {
+                			await check(rongRTCEngine, token);
+                		}
+                		var myVideoConstraints = initVideoConstraints();
+                		rongRTCEngine.setVideoParameters({
+                			VIDEO_PROFILE : myVideoConstraints,
+                			USER_TYPE : selfUserType,
+                			IS_CLOSE_VIDEO : isCameraClose
+                		});
+                		// 设置上报丢包率信息
+                		rongRTCEngine.enableSendLostReport(true);
+                		// 加入会议
+                		rongRTCEngine.joinChannel(convId, selfUserId, token);
+                	} catch (err) {
+                		swal("初始化失败!");
+                	}
+				});
+                async function check(rongRTCEngine, token) {
+                    await rongRTCEngine.audioVideoState().then((data)=>{
+                        if(data.videoState==0 && data.audioState==0){
+	                        swal({
+	                            title: "",
+	                            text: "没有检测到麦克风和摄像头，请检查您的设备。",
+	                            type: "",
+	                            showCancelButton: true,
+	                            cancelButtonText: "退出",
+	                            confirmButtonText : "继续以观察者加入",
+	                            showConfirmButton: true,
+	                            closeOnConfirm: true
+	                        }, function (isConfirm) {
+	                            if (isConfirm) {
+	                                selfUserType = '2';
+	                                rongRTCEngine.userType = '2';
+	                                $("#btn_camera").addClass("btn_camera_close");
+	                                $("#btn_mute").addClass("btn_mute_close");
+	                                $("#btn_share").removeClass("btn_share").addClass("shareClose");
+	                                // 加入会议
+	                                rongRTCEngine.joinChannel(convId, selfUserId, token);
+	                            }
+	                            else {
+	                                backLogin()
+	                                return;
+	                            }
+	                        })
+	                    } else if (data.videoState==1 && data.audioState==1 && data.videoAuthorized==0 && data.audioAuthorized == 0)
+	                        swal("没有获取到摄像头和麦克风权限")
+	                    else if (data.audioState==1 && data.audioAuthorized==0)
+	                        swal("没有获取到麦克风权限")
+	                    else if (data.videoState==1 && data.videoAuthorized==0)
+	                        swal("没有获取到摄像头权限")
+                	})
+                }
+			});
+	// 是否强制关闭浏览器操作
+	var isFouce = true;
+	/**
+	 * 页面关闭事件
+	 *
+	 */
+	$(window).unload(function() {
+		if (isFouce) {
+			leaveConv(convId);
+		}
+	});
+
+	/**
+	 * 请求token
+	 *
+	 */
+	function getToken(tokenUrl, uid, appid, callback) {
+		$.ajax({
+			url : tokenUrl,
+			type : "POST",
+			data : 'uid=' + uid + '&appid=' + appid,
+			async : true,
+			success : function(data) {
+				callback(data);
+			},
+			error : function(er) {
+				swal("请求token失败!");
+			}
+		});
+	}
+
+	/**
+	 * 初始化视频参数
+	 *
+	 */
+	function initVideoConstraints() {
+		if (resolution != null) {
+			var resolutionArr = resolution.split("*");
+			var width = resolutionArr[0];
+			var height = resolutionArr[1];
+			if (width != null && height != null) {
+				var myVideoConstraints = {};
+				myVideoConstraints.width = parseInt(width);
+				myVideoConstraints.height = parseInt(height);
+				myVideoConstraints.frameRate = 15;
+			}
+		}
+		return myVideoConstraints;
+	}
+    function Timer() {
+        this.timeout = 0;
+        this.startTime = 0;
+        this.start = function(callback, second) {
+            second = second || 0;
+
+            if (callback) {
+                this.timeout = setTimeout(function() {
+                    callback();
+                }, second);
+            }
+
+            this.startTime = +new Date;
+        };
+
+        this.stop = function(callback) {
+
+            clearTimeout(this.timeout);
+
+            var endTime = +new Date;
+            var startTime = this.startTime;
+            var duration = endTime - startTime;
+
+            return {
+                start: startTime,
+                end: endTime,
+                duration: duration
+            };
+        };
+    }
+	/**
+	 * 离开会议
+	 *
+	 */
+	var queryEwbType;
+    var timer = new Timer();
+	function leaveConv(convId) {
+	    // 点击挂断后服务器4秒没响应直接后退到登录页面
+	    timer.start(function () {
+            backLogin();
+        },500)
+
+		if (isShowWB && rongRTCEngine.getRemoteStreamCount() == 0) { // 显示白板功能时， 如果最后一个人离开会议，查询是否有白板
+			// 查询白板类型——离开会议
+			queryEwbType = 1;
+			rongRTCEngine.queryWhiteBoard();
+		} else {
+			rongRTCEngine.leaveChannel(convId);
+            // 关闭本地媒体流
+            rongRTCEngine.closeLocalStream();
+            isFouce = false;
+		}
+
+
+	}
+
+	/**
+	 * 初始化RongRTCEngine
+	 *
+	 */
+	function initRongRTCEngine() {
+		var rongRTCEngine = new RongRTCEngine(wsNavUrl);
+		// 注册回调
+		var rongRTCEngineEventHandle = new RongRTCEngineEventHandle();
+		// 加入完成
+		rongRTCEngineEventHandle.on('onJoinComplete', function(data) {
+			console.log(JSON.stringify(data));
+			var isJoined = data.isJoined;
+			/*//获取本地音视频失败
+			if (data.code){
+                swal({
+                    title: "",
+                    text: "没有检测到麦克风，没有检测到摄像头，请检查您的设备",
+                    type: "",
+                    showCancelButton: true,
+                    cancelButtonText: "退出",
+                    confirmButtonText : "确定加入",
+                    showConfirmButton: true,
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    if (isConfirm) {
+                        rongRTCEngine.userType = '2';
+                        rongRTCEngine.reTry = true;
+                        rongRTCEngine.joinChannel(rongRTCEngine.channelId, rongRTCEngine.userId, rongRTCEngine.token);
+                        return;
+                    }
+                    else {
+                        backLogin()
+                        return;
+                    }
+                })
+                return;
+			}*/
+			if (isJoined) {
+				if (selfUserType != 2) {
+					/* var localStream = rongRTCEngine.getLocalVideoView();
+					$("#mainVideo").append("<video id='" + selfUserId + "' autoplay></video>");
+					// 本地视频静音
+					$("#" + selfUserId)[0].muted = true;
+					// 附加流
+					attachMediaStream($("#" + selfUserId)[0], localStream); */
+					var localVideoView = rongRTCEngine.createLocalVideoView();
+					$("#mainVideo").append(localVideoView);
+					// 加入时是否关闭了本地摄像头
+					if (isCameraClose) {
+						$("#btn_camera").addClass("btn_camera_close");
+						addCloseVideoCover(selfUserId);
+					}
+                    $("#" + selfUserId).css("transform"," rotateY(180deg)");
+				}
+			} else {
+                swal({
+                    title: "",
+                    text: "加入会议失败",
+                    type: "",
+                    showCancelButton: true,
+                    confirmButtonText: "退出",
+                    cancelButtonText: "继续加入",
+                    showConfirmButton: true,
+                    closeOnConfirm: true
+                }, function (isConfirm) {
+                    isConfirm ? backLogin(): void 0;
+                    }
+                )
+			}
+		});
+		// 离开完成
+		rongRTCEngineEventHandle.on('onLeaveComplete', function(data) {
+			console.log(JSON.stringify(data));
+			var isLeft = data.isLeft;
+			if (isLeft) {
+				// 关闭本地媒体流
+				rongRTCEngine.closeLocalStream();
+
+				isFouce = false;
+				// 返回login
+				backLogin();
+			} else {
+				swal("离开会议失败!");
+			}
+		});
+		// 其它用户加入
+		rongRTCEngineEventHandle.on('onUserJoined', function (data) {
+			console.log(JSON.stringify(data));
+			var userType = data.userType;
+			var userId = data.userId;
+			if (userType == 2) {
+				console.log(userId + "以观察者加入");
+			} else if (userType == 1) {
+				var talkType = data.talkType;
+				// 加入时是否开启了摄像头
+				console.log(talkType)
+				if (talkType == 0) { // 没有开启
+					// 提示信息
+					console.log("加入会议")
+					$("#tip").text(getTime() + " [" + data.userId + "] 已加入会议且没有开启摄像头");
+
+				} else {
+					// 提示信息
+					$("#tip").text(getTime() + " [" + data.userId + "] 已加入会议");
+				}
+			}
+		});
+		//其它视频流加入
+		rongRTCEngineEventHandle.on('onaddstream', function(data) {
+			console.log(JSON.stringify(data));
+			var isLocal = data.isLocal;
+			var talkType = data.talkType;
+			var userType = data.userType;
+			if (userType == 1) {
+				var userId = data.userId;
+				var remoteVideoView = rongRTCEngine.createRemoteVideoView(userId);
+				if (selfUserType == 2 && rongRTCEngine.getRemoteStreamCount() == 1) { // 						本地观察者用户，并且第一个非观察者用户加入
+					$("#mainVideo").append(remoteVideoView);
+				} else {
+					remoteVideoView.onclick = function () {
+						switchWindow(this.id);
+					}
+					var subLi = document.createElement('li');
+					subLi.appendChild(remoteVideoView);
+					$("#subVideo").append(subLi);
+				}
+
+				if (talkType == 0) {
+					addCloseVideoCover(userId);
+				}
+				// 本地计时
+				if (rongRTCEngine.getRemoteStreamCount() == 1) {
+					timedCount();
+				}
+				// 滑动按钮
+				if (rongRTCEngine.getRemoteStreamCount() > showMax) {
+					$(".prev").css('display', 'block');
+					$(".next").css('display', 'block');
+				}
+			}
+		})
+		// 其它用户离开
+		rongRTCEngineEventHandle.on('onUserLeft', function(data) {
+			console.log(JSON.stringify(data));
+			var userType = data.userType;
+			if (userType != 2) {
+				var userId = data.userId;
+				var mainVideo = $("#mainVideo").children("video:eq(0)");
+				var mainVideoId = mainVideo.attr("id");
+				if (mainVideoId == userId) { // 主窗口如果是离开的远端视频
+					if (selfUserType == 1) { // 本地是普通用户
+						// 切换主窗口为本地视频
+						$("#" + selfUserId).trigger("click");
+					} else { // 本地是观察者用户
+						var firstSubVideo = $("#subVideo").children("li:eq(0)").children("video:eq(0)");
+						if (firstSubVideo[0] != null) { // 如果当前退出的不是最后一个，切换主窗口为子窗口中的第一个远端视频
+							firstSubVideo.trigger("click");
+						}
+					}
+				}
+				// 移除远端视频
+				removeVideo(userId);
+				// 移除覆盖层
+				removeCloseVideoCover(userId);
+				// 提示信息
+				$("#tip").text(getTime() + " [" + userId + "] 已离开会议");
+				// 重置本地计时
+				if (rongRTCEngine.getRemoteStreamCount() == 0) {
+					clearTimedCount();
+				}
+				if (rongRTCEngine.getRemoteStreamCount() < showMax) {
+					$(".prev").css('display', 'none');
+					$(".next").css('display', 'none');
+				}
+			}
+		});
+		// 其它用户改变音视频方式，关闭/打开摄像头
+		rongRTCEngineEventHandle.on('onUserUpdatedTalkType', function(data) {
+			console.log(JSON.stringify(data));
+			var userType = data.userType;
+			if (userType == 1) {
+				var userId = data.userId;
+				var talkType = data.talkType;
+				if (talkType == 1) {
+					$("#tip").text(getTime() + " [" + userId + "] 打开了摄像头");
+					removeCloseVideoCover(userId);
+				} else {
+					$("#tip").text(getTime() + " [" + userId + "] 关闭了摄像头");
+					addCloseVideoCover(userId);
+				}
+			}
+		});
+		rongRTCEngineEventHandle.on('onTurnTalkType', function(data) {
+			console.log(JSON.stringify(data));
+			var Type = data.type;
+			var userId = data.userId;
+			var open = data.open;
+			if (Type == 1) {
+				if (open == 1) {
+					$("#tip").text(getTime() + " [" + userId + "] 打开了摄像头");
+					removeCloseVideoCover(userId);
+				} else {
+					$("#tip").text(getTime() + " [" + userId + "] 关闭了摄像头");
+					addCloseVideoCover(userId);
+				}
+			} else if (Type == 2) {
+				if (open == 1) {
+					console.log("对方打开麦克风")
+				} else {
+					console.log("对方关闭麦克风")
+				}
+			}
+		});
+		// 与服务器断开连接
+		rongRTCEngineEventHandle.on('onConnectionStateChanged', function(data) {
+			console.log(JSON.stringify(data));
+			var connectionState = data.connectionState;
+			if (connectionState == 'DISCONNECTED') {
+				swal({
+					title : "",
+					text : "您已与服务器断开连接，请尝试重新进入会议!",
+					type : "",
+					showCancelButton : false,
+					confirmButtonText : "OK",
+					closeOnConfirm : false
+				}, function() {
+					// 关闭本地媒体流
+					rongRTCEngine.closeLocalStream();
+
+					isFouce = false;
+					// 返回login
+					backLogin();
+				});
+			}
+		});
+		// 请求白板
+		rongRTCEngineEventHandle.on('onWhiteBoardURL', function(data) {
+			console.log(JSON.stringify(data));
+			var isSuccess = data.isSuccess;
+			if (isSuccess) {
+				var url = data.url;
+				if (url == '') { // 观察者模式url返回为空
+					swal("当前没有白板供查看，请等待其他人创建白板!");
+				} else {
+					url += '&type=web';
+					if (selfUserType == 2) { // 本地观察者模式
+						url += '&role=guest';
+					}
+					$("#videoarea").css("display", "none");
+					$("#wbarea").css("display", "block");
+					$("#wb").html("<iframe height='100%' width='100%' frameborder='0' scrolling='no' marginheight='0' marginwidth='0' src='" + url + "' />");
+				}
+			} else {
+				swal("请求白板失败!");
+			}
+		});
+		// 查询白板
+		rongRTCEngineEventHandle.on('onWhiteBoardQuery', function(data) {
+			console.log(JSON.stringify(data));
+			var isSuccess = data.isSuccess;
+			if (isSuccess) {
+                timer.stop();
+				if (queryEwbType == 1) { // 离开会议
+					var url = data.url;
+					if (url == '') { // 当前会议没有白板url返回为空
+						rongRTCEngine.leaveChannel(convId);
+					} else {
+						// swal("退出后白板内容将被抛弃，是否立即退出?");
+						swal({
+							title : "",
+							text : "退出后白板内容将被抛弃，是否立即退出?",
+							type : "",
+							showCancelButton : true,
+							cancelButtonText : "不",
+							confirmButtonText : "退出",
+							closeOnConfirm : false
+						}, function() {
+							rongRTCEngine.leaveChannel(convId);
+						});
+					}
+				}
+			} else {
+				swal("查询白板失败!");
+			}
+		});
+		// 返回本地数据流的丢包率
+		rongRTCEngineEventHandle.on('onNetworkSentLost', function(data) {
+			console.debug(JSON.stringify(data));
+			var packetSendLossRate = data.packetSendLossRate;
+			console.debug("packetSendLossRate=" + packetSendLossRate);
+		});
+		// 打开屏幕共享完成
+		rongRTCEngineEventHandle.on('onStartScreenShareComplete', function(data) {
+            console.debug(JSON.stringify(data));
+            var isSuccess = data.isSuccess;
+            if (isSuccess) {
+            	isScreenSharing = true;
+            	if (selfUserType == 1) {
+					addShareCover(selfUserId);
+                	$("#" + selfUserId).css("transform", " rotateY(180deg)");
+                }
+            } else {
+            	if (data.code == 1) {
+            		swal("当前浏览器不支持屏幕共享!");
+            	} else if (data.code == 2) {
+            		swal({
+                        title: "",
+                        text: "首次使用屏幕共享，请先下载并安装以下插件",
+                        type: "",
+                        showCancelButton: true,
+                        confirmButtonText: "点击下载屏幕共享插件",
+                        cancelButtonText: "不需要",
+                        showConfirmButton: true,
+                        closeOnConfirm: true
+                    }, function () {
+						window.open(downloadUrl) ;
+                    })
+            	} else {
+            		swal("打开屏幕共享失败!");
+            	}
+            }
+        });
+		// 关闭屏幕共享完成
+		rongRTCEngineEventHandle.on('onStopScreenShareComplete', function(data) {
+            console.debug(JSON.stringify(data));
+            var isSuccess = data.isSuccess;
+            if (isSuccess) {
+            	isScreenSharing = false;
+            	if (selfUserType == 1) {
+               		removeShareVideoCover(selfUserId);
+                	$("#" + selfUserId).css("transform", " rotateY(180deg)");
+                }
+            } else {
+            	swal("关闭屏幕共享失败!");
+            }
+        });
+		
+		rongRTCEngine.setRongRTCEngineEventHandle(rongRTCEngineEventHandle);
+		return rongRTCEngine;
+	}
+
+	/**
+	 * 附加流
+	 *
+	 * @param jqObject
+	 * @param stream
+	 */
+	/* function attachMediaStream(jqObject, stream) {
+		jqObject.srcObject = stream;
+	} */
+
+	/**
+	 * 计时器
+	 *
+	 */
+	var t;
+	function timedCount() {
+		var c = 0;
+		t = setInterval(function() {
+			$("#timer").text("您已加入 : " + formatSeconds(c));
+			c = c + 1;
+		}, 1000);
+	}
+
+	function clearTimedCount() {
+		clearInterval(t);
+		t = null;
+		initTimer();
+	}
+
+	function initTimer() {
+		if (selfUserType == 1) {
+			$("#timer").text("当前会议只有您一人，您可以继续等待其他人加入，或者退出会议");
+		} else {
+			$("#timer").text("等待其他人加入会议");
+		}
+	}
+
+	/**
+	 * 切换视频窗口
+	 *
+	 */
+	function switchWindow(clickVideoId) {
+		/* var clickVideo = $("#" + clickVideoId);
+		var clickVideoStream = clickVideo[0].srcObject;
+		var mainVideo = $("#mainVideo").children("video:eq(0)");
+		var mainVideoId = mainVideo.attr("id");
+		var mainVideoStream = mainVideo[0].srcObject;
+		// 切换
+		mainVideo.attr("id", clickVideoId);
+		mainVideo[0].srcObject = clickVideoStream;
+		clickVideo.attr("id", mainVideoId);
+		clickVideo[0].srcObject = mainVideoStream;
+		// 本地视频静音，远端视频有声音
+		if (clickVideo.attr("id") == selfUserId) {
+			clickVideo[0].muted = true;
+			mainVideo[0].muted = false;
+		}
+		if (mainVideo.attr("id") == selfUserId) {
+			clickVideo[0].muted = false;
+			mainVideo[0].muted = true;
+		} */
+		var clickVideo = $("#" + clickVideoId);
+		var mainVideo = $("#mainVideo").children("video:eq(0)");
+		var clickVideoParent = clickVideo.parent();
+		var mainVideoParent = mainVideo.parent();
+        var bigVideo = {};
+        var minVideo = {};
+        var videos = new Array();
+        bigVideo.flowType = 1;
+        bigVideo.uid = clickVideo[0].id;
+        minVideo.flowType = 2;
+        minVideo.uid = mainVideo[0].id;
+        videos.push(bigVideo, minVideo);
+        videos = videos.filter((video) => {return video.uid != selfUserId});
+        var msgBody = JSON.stringify(videos);
+        // 发送流变化信令
+        rongRTCEngine.flowSubscribe(msgBody);
+		// 移除元素
+		clickVideo.remove();
+		mainVideo.remove();
+		// 点击事件处理
+		clickVideo[0].onclick = "";
+		mainVideo[0].onclick = function() {
+			switchWindow(this.id);
+		};
+		// 切换
+		clickVideoParent.append(mainVideo);
+		mainVideoParent.append(clickVideo);
+		// 刷新视频流
+		clickVideo[0].srcObject = clickVideo[0].srcObject;
+		mainVideo[0].srcObject = mainVideo[0].srcObject;
+        $("#" + selfUserId).css("transform"," rotateY(180deg)");
+		// 关闭摄像头后的覆盖层
+		if ($("#" + clickVideo.attr("id") + "_cover")[0]) {
+			removeCloseVideoCover(clickVideo.attr("id"));
+			addCloseVideoCover(clickVideo.attr("id"));
+		}
+		if ($("#" + mainVideo.attr("id") + "_cover")[0]) {
+			removeCloseVideoCover(mainVideo.attr("id"));
+			addCloseVideoCover(mainVideo.attr("id"));
+
+        }
+        // 关闭摄像头后的覆盖层
+        if ($("#" + clickVideo.attr("id") + "_share")[0]) {
+            removeShareVideoCover(clickVideo.attr("id"))
+            addShareCover(clickVideo.attr("id"))
+        }
+        if ($("#" + mainVideo.attr("id") + "_share")[0]) {
+            removeShareVideoCover(mainVideo.attr("id"))
+            addShareCover(mainVideo.attr("id"))
+
+        }
+	}
+
+	/**
+	 * 窗口向前向滑动
+	 *
+	 */
+	var showIndex = 1;
+	var showMax = 7;
+	var offset = 172;
+	function next() {
+		var length = rongRTCEngine.getRemoteStreamCount();
+		if (showIndex > length - showMax) {
+			swal("已到最后!")
+			return;
+		}
+		showIndex++;
+		$("#slide ul").animate({
+			"left" : "-=" + offset + "px"
+		}, 200)
+	}
+
+	function prev() {
+		if (showIndex <= 1) {
+			swal("已到最前!")
+			return;
+		}
+		showIndex--;
+		$("#slide ul").animate({
+			"left" : "+=" + offset + "px"
+		}, 200)
+	}
+
+	/**
+	 * 加关闭视频后的覆盖层
+	 *
+	 */
+	function addCloseVideoCover(closeVideoId) {
+		var imgSrc1 = "images/microphone_120x_white.png";
+		var imgSrc2 = "images/microphone_48x_white.png";
+		var nameLocal = "您";
+		var nameRemote1 = closeVideoId;
+		var nameRemote2 = closeVideoId.substr(0, 6) + "...";
+		var desc1 = "当前正以语音参与会议";
+		var desc2 = "";
+		var parentDiv = $("#" + closeVideoId).parent();
+		var parentId = parentDiv.attr("id");
+		var imgSrc = parentId == "mainVideo" ? imgSrc1 : imgSrc2;
+		var nameRemote = parentId == "mainVideo" ? nameRemote1 : nameRemote2;
+		var desc = parentId == "mainVideo" ? desc1 : desc2;
+		parentDiv
+				.append("<div id='"
+						+ closeVideoId
+						+ "_cover' class='closeVideoCover'><div style='margin-top:25%; margin-bottom: 25px;'><img src='" + imgSrc + "'></div></div>");
+		if (closeVideoId == selfUserId) {
+			$("#" + closeVideoId + "_cover").append(
+					"<div>[" + nameLocal + "]" + desc + "</div>");
+		} else {
+			$("#" + closeVideoId + "_cover").append(
+					"<div>[" + nameRemote + "]" + desc + "</div>");
+		}
+		if (parentId != "mainVideo") {
+			$("#" + closeVideoId + "_cover").click(function() {
+				switchWindow(closeVideoId);
+			});
+		}
+	}
+    /**
+     * 加关闭视频后的覆盖层
+     *
+     */
+    function addShareCover(closeVideoId) {
+        var imgSrc1 = "images/placeholder-screen.png";
+        var imgSrc2 = "images/placeholder-screen.png";
+        var nameLocal = "";
+        var nameRemote1 = closeVideoId;
+        var nameRemote2 = closeVideoId.substr(0, 6) + "...";
+        var desc1 = '';
+        var desc2 = "";
+        var parentDiv = $("#" + closeVideoId).parent();
+        var parentId = parentDiv.attr("id");
+        var imgSrc = parentId == "mainVideo" ? imgSrc1 : imgSrc2;
+        var nameRemote = parentId == "mainVideo" ? nameRemote1 : nameRemote2;
+        var desc = parentId == "mainVideo" ? desc1 : desc2;
+        parentDiv
+            .append("<div id='"
+                + closeVideoId
+                + "_share' class='shareVideoCover'><div style='margin-top:25%; margin-bottom: 25px;'><img src='" + imgSrc + "'></div></div>");
+        if (closeVideoId == selfUserId) {
+            $("#" + closeVideoId + "_share").append(
+                "<div></div>");
+        } else {
+            $("#" + closeVideoId + "_share").append(
+                "<div></div>");
+        }
+        if (parentId != "mainVideo") {
+            $("#" + closeVideoId + "_share").click(function() {
+                switchWindow(closeVideoId);
+            });
+        }
+    }
+
+	/**
+	 * 删除覆盖层
+	 *
+	 */
+	function removeCloseVideoCover(closeVideoId) {
+		$('#' + closeVideoId + '_cover').remove();
+	}
+    /**
+     * 删除共享覆盖层
+     *
+     */
+    function removeShareVideoCover(closeVideoId) {
+        $('#' + closeVideoId + '_share').remove();
+    }
+
+	/**
+	 * 删除video
+	 *
+	 */
+	function removeVideo(removeVideoId) {
+		var parentDiv = $("#" + removeVideoId).parent();
+		$("#" + removeVideoId).remove();
+		if (parentDiv.is('li')) { // 如果是子窗口的video
+			parentDiv.remove();
+		}
+	}
+
+	/**
+	 * 返回login.html
+	 *
+	 */
+	function backLogin() {
+		// window.location.href = "login.html";
+		var param = "convId=" + convId + "&isCameraClose="
+				+ (isCameraClose ? 1 : 0) + "&userType=" + selfUserType
+		if (resolution != null && resolution != "") {
+			param += "&resolution=" + resolution;
+		}
+		window.location.href = 'login.html?' + param;
+	}
+</script>
+</head>
+<body>
+	<div class="main">
+		<div id="videoarea">
+			<!-- 视频主窗口 -->
+			<div id="mainVideo"></div>
+			<!-- 视频成员 -->
+			<div id="subarea">
+				<i class="prev"><img src="images/prev.gif"></i>
+				<i class="next"><img src="images/next.gif"></i>
+				<div id="slide">
+					<ul id="subVideo">
+					</ul>
+				</div>
+			</div>
+			<!-- 通知区域 -->
+			<div class="noticearea">
+				<img src="images/notice.png">
+				<span id="room"></span>
+				<span id="timer"></span>
+				<span id="tip"></span>
+			</div>
+			<!-- 视频按钮 -->
+			<div class="btnarea">
+				<ul>
+					<li><a id="btn_camera" class="btn_camera"></a></li>
+					<li><a id="btn_mute" class="btn_mute"></a></li>
+					<li><a id="btn_hangup" class="btn_hangup"></a></li>
+					<li><a id="btn_voice" class="btn_voice"></a></li>
+					<li><a id="btn_share" class="btn_share" title="屏幕共享"></a></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+	<footer id="foot">
+		<ul>
+			<li><a target="_blank" href="http://rongcloud.cn">rongcloud.cn</a></li>
+			<li class="copyright">&copy Copyright SealRTC</li>
+		</ul>
+	</footer>
+</body>
+</html>

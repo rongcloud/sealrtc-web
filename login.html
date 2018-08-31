@@ -1,0 +1,193 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<title>SealRTC</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<link rel="icon" href="images/app_57x57.png" type="image/x-icon"/>
+	<link href="style/common.css" rel="stylesheet" type="text/css"/>
+	<link href="style/login.css" rel="stylesheet" type="text/css"/>
+	<link href="style/sweetalert.css" rel="stylesheet" type="text/css"/>
+
+	<script type="text/javascript" src="config.js?v=20180817"></script>
+	<script type="text/javascript" src="js/jquery-2.1.3.min.js"></script>
+	<script type="text/javascript" src="js/common.js?v=20180412"></script>
+	<script type="text/javascript" src="js/sweetalert.min.js"></script>
+    <script type="text/javascript">
+	$(document).ready(function() {
+		var convId = getParameterByName("convId");
+		if (convId == null || convId == "") {
+			convId = getCookie("convId");
+		}
+		if (convId != null && convId != "") {
+			$("#convId").val(convId);
+		}
+		var resolution = getParameterByName("resolution");
+		if (resolution == null || resolution == "") {
+			resolution = getCookie("resolution");
+		}
+		if (resolution != null && resolution != "") {
+			$(".media_resolution input[value='" + resolution + "']").attr("checked", true);  
+		} else {
+			$(".media_resolution input[value='640*480']").attr("checked", true);  
+		}
+		var isCameraClose = getParameterByName("isCameraClose");
+		if (isCameraClose == null || isCameraClose == "") {
+			isCameraClose = getCookie("isCameraClose");
+		}
+		if (isCameraClose != null && isCameraClose == "1") {
+			$("#cameraCheckbox").attr("checked", true);
+		}
+		var userType = getParameterByName("userType");
+		if (userType == null || userType == "") {
+			userType = getCookie("userType");
+		}
+		if (userType != null && userType == "2") {
+			$("#typeCheckbox").attr("checked", true);
+			$("#cameraCheckbox").attr("checked", false);
+		}
+		
+		// 分辨率设置的按钮点击事件
+		$(".media_btn").click(function() {
+			$(this).css('display', 'none');
+			$(".mediaarea").css('display', 'block');
+			$(".mediaarea")[0].tabIndex = 0;
+			$(".mediaarea")[0].focus();
+			$(".mediaarea")[0].style.outline = "none";
+		});
+		// 分辨率设置的窗口失去焦点事件
+		$(".mediaarea").blur(function() {
+			$(this).css('display', 'none');
+			$(".media_btn").css('display', 'block');
+		});
+		// 是否关闭摄像头change事件
+		$("#cameraCheckbox").change(function() {
+			if ($("#cameraCheckbox").is(':checked')) {
+				if ($("#typeCheckbox").is(':checked')) {
+					$("#typeCheckbox").attr("checked", false);
+				}
+			}
+		});
+		// 是否观察者change事件
+		$("#typeCheckbox").change(function() {
+			if ($("#typeCheckbox").is(':checked')) {
+				if ($("#cameraCheckbox").is(':checked')) {
+					$("#cameraCheckbox").attr("checked", false);
+				}
+			}
+		});
+		// 会议ID输入框获得焦点事件
+		$("#convId").focus(function() {
+			this.placeholder = '';
+			if (this.value == '请在这里输入会议ID') {
+				this.value = '';
+			}
+		});
+		// 会议ID输入框失去焦点事件
+		$("#convId").blur(function() {
+			if (this.value == '') {
+				this.placeholder = '请在这里输入会议ID';
+			}
+		});
+		// 页面回车事件——加入会议
+		document.onkeydown = function(e) {
+			var ev = document.all ? window.event : e;
+			if (ev.keyCode == 13) {
+				joinConversation();
+			}
+		}
+	});
+	/**
+	 * 加入会议
+	 * 
+	 */
+	function joinConversation() {
+		// 会议ID
+		var convId = $('#convId').val();
+		if (convId == "" || convId == "请输入会议ID") {
+			swal("请输入会议ID!");
+			return;
+		}
+		// 是否关闭本地摄像头
+		var isCameraClose = $("#cameraCheckbox").is(':checked') ? 1 : 0;
+		// 是否以观察者模式加入
+		var userType = $("#typeCheckbox").is(':checked') ? "2" : "1";
+		// 分辨率
+		var resolution = $("input[name='media_radio']:checked").val();
+		var userId = guid();
+		var appId =global_config .appId;
+		setCookie("convId", convId);
+		setCookie("isCameraClose", isCameraClose);
+		setCookie("userType", userType);
+		setCookie("resolution", resolution);
+		// setCookie("userId", userId);
+		// setCookie("appId", appId);
+		// window.location.href = 'video.html';
+		var param = "convId=" + convId + "&isCameraClose=" + isCameraClose
+				+ "&userType=" + userType + "&resolution=" + resolution
+				+ "&userId=" + userId + "&appId=" + appId;
+		window.location.href = 'video.html?' + param;
+	}
+</script>
+</head>
+<body>
+	<div class="main">
+		<div class="content">
+			<div class="logoarea">
+				<div class="media_btn"></div>
+				<div class="mediaarea">
+					<div class="media_desc">选择分辨率</div>
+					<div class="media_resolution">
+						<ul>
+							<li><input type="radio" id="radio-1" name="media_radio" class="radio" value="320*240" /><label
+								for="radio-1"></label></li>
+							<li>320*240</li>
+						</ul>
+						<ul>
+							<li><input type="radio" id="radio-2" name="media_radio" class="radio" value="640*480" /><label
+								for="radio-2"></label></li>
+							<li>640*480</li>
+						</ul>
+						<ul>
+							<li><input type="radio" id="radio-3" name="media_radio" class="radio" value="1280*720" /><label
+								for="radio-3"></label></li>
+							<li>1280*720</li>
+						</ul>
+					</div>
+				</div>
+				<div class="logo"></div>
+				<div class="version">
+					<p>欢迎体验实时高质量的音视频会议</p>
+					<p>SealRTC V1.6.0</p>
+				</div>
+			</div>
+			<div class="inputarea">
+				<p>请输入会议ID</p>
+				<!--输入信息-->
+				<input id="convId" type="text" class="input_text" placeholder="请在这里输入会议ID" maxlength='40' />
+				<!-- 选择是否以观察者模式加入 -->
+				<div>
+					<div style="float: left;">
+						<input type="checkbox" id="cameraCheckbox" class="checkbox" /><label for="cameraCheckbox"></label>
+					</div>
+					<div class="chk_desc">加入时不开启摄像头</div>
+				</div>
+				<div style="clear: both;">
+					<div style="float: left;">
+						<input type="checkbox" id="typeCheckbox" class="checkbox" /><label for="typeCheckbox"></label>
+					</div>
+					<div class="chk_desc">以旁听者身份加入</div>
+				</div>
+				<!--按钮-->
+				<input type="button" checked="checked" value="开始会议" class="input_btn"
+					onclick="joinConversation()" />
+			</div>
+		</div>
+	</div>
+	<footer id="foot">
+		<ul>
+			<li><a target="_blank" href="http://rongcloud.cn">rongcloud.cn</a></li>
+			<li class="copyright">&copy Copyright SealRTC</li>
+		</ul>
+	</footer>
+</body>
+</html>

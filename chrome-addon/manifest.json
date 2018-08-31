@@ -1,0 +1,40 @@
+{
+    "name" : "RongRTC",
+    "author": "RongRTC",
+    "version" : "1.0",
+    "manifest_version" : 2,
+    "minimum_chrome_version": "49",
+    "description" : "RongRTC Screen Sharing",
+    "background": {
+        "scripts": ["background-script.js"],
+        "persistent": false
+    },
+    "content_scripts": [ {
+       "js": [ "content-script.js" ],
+       "all_frames": true,
+       "run_at": "document_end",
+       "matches": [
+           "http://localhost:*/*",
+           "https://t-rtc.ronghub.com/*",
+           "https://d-rtc.ronghub.com/*",
+           "https://rtc.ronghub.com/*"
+       ]
+    }],
+    "externally_connectable": {
+        "matches": [
+            "http://localhost:*/*",
+            "https://t-rtc.ronghub.com/*",
+            "https://d-rtc.ronghub.com/*",
+            "https://rtc.ronghub.com/*"
+        ]
+    },
+    "icons" : {
+        "48" : "icon.png"
+    },
+    "permissions": [
+        "desktopCapture"
+    ],
+    "web_accessible_resources": [
+        "icon.png"
+    ]
+}

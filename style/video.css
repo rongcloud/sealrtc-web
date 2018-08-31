@@ -1,0 +1,301 @@
+* {
+	padding: 0px;
+	margin: 0px;
+}
+
+body {
+	background: #000;
+}
+
+.main {
+	position: relative;
+	width: 1280px;
+	height: 960px;
+	margin: 20px auto;
+	text-align: center;
+}
+
+#videoarea {
+	width: 100%;
+	height: 100%;
+}
+
+#mainVideo {
+	width: 100%;
+	height: 100%;
+}
+
+#mainVideo video {
+	width: 100%;
+	height: 100%;
+}
+
+.closeVideoCover {
+     position: absolute;
+     width: 100%;
+     height: 100%;
+     left: 0px;
+     top: 0px;
+     background-color: #03CBFF;
+     text-align: center;
+     font-family: Microsoft YaHei;
+     font-size: 20px;
+     color: white;
+     z-index: 9;
+ }
+.shareVideoCover {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
+    background-color: #141a30;
+    text-align: center;
+    font-family: Microsoft YaHei;
+    font-size: 20px;
+    color: white;
+    z-index: 9;
+}
+
+#subarea {
+	position: absolute;
+	width: 100%;
+	height: 210px;
+	bottom: 110px;
+	text-align: center;
+	background-color: rgba(255, 255, 255, 0);
+	z-index: 99;
+}
+
+#slide {
+	width: 1200px;
+	height: 100%;
+	overflow: hidden;
+	position: relative;
+	margin: 0 50px;
+}
+
+#slide ul {
+	position: relative;
+	width: 10000px;
+	list-style-type: none;
+}
+
+#slide ul li {
+	position: relative;
+	border: 1px solid #D6D9DC;
+	float: left;
+	padding: 5x 3px 3px 3px;
+	cursor: pointer;
+	text-align: center;
+	margin-right: 20px;
+	background-color: black;
+}
+
+#slide ul li video {
+	width: 151px;
+	height: 200px;
+	display: block;
+}
+
+.prev {
+	clear: both;
+	cursor: pointer;
+	position: absolute;
+	top: 65px;
+	left: 10px;
+	display: none;
+}
+
+.next {
+	cursor: pointer;
+	position: absolute;
+	top: 65px;
+	right: 10px;
+	display: none;
+}
+
+.noticearea {
+	position: absolute;
+	width: 100%;
+	height: 35px;
+	bottom: 65px;
+	text-align: center;
+	background-color: rgba(102, 102, 102, 0.68);
+	z-index: 99;
+}
+
+.noticearea img {
+	float: left;
+	margin-left: 20px;
+	margin-right: 10px;
+}
+
+.noticearea span {
+	float: left;
+	margin: 8px 50px 8px 5px;
+	font-family: Microsoft YaHei;
+	font-size: 14px;
+	color: white;
+}
+
+#tip {
+	float: right;
+}
+
+.btnarea {
+	position: absolute;
+	width: 100%;
+	height: 65px;
+	bottom: 0px;
+	text-align: center;
+	background-color: rgba(51, 51, 51, 0.85);
+	z-index: 99;
+}
+
+.btnarea ul {
+	display: inline-block;
+	list-style: none;
+}
+
+.btnarea ul li {
+	float: left;
+	line-height: 20px;
+	padding: 2px 5px;
+	font-family: Microsoft YaHei;
+	font-size: 14px;
+	color: #333333;
+}
+
+.btn_camera {
+	float: left;
+	width: 52px;
+	height: 52px;
+	margin: 6px 0 0 50px;
+	cursor: pointer;
+	background: url(../images/camera.png) no-repeat center center;
+}
+
+.btn_camera:hover {
+	background: url(../images/camera_press.png) no-repeat center center;
+}
+
+.btn_camera_close {
+	background: url(../images/camera_close.png) no-repeat center center;
+}
+
+.btn_camera_close:hover {
+	background: url(../images/camera_close_press.png) no-repeat center
+		center;
+}
+.btn_mute {
+	float: left;
+	width: 52px;
+	height: 52px;
+	margin: 5px 0 0 72px;
+	cursor: pointer;
+	background: url(../images/mute.png) no-repeat center center;
+}
+
+.btn_mute:hover {
+	background: url(../images/mute_press.png) no-repeat center center;
+}
+
+.btn_mute_close {
+	background: url(../images/mute_close.png) no-repeat center center;
+}
+
+.btn_mute_close:hover {
+	background: url(../images/mute_close_press.png) no-repeat center center;
+}
+
+.btn_hangup {
+	float: left;
+	width: 52px;
+	height: 52px;
+	margin: 5px 0 0 72px;
+	cursor: pointer;
+	background: url(../images/hangup.png) no-repeat center center;
+}
+
+.btn_hangup:hover {
+	background: url(../images/hangup_press.png) no-repeat center center;
+}
+
+.btn_voice {
+	float: left;
+	width: 52px;
+	height: 52px;
+	margin: 5px 0 0 72px;
+	cursor: pointer;
+	background: url(../images/voice.png) no-repeat center center;
+}
+.btn_share {
+	float: left;
+	width: 52px;
+	height: 52px;
+	margin: 5px 0 0 72px;
+	cursor: pointer;
+	background: url(../images/screen.png) no-repeat center center;
+}
+.btn_share:hover {
+	background: url(../images/shareHover.png) no-repeat center center;
+}
+.shareHover {
+	float: left;
+	position: absolute;
+	height:auto;
+	z-index: 100;
+	padding:20px;width:auto;
+	top:94%;left:66%;
+	background-color: rgba(52, 36, 53, 0.15);
+}
+.shareClose {
+	float: left;
+	width: 52px;
+	height: 52px;
+	margin: 5px 0 0 72px;
+	cursor: pointer;
+	background: url(../images/sharing_disable.png) no-repeat center center;
+}
+.btn_voice:hover {
+	background: url(../images/voice_press.png) no-repeat center center;
+}
+
+.btn_voice_close {
+	background: url(../images/voice_close.png) no-repeat center center;
+}
+
+.btn_voice_close:hover {
+	background: url(../images/voice_close_press.png) no-repeat center center;
+}
+
+.btn_wb {
+	float: left;
+	width: 52px;
+	height: 52px;
+	margin: 5px 0 0 72px;
+	cursor: pointer;
+	background: url(../images/whiteboard.png) no-repeat center center;
+}
+
+.btn_wb:hover {
+	background: url(../images/whiteboard_press.png) no-repeat center center;
+}
+
+#wbarea {
+	height: 100%;
+	width: 100%;
+	index: 199;
+	display: none;
+}
+
+.btn_wb_close {
+	position: absolute;
+	top: 5px;
+	right: 30px;
+	width: 24px;
+	height: 24px;
+	cursor: pointer;
+	background: url(../images/whiteboard_close.png) no-repeat center center;
+}
