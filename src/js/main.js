@@ -1,24 +1,10 @@
 (function (dependencies) {
   const win = dependencies.win,
-    RongSeal = dependencies.RongSeal,
-    RongRTC = dependencies.RongRTC,
-    utils = RongSeal.utils;
+    RongRTC = dependencies.RongRTC;
 
-  let rongRTC,
-    userId,
-    roomId;
-
-
-  function startMeet(usId, rmId) {
-    userId = usId;
-    roomId = rmId;
-    rongRTC = new RongRTC();
-    observeRTC();
-    observeRoom();
-    observeStream();
-  }
-
-  function observeRTC() {
+  let rongRTC;
+    
+  const observeRTC = () => {
     let Observer = rongRTC.Observer;
     let observer = new Observer((mutation) => {
       if (mutation.type === 'error') {
@@ -28,14 +14,14 @@
     observer.observe(rongRTC, {
       error: true
     });
-  }
+  };
 
-  function observeRoom() {
+  const observeRoom = () => {
     let Room = rongRTC.Room,
       Observer = rongRTC.Observer;
     let observer = new Observer((mutation) => {
-      let type = mutation.type,
-        user = mutation.user;
+      let type = mutation.type;
+      // user = mutation.user;
       if (type === 'joined') {
         // TODO 某用户加入房间 信令
       }
@@ -47,15 +33,15 @@
       joined: true,
       left: true
     });
-  }
+  };
 
-  function observeStream() {
+  const observeStream = () => {
     let Stream = rongRTC.Stream,
       Observer = rongRTC.Observer;
     let observer = new Observer((mutation) => {
-      let type = mutation.type,
-        user = mutation.user,
-        stream = mutation.stream;
+      let type = mutation.type;
+      // user = mutation.user,
+      // stream = mutation.stream;
       if (type === 'added') {
         // TODO 相应媒体流展示
       }
@@ -63,6 +49,13 @@
     observer.observe(Stream, {
       added: true
     });
+  };
+
+  function startMeet() {
+    rongRTC = new RongRTC();
+    observeRTC();
+    observeRoom();
+    observeStream();
   }
 
   win.RongSeal = win.RongSeal || {};
@@ -70,6 +63,6 @@
 
 })({
   win: window,
-  RongRTC: RongRTC,
-  RongSeal: RongSeal
+  RongRTC: window.RongRTC,
+  RongSeal: window.RongSeal
 });

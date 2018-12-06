@@ -3,19 +3,18 @@
   var utils = {
     noop: function () {},
     tplEngine: function (temp, data, regexp) {
+      var replaceAction = function (object) {
+        return temp.replace(regexp || (/{([^}]+)}/g), function (match, name) {
+          if (match.charAt(0) === '\\') return match.slice(1);
+          return (object[name] !== undefined) ? object[name] : '{' + name + '}';
+        });
+      };
       if (!(Object.prototype.toString.call(data) === '[object Array]')) data = [data];
       var ret = [];
       for (var i = 0, j = data.length; i < j; i++) {
         ret.push(replaceAction(data[i]));
       }
       return ret.join('');
-
-      function replaceAction(object) {
-        return temp.replace(regexp || (/{([^}]+)}/g), function (match, name) {
-          if (match.charAt(0) == '\\') return match.slice(1);
-          return (object[name] != undefined) ? object[name] : '{' + name + '}';
-        });
-      }
     },
     Cache: function (config) {
       config = config || {};

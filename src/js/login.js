@@ -1,6 +1,5 @@
 (function (dependencies) {
-  const win = dependencies.window,
-    RongSeal = dependencies.RongSeal,
+  const RongSeal = dependencies.RongSeal,
     utils = RongSeal.utils,
     getDom = utils.getDom;
 
@@ -8,14 +7,16 @@
     userIdEl = getDom('#userId'),
     startBtnEl = getDom('#start');
 
-  startBtnEl.onclick = startMeet;
-
-  function startMeet() {
+  const startMeet = () => {
     // check value
-    RongSeal.startMeet();
-  }
+    var roomId = roomIdEl.value;
+    var userId = userIdEl.value;
+    RongSeal.startMeet(userId, roomId);
+  };
+
+  startBtnEl.onclick = startMeet;
 
 })({
   win: window,
-  RongSeal: RongSeal
+  RongSeal: window.RongSeal
 });
