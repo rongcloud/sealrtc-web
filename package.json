@@ -1,0 +1,30 @@
+{
+  "name": "seal-rtc-v2",
+  "version": "2.0.0",
+  "description": "SealRTC Demo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "eslint": "eslint .",
+    "eslint-fix": "eslint . --fix",
+    "precommit": "npm run eslint"
+  },
+  "precommit": [
+    "npm run precommit"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@gitlab2.rongcloud.net:public-web/seal-rtc-v2.git"
+  },
+  "keywords": [
+    "RTC",
+    "SealRTC",
+    "RongCloud"
+  ],
+  "author": "RongCloud",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^5.6.1",
+    "precommit": "^1.2.2"
+  }
+}

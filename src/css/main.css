@@ -1,0 +1,128 @@
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+p, input, button {
+  margin: 5px 0;
+}
+
+ul, li {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+input {
+  outline: none;
+}
+
+.rong-box {
+  width: 100%;
+  height: 100%;
+}
+
+.rong-login {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #4e6baa;
+  text-align: center;
+  overflow: scroll;
+}
+
+.rong-login-content {
+  width: 400px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.rong-login-content .rong-login-tit {
+  font-size: 32px;
+  margin-top: 0;
+  color: white;
+}
+
+.rong-login-content .rong-tit-id {
+  margin-top: 13px;
+  font-size: 28px;
+  color: #3A83F5;
+}
+
+.rong-login-content .rong-input {
+  display: block;
+  margin: 40px 0;
+  width: 100%;
+  height: 48px;
+  line-height: 64px;
+  border-radius: 40px;
+  border: 1px #DDDDDD solid;
+  background: white;
+  text-align: left;
+  font-size: 15px;
+  color: #777;
+  padding-left: 20px;
+  box-sizing: border-box;
+}
+
+.rong-login-content .rong-inp-id::-webkit-input-placeholder {
+  color: #999;
+}
+
+.rong-login-content .rong-btn-start {
+  width: 400px;
+  height: 50px;
+  border-radius: 40px;
+  border: 1px #28d6f6 solid;
+  background: #28d6f6;
+  font-size: 15px;
+  color: #FFFFFF;
+  cursor: pointer;
+}
+
+.rong-login-content .rong-login-check-box {
+  margin: 30px 0;
+}
+
+.rong-login-content .rong-login-check-box .rong-login-checkbox {
+  display: inline-block;
+  text-align: left;
+  position: relative;
+  width: 43%;
+}
+
+.rong-login-content .rong-login-check-box .rong-login-checkbox input[type="checkbox"] {
+  display: none;
+}
+
+.rong-login-content .rong-login-check-box .rong-login-checkbox label {
+  vertical-align: middle;
+  background-color: white;
+  border-radius: 5px;
+  padding: 8px;
+  display: inline-block;
+  position: relative;
+}
+
+.rong-login-content .rong-login-check-box .rong-login-checkbox label::after {
+  content: '\2714';
+  position: absolute;
+  color: black;
+  top: 0;
+  left: 0;
+  padding: 1px 0 0 0;
+  font-size: 20px;
+  line-height: 19px;
+  width: 100%;
+  height: 100%;
+}
+
+.rong-login-content .rong-login-check-box .rong-login-checkbox span {
+  margin-left: 5px;
+  font-size: 14px;
+  color: white;
+}
