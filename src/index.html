@@ -7,13 +7,35 @@
   <link rel="icon" href="./css/img/icon.png" type="image/x-icon" />
   <link rel="stylesheet" href="./css/main.css">
   <script src="./lib/RongRTC.2.0.0.js"></script>
-  <title>SealRTC</title>
+  <script src="./config.js"></script>
+  <title>SealRTC v2.0.0</title>
 </head>
 <body>
   <div class="rong-box">
+    <!-- 登录界面 -->
     <div class="rong-login">
       <div class="rong-rate-setting">
-      
+        <div class="rong-rate-icon">
+          <div class="rong-rate-list-box">
+            <div class="rong-rate-list">
+              <p>设置分辨率</p>
+              <ul>
+                <li>
+                  <input type="radio" name="rate" id="rl-320-240" value="320*240"><label for="rl-320-240"></label><span>320 * 240</span>
+                </li>
+                <li>
+                  <input type="radio" name="rate" id="rl-640-480" value="640*480" checked><label for="rl-640-480"></label><span>640 * 480</span>
+                </li>
+                <li>
+                  <input type="radio" name="rate" id="rl-1280-720" value="1280*720"><label for="rl-1280-720"></label><span>1280 * 720</span>
+                </li>
+                <li>
+                  <input type="radio" name="rate" id="rl-1920-720" value="1920*720"><label for="rl-1920-720"></label><span>1920 * 720</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="rong-login-content">
         <img class="rong-login-logo" src="./css/img/logo.png">
@@ -35,12 +57,41 @@
         <input id="start" class="rong-btn-start" type="button" value="开始会议">
       </div>
     </div>
-    <div class="rong-main">
 
+    <!-- 视频展示与操作界面 -->
+    <div class="rong-main">
+      <div class="rong-main-show">
+        <div class="rong-video-list">
+          <div class="rong-video-box" ismain="true">
+            <video class="rong-self-video"></video>
+            <div class="rong-show-audio"></div>
+            <p class="rong-show-info">自己</p>
+          </div>
+        </div>
+        <div class="rong-wb-box">
+          <a class="rong-wb-close"></a>
+          <iframe id="rongWhiteboard" class="rong-whiteboard" src="" frameborder="0"></iframe>
+        </div>
+        <div class="rong-show-content">
+          <span class="rong-room-name"></span>
+          <span class="rong-user-name"></span>
+        </div>
+        <div class="rong-show-opt">
+          <ul>
+            <li isopen="1" class="rong-opt-camera"></li><li 
+            class="rong-opt-microphone"></li><li 
+            class="rong-opt-voice"></li><li 
+            class="rong-opt-share"></li><li 
+            class="rong-opt-wb"></li><li 
+            class="rong-opt-hangup"></li>
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 
   <script src="./js/utils.js"></script>
+  <script src="./js/common.js"></script>
   <script src="./js/login.js"></script>
   <script src="./js/main.js"></script>
 </body>
