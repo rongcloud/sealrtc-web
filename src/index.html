@@ -64,8 +64,13 @@
         <div class="rong-video-list">
           <div class="rong-video-box" rong-data-main="true">
             <video class="rong-self-video"></video>
+            <div class="rong-show-share"></div>
             <div class="rong-show-audio"></div>
             <p class="rong-show-info">自己</p>
+            <div class="rong-show-video-box">
+              <a rong-data-open="1" class="rong-video-opt rong-opt-camera"></a>
+              <a rong-data-open="1" class="rong-video-opt rong-opt-microphone"></a>
+            </div>
           </div>
         </div>
         <div class="rong-wb-box">
@@ -75,16 +80,9 @@
         <div class="rong-show-content">
           <span class="rong-room-name"></span>
           <span class="rong-user-name"></span>
-        </div>
-        <div class="rong-show-opt">
-          <ul>
-            <li rong-data-open="1" class="rong-opt-camera"></li><li 
-            class="rong-opt-microphone"></li><li 
-            class="rong-opt-voice"></li><li 
-            class="rong-opt-share"></li><li 
-            class="rong-opt-wb"></li><li 
-            class="rong-opt-hangup"></li>
-          </ul>
+          <a rong-data-open="1" class="rong-content-opt rong-opt-hangup"></a>
+          <a rong-data-open="1" class="rong-content-opt rong-opt-wb"></a>
+          <a rong-data-open="1" class="rong-content-opt rong-opt-share"></a>
         </div>
       </div>
     </div>

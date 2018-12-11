@@ -10,7 +10,7 @@ module.exports = {
   },
   "rules": {
     "quotes": [2, "single"],
-    "no-alert": "error",
+    // "no-alert": "error",
     "no-irregular-whitespace": "error",
     "eqeqeq": "warn",
     "key-spacing": "error",

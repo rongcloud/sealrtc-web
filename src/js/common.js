@@ -15,17 +15,21 @@
   const WhiteboardId = 'rongWhiteboard';
   const VideoListClassName = 'rong-video-list';
   const VideoBoxClassName = 'rong-video-box';
-  const AudioShowClassName = 'rong-show-audio';
+  const AudioCoverClassName = 'rong-show-audio';
+  const ScreenCoverClassName = 'rong-show-share';
   const WhiteboardBoxClassName = 'rong-wb-box';
   const WhiteboardCloseClassName = 'rong-wb-close';
   const InfoClassName = 'rong-show-info';
   const CameraOptClassName = 'rong-opt-camera';
   const VoiceOptClassName = 'rong-opt-voice';
+  const OptBoxClassName = 'rong-show-video-box';
   const VideoHTMLTpl = `<video></video>
-    <div class="${AudioShowClassName}"></div>
+    <div class="${AudioCoverClassName}"></div>
     <p class="${InfoClassName}" title="{id}">{id}</p>
-    <a ${OpenAttribute}="1" ${IdAttribute}={id}  class="rong-video-opt ${CameraOptClassName}"></a>
-    <a ${OpenAttribute}="1" ${IdAttribute}={id} class="rong-video-opt ${VoiceOptClassName}"></a>`;
+    <div class="rong-show-video-box">
+      <a ${OpenAttribute}="1" ${IdAttribute}={id}  class="rong-video-opt ${CameraOptClassName}"></a>
+      <a ${OpenAttribute}="1" ${IdAttribute}={id} class="rong-video-opt ${VoiceOptClassName}"></a>
+    </div>`;
 
   const getSwitchOpen = (el) => {
     let openValue = el.getAttribute(OpenAttribute) || SealSwitch.CLOSE;
@@ -55,14 +59,25 @@
     return videoEl;
   };
 
-  const getAudioEl = function (id) {
+  const removeVideoEl = (id) => {
+    let videoEl = utils.getDomById(id);
+    let parentEl = videoEl.parentNode;
+    let isShowMain = parentEl.getAttribute(ShowMainAttribute);
+    let grandParentEl = parentEl.parentNode;
+    grandParentEl.removeChild(parentEl);
+    if (isShowMain && grandParentEl.children.length) {
+      grandParentEl.children[0].setAttribute(ShowMainAttribute, 'true');
+    }
+  };
+
+  const getCoverEl = function (id, name) {
     let videoEl = utils.getDomById(id);
     let videoBoxEl = videoEl.parentNode;
     let children = videoBoxEl.children;
     let audioEl;
     for (let i = 0, max = children.length; i < max; i++) {
       let child = children[i];
-      let hasAudioName = child.className.indexOf(AudioShowClassName) !== -1;
+      let hasAudioName = child.className.indexOf(name) !== -1;
       if (hasAudioName) {
         audioEl = child;
       }
@@ -70,14 +85,24 @@
     return audioEl;
   };
 
-  const showAudio = (id) => {
-    let audioEl = getAudioEl(id);
+  const showAudioCover = (id) => {
+    let audioEl = getCoverEl(id, AudioCoverClassName);
     utils.showDom(audioEl);
   };
 
-  const hideAudio = (id) => {
-    let audioEl = getAudioEl(id);
+  const hideAudioCover = (id) => {
+    let audioEl = getCoverEl(id, AudioCoverClassName);
     utils.hideDom(audioEl);
+  };
+
+  const showScreenShareCover = (id) => {
+    let screenShareEl = getCoverEl(id, ScreenCoverClassName);
+    utils.showDom(screenShareEl);
+  };
+
+  const hideScreenShareCover = (id) => {
+    let screenShareEl = getCoverEl(id, ScreenCoverClassName);
+    utils.hideDom(screenShareEl);
   };
 
   const hideWhiteboard = () => {
@@ -112,7 +137,7 @@
 
   const viewDom = (el) => {
     let mainSelector = '*[{mark}=\'true\']';
-    isMainMark = utils.tplEngine(mainSelector, {
+    let isMainMark = utils.tplEngine(mainSelector, {
       mark: ShowMainAttribute
     });
     let mainEl = utils.getDom(isMainMark);
@@ -125,8 +150,11 @@
     setSwitchOpen: setSwitchOpen,
     switchEl: switchEl,
     addVideoEl: addVideoEl,
-    showAudio: showAudio,
-    hideAudio: hideAudio,
+    removeVideoEl: removeVideoEl,
+    showAudioCover: showAudioCover,
+    hideAudioCover: hideAudioCover,
+    showScreenShareCover: showScreenShareCover,
+    hideScreenShareCover: hideScreenShareCover,
     showWhiteboard: showWhiteboard,
     hideWhiteboard: hideWhiteboard,
     getRateParams: getRateParams,
@@ -138,9 +166,11 @@
       SealSwitch: SealSwitch
     },
     ClassName: {
-      AudioShow: AudioShowClassName,
+      AudioShow: AudioCoverClassName,
+      ScreenCover: ScreenCoverClassName,
       CameraOpt: CameraOptClassName,
-      VoiceOpt: VoiceOptClassName
+      VoiceOpt: VoiceOptClassName,
+      OptBox: OptBoxClassName
     }
   };
   win.RongSeal = win.RongSeal || {};

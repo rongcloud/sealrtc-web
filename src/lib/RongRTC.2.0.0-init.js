@@ -3501,7 +3501,7 @@
                   return s.track === track;
                 });
                 if (alreadyExists) {
-                  // throw new DOMException('Track already exists.', 'InvalidAccessError');
+                  throw new DOMException('Track already exists.', 'InvalidAccessError');
                 }
               });
               var existingSenders = pc.getSenders();
@@ -8654,7 +8654,7 @@
   *
   */
   RongRTCEngine.prototype.isSubscribeVersion = function () {
-    if (this.logonVersion == RongRTCConstant.LogonVersion.SUBSCRIBE) {
+    if (this.logonVersion == RongRTCConstant.LogonVersion.INIT) {
       // 订阅分发版本
       return true;
     }

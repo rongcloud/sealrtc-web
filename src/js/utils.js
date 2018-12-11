@@ -1,6 +1,7 @@
 (function (dependencies) {
   var win = dependencies.win;
   const noop = function () {};
+  let utils;
 
   const tplEngine = (temp, data, regexp) => {
     let replaceAction = function (object) {
@@ -41,90 +42,6 @@
       remove: remove
     };
   })();
-
-  /* 
-    var option = {
-      url: '',
-      method: '',
-      headers: {},
-      success: function(){},
-      fail: function(){}
-    };
-  */
-  const request = function (option) {
-    var getXHR = function () {
-      var xhr = null;
-      var hasXDomain = function () {
-        return (typeof XDomainRequest != 'undefined');
-      };
-      var hasXMLRequest = function () {
-        return (typeof XMLHttpRequest != 'undefined');
-      };
-      if (hasXDomain()) {
-        xhr = new XDomainRequest();
-      } else if (hasXMLRequest()) {
-        xhr = new XMLHttpRequest();
-      } else {
-        xhr = new ActiveXObject("Microsoft.XMLHTTP");
-      }
-      return xhr;
-    };
-
-    var xhr = getXHR();
-    var method = option.method || 'GET';
-    var url = option.url;
-    var queryStrings = option.queryStrings || {};
-    var tpl = '{key}={value}', strings = [];
-    for (var key in queryStrings) {
-      var value = queryStrings(key);
-      var str = utils.tplEngine(tpl, {
-        key: key,
-        value: value
-      });
-      strings.push(str);
-    }
-    var queryString = strings.join('&');
-    var urlTpl = '{url}?{queryString}';
-    url = utils.tplEngine(urlTpl, {
-      url: url,
-      queryString: queryString
-    });
-
-    xhr.open(method, url, true);
-
-    var headers = option.headers || {};
-    for (var key in headers) {
-      var name = headers[key];
-      xhr.setRequestHeader(name, header);
-    }
-
-    var success = option.success || utils.noop;
-    var fail = option.fail || utils.noop;
-    var isSuccess = function (xhr) {
-      return /^(200|202|10000)$/.test(xhr.status);
-    };
-
-    var onLoad = function () {
-      var result = xhr.responseText;
-      if (isSuccess(xhr)) {
-        success(result);
-      } else {
-        fail(result);
-      }
-    };
-    if ('onload' in xhr) {
-      xhr.onload = onLoad;
-    }
-    else {
-      xhr.onreadystatechange = function () {
-        if (xhr.readyState == 4) {
-          onLoad();
-        }
-      };
-    }
-    xhr.send(option.body);
-  };
-
   /* 
       var option = {
         url: '',
@@ -143,7 +60,7 @@
     }
     var xhr = new XMLHttpRequest();
     xhr.open(option.method, option.url);
-    xhr.addEventListener('load', function (e) {
+    xhr.addEventListener('load', function () {
       option.success && option.success(xhr.responseText);
     }, false);
     xhr.addEventListener('error', function (e) {
@@ -161,7 +78,7 @@
     try {
       selector = win.document.querySelector(name);
     } catch (e) {
-      console.error(e);
+      // console.error(e);
     }
     return selector;
   };
@@ -207,6 +124,24 @@
     return brother;
   };
 
+  const getChildDom = function (dom, childName) {
+    if (isString(dom)) {
+      dom = utils.getDom(dom);
+    }
+    if (!isString(childName)) {
+      childName = childName.className;
+    }
+    let children = dom.children;
+    let child;
+    for (let i = 0, max = children.length; i < max; i++) {
+      let bro = children[i];
+      if (bro.className.indexOf(childName) !== -1) {
+        child = bro;
+      }
+    }
+    return child;
+  };
+
   const getSelected = function (name) {
     let list = document.getElementsByName(name);
     let selectedEl;
@@ -220,18 +155,18 @@
     return selectedEl;
   };
   
-  const utils = {
+  utils = {
     noop: noop,
     tplEngine: tplEngine,
     Cache: Cache,
-    request: request,
     sendForm: sendForm,
     getDom: getDom,
     showDom: showDom,
     hideDom: hideDom,
     getDomById: getDomById,
     getSelected: getSelected,
-    getBrotherDom: getBrotherDom
+    getBrotherDom: getBrotherDom,
+    getChildDom: getChildDom
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.utils = utils;
