@@ -17,7 +17,7 @@
     return ret.join('');
   };
 
-  const Cache = function (config) {
+  const Cache = (function (config) {
     config = config || {};
     var prefix = config.prefix || 'rong-sealrtc-v2';
     var genKey = function (key) {
@@ -40,7 +40,7 @@
       get: get,
       remove: remove
     };
-  };
+  })();
 
   /* 
     var option = {
@@ -188,6 +188,25 @@
     }
   };
 
+  const getBrotherDom = function (dom, brotherName) {
+    if (isString(dom)) {
+      dom = utils.getDom(dom);
+    }
+    if (!isString(brotherName)) {
+      brotherName = brotherName.className;
+    }
+    let parent = dom.parentElement;
+    let brothers = parent.children;
+    let brother;
+    for (let i = 0, max = brothers.length; i < max; i++) {
+      let bro = brothers[i];
+      if (bro.className.indexOf(brotherName) !== -1) {
+        brother = bro;
+      }
+    }
+    return brother;
+  };
+
   const getSelected = function (name) {
     let list = document.getElementsByName(name);
     let selectedEl;
@@ -211,7 +230,8 @@
     showDom: showDom,
     hideDom: hideDom,
     getDomById: getDomById,
-    getSelected: getSelected
+    getSelected: getSelected,
+    getBrotherDom: getBrotherDom
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.utils = utils;

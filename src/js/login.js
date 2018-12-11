@@ -2,12 +2,21 @@
   const RongSeal = dependencies.RongSeal,
     utils = RongSeal.utils,
     common = RongSeal.common,
-    getDom = utils.getDom;
+    getDom = utils.getDom,
+    Cache = utils.Cache;
 
   const roomIdEl = getDom('#roomId'),
     userIdEl = getDom('#userId'),
     startBtnEl = getDom('#start');
 
+  const RoomIdKey = 'rong-sealv2-roomid';
+
+  const setDefaultId = () => {
+    let roomId = Cache.get(RoomIdKey);
+    if (roomId) {
+      roomIdEl.value = roomId;
+    }
+  };
   const isRTCValueValid = () => {
     var isRoomIdEmpty = !roomIdEl.value,
       isUserIdEmpty = !userIdEl.value;
@@ -28,14 +37,20 @@
       var userId = userIdEl.value;
       var rateEl = utils.getSelected('rate');
       var rate = common.getRateParams(rateEl.value);
+      var isOpenCamera = utils.getSelected('isOpenCamera');
+      var isTourist = utils.getSelected('isTourist');
       RongSeal.startMeet({
         userId: userId,
         roomId: roomId,
-        rate: rate
+        rate: rate,
+        isOpenCamera: isOpenCamera,
+        isTourist: isTourist
       });
+      Cache.set(RoomIdKey, roomId);
     }
   };
 
+  setDefaultId();
   startBtnEl.onclick = startMeet;
 
 })({

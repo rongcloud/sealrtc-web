@@ -5,6 +5,7 @@ html, body {
   overflow: hidden;
   background-color: black;
   color: #4a4a4a;
+  overflow-x: scroll;
 }
 
 p, input, button {
@@ -190,16 +191,7 @@ input {
   display: none;
 }
 
-.rong-login-content .rong-login-check-box .rong-login-checkbox label {
-  vertical-align: middle;
-  background-color: white;
-  border-radius: 5px;
-  padding: 8px;
-  display: inline-block;
-  position: relative;
-}
-
-.rong-login-content .rong-login-check-box .rong-login-checkbox label::after {
+.rong-login-content .rong-login-check-box .rong-login-checkbox input[type="checkbox"]:checked + label::after {
   content: '\2714';
   position: absolute;
   color: #4a4a4a;
@@ -210,6 +202,15 @@ input {
   line-height: 19px;
   width: 100%;
   height: 100%;
+}
+
+.rong-login-content .rong-login-check-box .rong-login-checkbox label {
+  vertical-align: middle;
+  background-color: white;
+  border-radius: 5px;
+  padding: 8px;
+  display: inline-block;
+  position: relative;
 }
 
 .rong-login-content .rong-login-check-box .rong-login-checkbox span {
@@ -260,7 +261,7 @@ input {
   height: 100%;
 }
 
-.rong-main .rong-main-show .rong-video-box[ismain="true"] {
+.rong-main .rong-main-show .rong-video-box[rong-data-main="true"] {
   position: absolute;
   margin: 0;
   top: 0;
@@ -296,89 +297,17 @@ input {
   cursor: pointer;
 }
 
-.rong-main .rong-show-opt .rong-opt-camera {
-  background-image: url("./img/camera.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-camera:hover {
-  background-image: url("./img/camera_press.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-camera[isopen='0'] {
-  background-image: url("./img/camera_close.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-camera[isopen='0']:hover {
-  background-image: url("./img/camera_close_press.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-microphone {
-  background-image: url("./img/mute.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-microphone:hover {
-  background-image: url("./img/mute_press.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-microphone[isopen='0'] {
-  background-image: url("./img/mute_close.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-microphone[isopen='0']:hover {
-  background-image: url("./img/mute_close_press.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-voice {
-  background-image: url("./img/voice.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-voice:hover {
-  background-image: url("./img/voice_press.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-voice[isopen="0"] {
-  background-image: url("./img/voice_close.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-voice[isopen="0"]:hover {
-  background-image: url("./img/voice_close_press.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-share {
-  background-image: url("./img/share.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-share:hover {
-  background-image: url("./img/share_press.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-wb {
-  background-image: url("./img/whiteboard.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-wb:hover {
-  background-image: url("./img/whiteboard_press.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-hangup {
-  background-image: url("./img/hangup.png");
-}
-
-.rong-main .rong-show-opt .rong-opt-hangup:hover {
-  background-image: url("./img/hangup_press.png");
-}
-
 .rong-main .rong-video-list {
   max-width: 100%;
-  height: 150px;
+  height: 175px;
   background-color: transparent;
   z-index: 3;
-  margin-top: calc(100vh - 150px - 110px);
+  margin-top: calc(100vh - 175px - 110px);
 }
 
 .rong-main .rong-video-list .rong-video-box {
   float: left;
-  width: 100px;
+  width: 130px;
   height: 100%;
   background-color: black;
   margin: 0 15px;
@@ -472,6 +401,108 @@ input {
   z-index: 15;
 }
 
+.rong-video-opt {
+  width: 43px;
+  height: 43px;
+  display: inline-block;
+  background-position: center;
+  background-size: cover;
+  position: absolute;
+  bottom: 4px;
+  display: none;
+  z-index: 8;
+}
+
+.rong-video-box:hover .rong-video-opt {
+  display: block;
+}
+
+.rong-show-audio:hover .rong-video-opt {
+  display: block;
+}
+
+.rong-video-box .rong-opt-camera {
+  left: 28%;
+  transform: translateX(-50%);
+}
+
+.rong-video-box .rong-opt-voice {
+  right: 28%;
+  transform: translateX(50%);
+}
+
 .rong-video-box:hover .rong-show-info {
   display: block;
+}
+
+.rong-opt-camera {
+  background-image: url("./img/camera.png");
+}
+
+.rong-opt-camera:hover {
+  background-image: url("./img/camera_press.png");
+}
+
+.rong-opt-camera[rong-data-open='0'] {
+  background-image: url("./img/camera_close.png");
+}
+
+.rong-opt-camera[rong-data-open='0']:hover {
+  background-image: url("./img/camera_close_press.png");
+}
+
+.rong-opt-microphone {
+  background-image: url("./img/mute.png");
+}
+
+.rong-opt-microphone:hover {
+  background-image: url("./img/mute_press.png");
+}
+
+.rong-opt-microphone[rong-data-open='0'] {
+  background-image: url("./img/mute_close.png");
+}
+
+.rong-opt-microphone[rong-data-open='0']:hover {
+  background-image: url("./img/mute_close_press.png");
+}
+
+.rong-opt-voice {
+  background-image: url("./img/voice.png");
+}
+
+.rong-opt-voice:hover {
+  background-image: url("./img/voice_press.png");
+}
+
+.rong-opt-voice[rong-data-open="0"] {
+  background-image: url("./img/voice_close.png");
+}
+
+.rong-opt-voice[rong-data-open="0"]:hover {
+  background-image: url("./img/voice_close_press.png");
+}
+
+.rong-opt-share {
+  background-image: url("./img/share.png");
+}
+
+.rong-opt-share:hover {
+  background-image: url("./img/share_press.png");
+}
+
+.rong-opt-wb {
+  background-image: url("./img/whiteboard.png");
+}
+
+.rong-opt-wb:hover {
+  background-image: url("./img/whiteboard_press.png");
+}
+
+.rong-opt-hangup {
+  background-image: url("./img/hangup.png");
+}
+
+.rong-opt-hangup:hover {
+  background-image: url("./img/hangup_press.png");
 }

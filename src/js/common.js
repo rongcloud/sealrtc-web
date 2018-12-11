@@ -1,7 +1,9 @@
 (function (dependencies) {
   const win = dependencies.win;
   const RongSeal = dependencies.RongSeal;
-  const openAttribute = 'isopen';
+  const OpenAttribute = 'rong-data-open';
+  const ShowMainAttribute = 'rong-data-main';
+  const IdAttribute = 'rong-data-id';
   const utils = RongSeal.utils;
 
   const SealSwitch = {
@@ -17,15 +19,22 @@
   const WhiteboardBoxClassName = 'rong-wb-box';
   const WhiteboardCloseClassName = 'rong-wb-close';
   const InfoClassName = 'rong-show-info';
+  const CameraOptClassName = 'rong-opt-camera';
+  const VoiceOptClassName = 'rong-opt-voice';
+  const VideoHTMLTpl = `<video></video>
+    <div class="${AudioShowClassName}"></div>
+    <p class="${InfoClassName}" title="{id}">{id}</p>
+    <a ${OpenAttribute}="1" ${IdAttribute}={id}  class="rong-video-opt ${CameraOptClassName}"></a>
+    <a ${OpenAttribute}="1" ${IdAttribute}={id} class="rong-video-opt ${VoiceOptClassName}"></a>`;
 
   const getSwitchOpen = (el) => {
-    let openValue = el.getAttribute(openAttribute) || SealSwitch.CLOSE;
+    let openValue = el.getAttribute(OpenAttribute) || SealSwitch.CLOSE;
     return openValue === SealSwitch.OPEN;
   }
 
   const setSwitchOpen = (el, isOpen) => {
     let openValue = isOpen ? SealSwitch.OPEN : SealSwitch.CLOSE;
-    el.setAttribute(openAttribute, openValue);
+    el.setAttribute(OpenAttribute, openValue);
   };
 
   const switchEl = (el) => {
@@ -36,18 +45,13 @@
   const addVideoEl = (id) => {
     let parentEl = utils.getDom('.' + VideoListClassName);
     let boxEl = document.createElement('div');
-    let videoEl = document.createElement('video');
-    let audioEl = document.createElement('div');
-    let infoEl = document.createElement('p');
     boxEl.className = VideoBoxClassName;
-    audioEl.className = AudioShowClassName;
-    infoEl.className = InfoClassName;
-    infoEl.textContent = id;
-    infoEl.title = id;
-    boxEl.append(videoEl);
-    boxEl.append(audioEl);
-    boxEl.append(infoEl);
+    let innerHTML = utils.tplEngine(VideoHTMLTpl, {
+      id: id
+    });
+    boxEl.innerHTML = innerHTML;
     parentEl.append(boxEl);
+    let videoEl = boxEl.children[0];
     return videoEl;
   };
 
@@ -105,6 +109,16 @@
       height: Number(height)
     };
   };
+
+  const viewDom = (el) => {
+    let mainSelector = '*[{mark}=\'true\']';
+    isMainMark = utils.tplEngine(mainSelector, {
+      mark: ShowMainAttribute
+    });
+    let mainEl = utils.getDom(isMainMark);
+    mainEl.setAttribute(ShowMainAttribute, '');
+    el.setAttribute(ShowMainAttribute, true);
+  };
   
   const common = {
     getSwitchOpen: getSwitchOpen,
@@ -115,7 +129,19 @@
     hideAudio: hideAudio,
     showWhiteboard: showWhiteboard,
     hideWhiteboard: hideWhiteboard,
-    getRateParams: getRateParams
+    getRateParams: getRateParams,
+    viewDom: viewDom,
+    SealEnum: {
+      OpenAttribute: OpenAttribute,
+      ShowMainAttribute: ShowMainAttribute,
+      IdAttribute: IdAttribute,
+      SealSwitch: SealSwitch
+    },
+    ClassName: {
+      AudioShow: AudioShowClassName,
+      CameraOpt: CameraOptClassName,
+      VoiceOpt: VoiceOptClassName
+    }
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.common = common;
