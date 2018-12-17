@@ -1,5 +1,5 @@
-$commonBlack: #4a4a4a;
 $loginDisplay: block;
+$icons: url('./img/icons.svg');
 @mixin main-mixin {
   @if $loginDisplay == none {
     display: block;
@@ -15,8 +15,8 @@ html, body {
   margin: 0;
   overflow: hidden;
   background-color: black;
-  color: $commonBlack;
-  overflow-x:scroll;
+  color: black;
+  overflow-x: scroll;
 }
 p, input, button {
   margin: 5px 0;
@@ -37,7 +37,7 @@ input {
   overflow: scroll;
 }
 
-/* ---------- Login ---------- */
+/* 登录样式 */
 
 .rong-login {
   position: relative;
@@ -51,49 +51,63 @@ input {
 .rong-login-logo {
   height: 120px;
 }
-.rong-rate-setting {
+.rong-resolution-setting {
   position: absolute;
   right: 180px;
   top: 50px;
-  color: $commonBlack;
-  .rong-rate-icon {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
+  .rong-resolution-icon {
+    width: 20px;
+    height: 20px;
     display: inline-block;
-    background-image:url(./img/setting.png);
-    background-color: white;
-    background-position: center;
+    background-image: url(./img/setting.svg);
+    background-position: 0 0;
     background-repeat: no-repeat;
-    background-size: 21px 21px;
+    background-size: 20px 20px;
     margin-bottom: 3px;
     position: relative;
   }
-  .rong-rate-icon:hover .rong-rate-list-box {
+  .rong-resolution-icon:hover .rong-resolution-list-box {
     display: block;
   }
-  .rong-rate-list-box {
+  .rong-resolution-list-box {
     display: none;
     position: absolute;
     text-align: left;
-    top: 35px;
+    top: 15px;
     padding-top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    width: 175px;
+    width: 190px;
   }
-  .rong-rate-list {
+  .rong-resolution-list {
     background-color: white;
-    padding: 5px 10px 55px 10px;
-    border-radius: 8px;
+    padding: 5px 15px 55px 15px;
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
     font-size: 15px;
+    border-top: 4px solid rgb(31, 192, 248);
+    .rong-resolution-arrow {
+      width: 0px;
+      height: 0px;
+      border-width: 10px;
+      border-style: solid;
+      border-color: transparent transparent rgb(31, 192, 248) transparent;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translate(-50%);
+    }
+    ul {
+      margin-top: 15px;
+    }
     li {
-      margin: 3px 0;
+      margin: 6px 0;
     }
     li label, li span {
       vertical-align: middle;
     }
     p {
+      font-size: 16px;
       margin-bottom: 10px;
     }
     input[type="radio"] {
@@ -101,19 +115,19 @@ input {
     }
     input[type="radio"]:checked + label:after {
       content: ' ';
-      width: 12px;
-      height: 12px;
+      width: 11px;
+      height: 11px;
       border-radius: 50px;
       position: absolute;
-      top: 3px;
       background: #6CBF1B;
-      left: 3px;
+      left: 1px;
+      top: 1px;
       font-size: 32px;
     }
     label {
       position: relative;
-      width: 17px;
-      height: 17px;
+      width: 13px;
+      height: 13px;
       display: inline-block;
       border: 1px solid #adb8c0;
       border-radius: 50%;
@@ -122,7 +136,7 @@ input {
           inset 0px 0px 10px rgba(0, 0, 0, 0.1)
     }
     span {
-      margin: 3px 45px 3px 8px;
+      margin: 3px 45px 3px 10px;
     }
   }
 }
@@ -184,7 +198,6 @@ input {
     input[type="checkbox"]:checked + label::after {
       content: '\2714';
       position: absolute;
-      color: $commonBlack;
       top: 0;
       left: 0;
       padding: 1px 0 0 0;
@@ -209,185 +222,277 @@ input {
   }
 }
 
-/* ---------- Main ---------- */
-
-.rong-main {
+/* 视频展示与操作界面样式 */
+.rong-rtc {
   @include main-mixin;
   margin: 0 auto;
   width: auto;
   height: 100%;
   position: relative;
   text-align: center;
-  .rong-main-show {
+  overflow-y: hidden;
+
+  .rong-rtc-main {
     display: inline-block;
     height: 100%;
-    background-color: black;;
+    background-color: black;
     position: relative;
     min-width: 525px;
-    text-align: center;
-    .rong-show-content {
-      position: absolute;
-      top: 0;
-      height: 40px;
-      width: 100%;
-      background-color: rgba(102, 102, 102, 0.68);
-      z-index: 10;
-      line-height: 40px;
-      color: white;
-      text-align: left;
-      font-size: 14px;
+  }
+
+  .rong-rtc-opt {
+    position: absolute;
+    top: 0;
+    height: 50px;
+    line-height: 50px;
+    width: 100%;
+    background-color: #4E6CAA;
+    z-index: 10;
+    color: white;
+    text-align: left;
+    font-size: 14px;
+    span {
+      margin: 0 15px;
     }
-    .rong-content-opt {
+    a {
       float: right;
       width: 30px;
       height: 30px;
       background-size: cover;
-      margin: 0 20px 0 10px;;
+      margin: 0 20px 0 10px;
       position: relative;
       top: 50%;
       transform: translateY(-50%);
-    }
-    .rong-content-opt + .rong-content-opt {
-      margin: 0 10px;
-    }
-    .rong-show-content span {
-      margin: 0 15px;
-    }
-    .rong-video-box {
-      position: relative;
-      display: inline-block;
-      height: 100%;
-    }
-    .rong-video-box[rong-data-main="true"] {
-      position: absolute;
-      margin: 0;
-      top: 0;
-      left: 0;
-      height: 100%;
-      min-width: 450px;
-      width: 100%;
-      border: none;
-      z-index: 2;
-    }
-  }
-  .rong-show-opt {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    height: 65px;
-    background-color: rgba(51, 51, 51, 0.85);
-    z-index: 10;
-    ul {
-      width: 100%;
-      height: 100%;
-      text-align: center;
-    }
-    ul li {
-      display: inline-block;
-      width: 16%;
-      height: 100%;
       background-position: center;
       background-repeat: no-repeat;
+      border-radius: 50%;
+      background-color: rgba(0, 0, 0, 0.5);
       cursor: pointer;
     }
+    a:hover {
+      background-color: rgba(0, 0, 0, 0.7);
+    }
+    a + a {
+      margin: 0 10px;
+    }
+    .rong-opt-hangup {
+      background-image: url('./img/hangup.svg');
+      background-size: 18px auto;
+      background-color: rgb(232, 98, 98);
+    }
+    .rong-opt-hangup:hover {
+      background-color: #FC6A6A;
+    }
+    .rong-opt-wb {
+      background-image: url('./img/wb.svg');
+      background-size: 13px auto;
+    }
+    .rong-opt-share {
+      background-image: url('./img/share.svg');
+      background-size: 13px auto;
+    }
   }
-  .rong-video-list {
+
+
+  .rong-stream-list {
     max-width: 100%;
-    height: 175px;
+    height: 165px;
     background-color: transparent;
     z-index: 3;
-    margin-top: calc(100vh - 175px - 70px);
-    .rong-video-box {
-      float: left;
-      width: 130px;
-      height: 100%;
-      background-color: black;
-      margin: 0 15px;
-      position: relative;
-      border: 1px solid white;
-      z-index: 12;
+    margin-top: calc(100vh - 165px - 70px);
+  }
+  .rong-stream-box:hover {
+    .rong-user-name {
+      display: block;
     }
+  }
+  .rong-stream-box {
+    float: left;
+    width: 120px;
+    height: 100%;
+    background-color: black;
+    margin: 0 15px;
+    position: relative;
+    z-index: 15;
+    border: 1px solid rgb(184, 189, 196);
     video {
-      position: absolute;
+      position: relative;
       left: 0;
       top: 0;
       width: 100%;
       height: 100%;
+      // background-color: red;
     }
-    .rong-show-info {
+    .rong-user-name {
+      display: none;
+      position: absolute;
+      right: 5px;
+      top: 5px;
+      // display: 
       font-size: 13px;
+      padding-right: 3px;
+      color: white;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      max-width: 60%;
+      z-index: 20;
     }
-    .rong-show-audio {
-      background-image: url('./img/microphone_48x_white.png');
-      background-position: center;
+    .rong-stream-opt {
+      position: absolute;
+      bottom: 4px;
+      width: 100%;
+      z-index: 10;
+      text-align: left;
+      a {
+        width: 20px;
+        height: 20px;
+        display: inline-block;
+        background-position: center;
+        background-repeat: no-repeat;
+        cursor: pointer;
+      }
+      .rong-opt-video {
+        background-image: url('./img/video-enable.png');
+        background-size: 32px auto;
+        margin-left: 10px;
+      }
+      .rong-opt-audio {
+        background-image: url('./img/audio-enable.png');
+        background-size: auto 28px;
+      }
+    }
+    .rong-audio-cover, .rong-share-cover {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: white;
+    }
+    .rong-share-cover {
+      z-index: 16;
+      img {
+        width: 60px;
+        height: auto;
+      }
+      p {
+        display: block;
+      }
+    }
+    .rong-audio-cover-box {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      p {
+        width: 100%;
+        display: none;
+        font-size: 13px;
+        background-color: white;
+      }
     }
   }
-}
-.rong-show-audio {
-  display: none;
-  position: absolute;
-  z-index: 5;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #03CBFF;
-  background-image: url('./img/microphone_120x_white.png');
-  background-position: center 40%;
-  background-repeat: no-repeat;
-}
-.rong-show-share {
-  display: none;
-  position: absolute;
-  z-index: 11;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #141a30;
-}
-.rong-show-share::before {
-  content: '您正在屏幕分享';
-  background-image: url(./img/share.png);
-  position: absolute;
-  left: 0;
-  background-repeat: no-repeat;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding-top: 37px;
-  text-align: center;
-  background-size: 32px;
-  background-position-x: center;
-  color: #75899d;
-  font-size: 12px;
-}
-
-.rong-self-video {
-  transform: rotateY(180deg);
-}
-.rong-wb-box {
-  display: none;
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 20;
-  background-color: black;
-  .rong-wb-close {
-    width: 24px;
-    height: 24px;
-    line-height: 24px;
+  .rong-stream-box[is-zoom="true"] {
     position: absolute;
-    top: 5px;
-    right: 30px;
-    border-radius: 4px;
-    z-index: 30;
-    background-image: url('./img/whiteboard_close.png');
-    cursor: pointer;
+    margin: 0;
+    top: 0;
+    left: 0;
+    height: 100%;
+    min-width: 450px;
+    width: 100%;
+    z-index: 2;
+    border: none;
+    video {
+      transform: rotateY(180deg);
+    }
+    .rong-user-name {
+      top: 55px;
+    }
+    .rong-audio-cover-box {
+      p {
+        font-size: 17px;
+      }
+      img {
+        width: 110px;
+      }
+    }
+    .rong-stream-opt {
+      text-align: center;
+      margin-bottom: 10px;
+      a {
+        background-color: rgba(0, 0, 0, 0.5);
+        width: 31px;
+        height: 31px;
+        border-radius: 50%;
+        margin: 0 25px;
+      }
+      .rong-opt-audio {
+        background-position: 4px 1px;
+      }
+    }
   }
-  .rong-whiteboard {
+  .rong-stream-box[is-openvideo-byself="false"] {
+    .rong-opt-video {
+      background-image: url("./img/video-disable.png");
+    }
+    .rong-audiocover-title {
+      display: block;
+    }
+  }
+  .rong-stream-box[is-openaudio-byself="false"] {
+    .rong-opt-audio {
+      background-image: url("./img/audio-disable.png");
+      // background-size: auto 30px;
+    }
+  }
+  .rong-stream-box[is-openvideo-byother="false"] {
+    .rong-audiocover-title-other {
+      display: block;
+    }
+  }
+  // .rong-stream-box[is-openvideo-byself="false"][is-zoom="true"] {
+  //   .rong-opt-video {
+  //     background-position: 1px 1px;
+  //   }
+  // }
+  // .rong-stream-box[is-openaudio-byself="false"][is-zoom="true"] {
+  //   .rong-opt-audio {
+  //     // background-size: auto 30px;
+  //     // background-position: 3px 1px;
+  //   }
+  // }
+  .rong-stream-box[is-openvideo-byself="false"], .rong-stream-box[is-openvideo-byother="false"] {
+    .rong-audio-cover {
+      display: block;
+      img {
+        width: 60px;
+      }
+    }
+    .rong-user-name {
+      color: black;
+    }
+  }
+  .rong-stream-box[is-openvideo-byself="false"][is-openvideo-byother="false"] {
+    .rong-audiocover-title-other {
+      display: none;
+    }
+  }
+  .rong-stream-box[is-screenshare="true"] {
+    .rong-share-cover {
+      display: block;
+    }
+    .rong-audio-cover-box p {
+      display: block;
+    }
+    .rong-user-name {
+      color: black;
+    }
+  }
+  .rong-wb-box {
+    display: none;
     position: absolute;
     left: 0;
     top: 0;
@@ -395,112 +500,75 @@ input {
     height: 100%;
     z-index: 20;
     background-color: black;
+    .rong-wb-close {
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
+      position: absolute;
+      top: 5px;
+      right: 30px;
+      border-radius: 4px;
+      z-index: 30;
+      background-image: url('./img/whiteboard_close.png');
+      cursor: pointer;
+    }
+    .rong-whiteboard {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 20;
+      background-color: black;
+    }
   }
 }
-.rong-show-info {
-  position: absolute;
-  right: 5px;
-  top: 5px;
-  display: none;
-  background-color: rgba(255,255,255,.75);
-  color: $commonBlack;
-  border-radius: 10px;
-  padding: 10px 15px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  max-width: 60%;
-  z-index: 15;
-}
 
-.rong-show-video-box {
+.rong-alert-box {
   position: absolute;
-  bottom: 4px;
+  left: 0;
+  top: 0;
   width: 100%;
-  z-index: 10;
-  /* 小屏展示时的操作按钮 */
-  .rong-video-opt {
-    width: 22px;
-    height: 22px;
-    margin: 0 5%;
-    display: inline-block;
-    background-position: center;
-    background-size: cover;
-    background-repeat: no-repeat;
-    z-index: 8;
-  } 
-}
-
-.rong-video-box[rong-data-main="true"] {
-  /* 大屏展示时的操作按钮 */
-  .rong-video-opt {
-    width: 50px;
-    height: 50px;
+  height: 100%;
+  z-index: 200;
+  .rong-alert {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 330px;
+    min-height: 174px;
+    border: 1px solid rgb(224, 227, 225);
+    border-radius: 5px;
+    background-color: white;
+    padding: 10px 20px;
+    box-shadow: rgb(72, 72, 72) 1px 2px 30px 0px;
   }
-  .rong-show-info {
-    top: 45px;
+  .rong-alert-title {
+    font-size: 15px;
   }
-  .rong-show-share::before {
-    padding-top: 65px;
-    background-size: 55px;
-    font-size: 17px;
+  .rong-alert-content {
+    text-align: center;
+    font-size: 16px;
+    margin: 40px 0;
   }
-}
-
-.rong-video-box:hover .rong-show-info {
-  display: block;
-}
-.rong-opt-camera {
-  background-image: url('./img/camera.png');
-}
-.rong-opt-camera:hover {
-  background-image: url('./img/camera_press.png');
-}
-.rong-opt-camera[rong-data-open='0'] {
-  background-image: url('./img/camera_close.png');
-}
-.rong-opt-camera[rong-data-open='0']:hover {
-  background-image: url('./img/camera_close_press.png');
-}
-.rong-opt-microphone {
-  background-image: url('./img/mute.png');
-}
-.rong-opt-microphone:hover {
-  background-image: url('./img/mute_press.png');
-}
-.rong-opt-microphone[rong-data-open='0'] {
-  background-image: url('./img/mute_close.png');
-}
-.rong-opt-microphone[rong-data-open='0']:hover {
-  background-image: url('./img/mute_close_press.png');
-}
-.rong-opt-voice {
-  background-image: url('./img/voice.png');
-}
-.rong-opt-voice:hover {
-  background-image: url('./img/voice_press.png');
-}
-.rong-opt-voice[rong-data-open="0"] {
-  background-image: url('./img/voice_close.png');
-}
-.rong-opt-voice[rong-data-open="0"]:hover {
-  background-image: url('./img/voice_close_press.png');
-}
-.rong-opt-share {
-  background-image: url('./img/share.png');
-}
-.rong-opt-share:hover {
-  background-image: url('./img/share_press.png');
-}
-.rong-opt-wb {
-  background-image: url('./img/whiteboard.png');
-}
-.rong-opt-wb:hover {
-  background-image: url('./img/whiteboard_press.png');
-}
-.rong-opt-hangup {
-  background-image: url('./img/hangup.png');
-}
-.rong-opt-hangup:hover {
-  background-image: url('./img/hangup_press.png');
+  .rong-alert-btn-box {
+    text-align: right;
+    button {
+      font-size: 12px;
+      display: inline-block;
+      width: 72px;
+      height: 30px;
+      border: 1px solid rgb(165, 165, 165);
+      border-radius: 20px;
+      margin-left: 8px;
+      background-color: white;
+      cursor: pointer;
+    }
+    button + button {
+      border: none;
+      background-color: rgb(78, 108, 170);
+      color: white;
+    }
+  }
 }

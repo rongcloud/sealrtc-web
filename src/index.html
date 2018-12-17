@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="icon" href="./css/img/icon.png" type="image/x-icon" />
   <link rel="stylesheet" href="./css/main.css">
-  <script src="./lib/RongRTC.2.0.0.js"></script>
+  <script src="./lib/RongRTC.2.0.0-new.js"></script>
   <script src="./config.js"></script>
   <title>SealRTC v2.0.0</title>
 </head>
@@ -14,23 +14,29 @@
   <div class="rong-box">
     <!-- 登录界面 -->
     <div class="rong-login">
-      <div class="rong-rate-setting">
-        <div class="rong-rate-icon">
-          <div class="rong-rate-list-box">
-            <div class="rong-rate-list">
-              <p>设置分辨率</p>
+      <div class="rong-resolution-setting">
+        <div class="rong-resolution-icon">
+          <div class="rong-resolution-list-box">
+            <div class="rong-resolution-list">
+              <i class="rong-resolution-arrow"></i>
+              <p>通话设置</p>
               <ul>
+                <li>分辨率</li>
                 <li>
-                  <input type="radio" name="rate" id="rl-320-240" value="320*240"><label for="rl-320-240"></label><span>320 * 240</span>
+                  <input type="radio" name="resolution" id="rl-320-240" value="320*240"><label for="rl-320-240"></label><span>320
+                    * 240</span>
                 </li>
                 <li>
-                  <input type="radio" name="rate" id="rl-640-480" value="640*480" checked><label for="rl-640-480"></label><span>640 * 480</span>
+                  <input type="radio" name="resolution" id="rl-640-480" value="640*480" checked><label for="rl-640-480"></label><span>640
+                    * 480</span>
                 </li>
                 <li>
-                  <input type="radio" name="rate" id="rl-1280-720" value="1280*720"><label for="rl-1280-720"></label><span>1280 * 720</span>
+                  <input type="radio" name="resolution" id="rl-1280-720" value="1280*720"><label for="rl-1280-720"></label><span>1280
+                    * 720</span>
                 </li>
                 <li>
-                  <input type="radio" name="rate" id="rl-1920-720" value="1920*720"><label for="rl-1920-720"></label><span>1920 * 720</span>
+                  <input type="radio" name="resolution" id="rl-1920-1080" value="1920*1080"><label for="rl-1920-1080"></label><span>1920
+                    * 720</span>
                 </li>
               </ul>
             </div>
@@ -44,14 +50,14 @@
         <input id="userId" class="rong-input" type="text" placeholder="请在这里输入用户名">
         <div class="rong-login-check-box">
           <div class="rong-login-checkbox">
-            <input id="isOpenCamera" name="isOpenCamera" type="checkbox">
-            <label for="isOpenCamera"></label>
+            <input id="isOpenVideo" name="isOpenVideo" type="checkbox">
+            <label for="isOpenVideo"></label>
             <span>加入时不开启摄像头</span>
           </div>
           <div class="rong-login-checkbox">
-            <input id="isTourist" name="isTourist" type="checkbox">
-            <label for="isTourist"></label>
-            <span>以旁听者身份加入</span>
+            <input id="isOpenAudio" name="isOpenAudio" type="checkbox">
+            <label for="isOpenAudio"></label>
+            <span>加入时不开启麦克风</span>
           </div>
         </div>
         <input id="start" class="rong-btn-start" type="button" value="开始会议">
@@ -59,35 +65,50 @@
     </div>
 
     <!-- 视频展示与操作界面 -->
-    <div class="rong-main">
-      <div class="rong-main-show">
-        <div class="rong-video-list">
-          <div class="rong-video-box" rong-data-main="true">
-            <video class="rong-self-video"></video>
-            <div class="rong-show-share"></div>
-            <div class="rong-show-audio"></div>
-            <p class="rong-show-info">自己</p>
-            <div class="rong-show-video-box">
-              <a rong-data-open="1" class="rong-video-opt rong-opt-camera"></a>
-              <a rong-data-open="1" class="rong-video-opt rong-opt-microphone"></a>
-            </div>
-          </div>
+    <div class="rong-rtc">
+      <div class="rong-rtc-main">
+        <!-- 房间信息和操控按钮 -->
+        <div class="rong-rtc-opt">
+          <span class="rong-room-title"></span>
+          <span class="rong-user-title"></span>
+          <a class="rong-opt-hangup" title="挂断"></a>
+          <a class="rong-opt-wb" title="白板"></a>
+          <a class="rong-opt-share" title="屏幕共享"></a>
         </div>
+
+        <!-- 白板 -->
         <div class="rong-wb-box">
           <a class="rong-wb-close"></a>
           <iframe id="rongWhiteboard" class="rong-whiteboard" src="" frameborder="0"></iframe>
         </div>
-        <div class="rong-show-content">
-          <span class="rong-room-name"></span>
-          <span class="rong-user-name"></span>
-          <a rong-data-open="1" class="rong-content-opt rong-opt-hangup"></a>
-          <a rong-data-open="1" class="rong-content-opt rong-opt-wb"></a>
-          <a rong-data-open="1" class="rong-content-opt rong-opt-share"></a>
+
+        <!-- stream 流 -->
+        <div class="rong-stream-list">
+          <div class="rong-stream-box" is-self="true" is-zoom="true">
+            <video></video>
+            <div class="rong-share-cover">
+              <div class="rong-audio-cover-box">
+                <img src="./css/img/share-cover.png">
+                <p class="rong-sharecover-title">正在进行屏幕共享</p>
+              </div>
+            </div>
+            <div class="rong-audio-cover">
+              <div class="rong-audio-cover-box">
+                <img src="./css/img/audio-cover.png">
+                <p class="rong-audiocover-title">摄像头已关闭</p>
+                <p class="rong-audiocover-title-other">对方已关闭摄像头</p>
+              </div>
+            </div>
+            <p class="rong-user-name">自己</p>
+            <div class="rong-stream-opt">
+              <a class="rong-opt-video"></a>
+              <a class="rong-opt-audio"></a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
-
   <script src="./js/utils.js"></script>
   <script src="./js/common.js"></script>
   <script src="./js/login.js"></script>

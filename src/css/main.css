@@ -5,7 +5,7 @@ html, body {
   margin: 0;
   overflow: hidden;
   background-color: black;
-  color: #4a4a4a;
+  color: black;
   overflow-x: scroll;
 }
 
@@ -30,7 +30,7 @@ input {
   overflow: scroll;
 }
 
-/* ---------- Login ---------- */
+/* 登录样式 */
 .rong-login {
   position: relative;
   width: 100%;
@@ -45,89 +45,105 @@ input {
   height: 120px;
 }
 
-.rong-rate-setting {
+.rong-resolution-setting {
   position: absolute;
   right: 180px;
   top: 50px;
-  color: #4a4a4a;
 }
 
-.rong-rate-setting .rong-rate-icon {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
+.rong-resolution-setting .rong-resolution-icon {
+  width: 20px;
+  height: 20px;
   display: inline-block;
-  background-image: url(./img/setting.png);
-  background-color: white;
-  background-position: center;
+  background-image: url(./img/setting.svg);
+  background-position: 0 0;
   background-repeat: no-repeat;
-  background-size: 21px 21px;
+  background-size: 20px 20px;
   margin-bottom: 3px;
   position: relative;
 }
 
-.rong-rate-setting .rong-rate-icon:hover .rong-rate-list-box {
+.rong-resolution-setting .rong-resolution-icon:hover .rong-resolution-list-box {
   display: block;
 }
 
-.rong-rate-setting .rong-rate-list-box {
+.rong-resolution-setting .rong-resolution-list-box {
   display: none;
   position: absolute;
   text-align: left;
-  top: 35px;
+  top: 15px;
   padding-top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  width: 175px;
+  width: 190px;
 }
 
-.rong-rate-setting .rong-rate-list {
+.rong-resolution-setting .rong-resolution-list {
   background-color: white;
-  padding: 5px 10px 55px 10px;
-  border-radius: 8px;
+  padding: 5px 15px 55px 15px;
+  border-bottom-left-radius: 3px;
+  border-bottom-right-radius: 3px;
   font-size: 15px;
+  border-top: 4px solid #1fc0f8;
 }
 
-.rong-rate-setting .rong-rate-list li {
-  margin: 3px 0;
+.rong-resolution-setting .rong-resolution-list .rong-resolution-arrow {
+  width: 0px;
+  height: 0px;
+  border-width: 10px;
+  border-style: solid;
+  border-color: transparent transparent #1fc0f8 transparent;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%);
 }
 
-.rong-rate-setting .rong-rate-list li label, .rong-rate-setting .rong-rate-list li span {
+.rong-resolution-setting .rong-resolution-list ul {
+  margin-top: 15px;
+}
+
+.rong-resolution-setting .rong-resolution-list li {
+  margin: 6px 0;
+}
+
+.rong-resolution-setting .rong-resolution-list li label, .rong-resolution-setting .rong-resolution-list li span {
   vertical-align: middle;
 }
 
-.rong-rate-setting .rong-rate-list p {
+.rong-resolution-setting .rong-resolution-list p {
+  font-size: 16px;
   margin-bottom: 10px;
 }
 
-.rong-rate-setting .rong-rate-list input[type="radio"] {
+.rong-resolution-setting .rong-resolution-list input[type="radio"] {
   display: none;
 }
 
-.rong-rate-setting .rong-rate-list input[type="radio"]:checked + label:after {
+.rong-resolution-setting .rong-resolution-list input[type="radio"]:checked + label:after {
   content: ' ';
-  width: 12px;
-  height: 12px;
+  width: 11px;
+  height: 11px;
   border-radius: 50px;
   position: absolute;
-  top: 3px;
   background: #6CBF1B;
-  left: 3px;
+  left: 1px;
+  top: 1px;
   font-size: 32px;
 }
 
-.rong-rate-setting .rong-rate-list label {
+.rong-resolution-setting .rong-resolution-list label {
   position: relative;
-  width: 17px;
-  height: 17px;
+  width: 13px;
+  height: 13px;
   display: inline-block;
   border: 1px solid #adb8c0;
   border-radius: 50%;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), inset 0px -15px 10px -12px rgba(0, 0, 0, 0.05), inset 15px 10px -12px rgba(255, 255, 255, 0.1), inset 0px 0px 10px rgba(0, 0, 0, 0.1);
 }
 
-.rong-rate-setting .rong-rate-list span {
-  margin: 3px 45px 3px 8px;
+.rong-resolution-setting .rong-resolution-list span {
+  margin: 3px 45px 3px 10px;
 }
 
 .rong-login-content {
@@ -199,7 +215,6 @@ input {
 .rong-login-content .rong-login-check-box .rong-login-checkbox input[type="checkbox"]:checked + label::after {
   content: '\2714';
   position: absolute;
-  color: #4a4a4a;
   top: 0;
   left: 0;
   padding: 1px 0 0 0;
@@ -224,39 +239,43 @@ input {
   color: white;
 }
 
-/* ---------- Main ---------- */
-.rong-main {
+/* 视频展示与操作界面样式 */
+.rong-rtc {
   display: none;
   margin: 0 auto;
   width: auto;
   height: 100%;
   position: relative;
   text-align: center;
+  overflow-y: hidden;
 }
 
-.rong-main .rong-main-show {
+.rong-rtc .rong-rtc-main {
   display: inline-block;
   height: 100%;
   background-color: black;
   position: relative;
   min-width: 525px;
-  text-align: center;
 }
 
-.rong-main .rong-main-show .rong-show-content {
+.rong-rtc .rong-rtc-opt {
   position: absolute;
   top: 0;
-  height: 40px;
+  height: 50px;
+  line-height: 50px;
   width: 100%;
-  background-color: rgba(102, 102, 102, 0.68);
+  background-color: #4E6CAA;
   z-index: 10;
-  line-height: 40px;
   color: white;
   text-align: left;
   font-size: 14px;
 }
 
-.rong-main .rong-main-show .rong-content-opt {
+.rong-rtc .rong-rtc-opt span {
+  margin: 0 15px;
+}
+
+.rong-rtc .rong-rtc-opt a {
   float: right;
   width: 30px;
   height: 30px;
@@ -265,23 +284,154 @@ input {
   position: relative;
   top: 50%;
   transform: translateY(-50%);
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
 }
 
-.rong-main .rong-main-show .rong-content-opt + .rong-content-opt {
+.rong-rtc .rong-rtc-opt a:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.rong-rtc .rong-rtc-opt a + a {
   margin: 0 10px;
 }
 
-.rong-main .rong-main-show .rong-show-content span {
-  margin: 0 15px;
+.rong-rtc .rong-rtc-opt .rong-opt-hangup {
+  background-image: url("./img/hangup.svg");
+  background-size: 18px auto;
+  background-color: #e86262;
 }
 
-.rong-main .rong-main-show .rong-video-box {
+.rong-rtc .rong-rtc-opt .rong-opt-hangup:hover {
+  background-color: #FC6A6A;
+}
+
+.rong-rtc .rong-rtc-opt .rong-opt-wb {
+  background-image: url("./img/wb.svg");
+  background-size: 13px auto;
+}
+
+.rong-rtc .rong-rtc-opt .rong-opt-share {
+  background-image: url("./img/share.svg");
+  background-size: 13px auto;
+}
+
+.rong-rtc .rong-stream-list {
+  max-width: 100%;
+  height: 165px;
+  background-color: transparent;
+  z-index: 3;
+  margin-top: calc(100vh - 165px - 70px);
+}
+
+.rong-rtc .rong-stream-box:hover .rong-user-name {
+  display: block;
+}
+
+.rong-rtc .rong-stream-box {
+  float: left;
+  width: 120px;
+  height: 100%;
+  background-color: black;
+  margin: 0 15px;
   position: relative;
-  display: inline-block;
+  z-index: 15;
+  border: 1px solid #b8bdc4;
+}
+
+.rong-rtc .rong-stream-box video {
+  position: relative;
+  left: 0;
+  top: 0;
+  width: 100%;
   height: 100%;
 }
 
-.rong-main .rong-main-show .rong-video-box[rong-data-main="true"] {
+.rong-rtc .rong-stream-box .rong-user-name {
+  display: none;
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  font-size: 13px;
+  padding-right: 3px;
+  color: white;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 60%;
+  z-index: 20;
+}
+
+.rong-rtc .rong-stream-box .rong-stream-opt {
+  position: absolute;
+  bottom: 4px;
+  width: 100%;
+  z-index: 10;
+  text-align: left;
+}
+
+.rong-rtc .rong-stream-box .rong-stream-opt a {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  background-position: center;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.rong-rtc .rong-stream-box .rong-stream-opt .rong-opt-video {
+  background-image: url("./img/video-enable.png");
+  background-size: 32px auto;
+  margin-left: 10px;
+}
+
+.rong-rtc .rong-stream-box .rong-stream-opt .rong-opt-audio {
+  background-image: url("./img/audio-enable.png");
+  background-size: auto 28px;
+}
+
+.rong-rtc .rong-stream-box .rong-audio-cover, .rong-rtc .rong-stream-box .rong-share-cover {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+}
+
+.rong-rtc .rong-stream-box .rong-share-cover {
+  z-index: 16;
+}
+
+.rong-rtc .rong-stream-box .rong-share-cover img {
+  width: 60px;
+  height: auto;
+}
+
+.rong-rtc .rong-stream-box .rong-share-cover p {
+  display: block;
+}
+
+.rong-rtc .rong-stream-box .rong-audio-cover-box {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+}
+
+.rong-rtc .rong-stream-box .rong-audio-cover-box p {
+  width: 100%;
+  display: none;
+  font-size: 13px;
+  background-color: white;
+}
+
+.rong-rtc .rong-stream-box[is-zoom="true"] {
   position: absolute;
   margin: 0;
   top: 0;
@@ -289,117 +439,88 @@ input {
   height: 100%;
   min-width: 450px;
   width: 100%;
-  border: none;
   z-index: 2;
+  border: none;
 }
 
-.rong-main .rong-show-opt {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 65px;
-  background-color: rgba(51, 51, 51, 0.85);
-  z-index: 10;
-}
-
-.rong-main .rong-show-opt ul {
-  width: 100%;
-  height: 100%;
-  text-align: center;
-}
-
-.rong-main .rong-show-opt ul li {
-  display: inline-block;
-  width: 16%;
-  height: 100%;
-  background-position: center;
-  background-repeat: no-repeat;
-  cursor: pointer;
-}
-
-.rong-main .rong-video-list {
-  max-width: 100%;
-  height: 175px;
-  background-color: transparent;
-  z-index: 3;
-  margin-top: calc(100vh - 175px - 70px);
-}
-
-.rong-main .rong-video-list .rong-video-box {
-  float: left;
-  width: 130px;
-  height: 100%;
-  background-color: black;
-  margin: 0 15px;
-  position: relative;
-  border: 1px solid white;
-  z-index: 12;
-}
-
-.rong-main .rong-video-list video {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.rong-main .rong-video-list .rong-show-info {
-  font-size: 13px;
-}
-
-.rong-main .rong-video-list .rong-show-audio {
-  background-image: url("./img/microphone_48x_white.png");
-  background-position: center;
-}
-
-.rong-show-audio {
-  display: none;
-  position: absolute;
-  z-index: 5;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #03CBFF;
-  background-image: url("./img/microphone_120x_white.png");
-  background-position: center 40%;
-  background-repeat: no-repeat;
-}
-
-.rong-show-share {
-  display: none;
-  position: absolute;
-  z-index: 11;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #141a30;
-}
-
-.rong-show-share::before {
-  content: '您正在屏幕分享';
-  background-image: url(./img/share.png);
-  position: absolute;
-  left: 0;
-  background-repeat: no-repeat;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding-top: 37px;
-  text-align: center;
-  background-size: 32px;
-  background-position-x: center;
-  color: #75899d;
-  font-size: 12px;
-}
-
-.rong-self-video {
+.rong-rtc .rong-stream-box[is-zoom="true"] video {
   transform: rotateY(180deg);
 }
 
-.rong-wb-box {
+.rong-rtc .rong-stream-box[is-zoom="true"] .rong-user-name {
+  top: 55px;
+}
+
+.rong-rtc .rong-stream-box[is-zoom="true"] .rong-audio-cover-box p {
+  font-size: 17px;
+}
+
+.rong-rtc .rong-stream-box[is-zoom="true"] .rong-audio-cover-box img {
+  width: 110px;
+}
+
+.rong-rtc .rong-stream-box[is-zoom="true"] .rong-stream-opt {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.rong-rtc .rong-stream-box[is-zoom="true"] .rong-stream-opt a {
+  background-color: rgba(0, 0, 0, 0.5);
+  width: 31px;
+  height: 31px;
+  border-radius: 50%;
+  margin: 0 25px;
+}
+
+.rong-rtc .rong-stream-box[is-zoom="true"] .rong-stream-opt .rong-opt-audio {
+  background-position: 4px 1px;
+}
+
+.rong-rtc .rong-stream-box[is-openvideo-byself="false"] .rong-opt-video {
+  background-image: url("./img/video-disable.png");
+}
+
+.rong-rtc .rong-stream-box[is-openvideo-byself="false"] .rong-audiocover-title {
+  display: block;
+}
+
+.rong-rtc .rong-stream-box[is-openaudio-byself="false"] .rong-opt-audio {
+  background-image: url("./img/audio-disable.png");
+}
+
+.rong-rtc .rong-stream-box[is-openvideo-byother="false"] .rong-audiocover-title-other {
+  display: block;
+}
+
+.rong-rtc .rong-stream-box[is-openvideo-byself="false"] .rong-audio-cover, .rong-rtc .rong-stream-box[is-openvideo-byother="false"] .rong-audio-cover {
+  display: block;
+}
+
+.rong-rtc .rong-stream-box[is-openvideo-byself="false"] .rong-audio-cover img, .rong-rtc .rong-stream-box[is-openvideo-byother="false"] .rong-audio-cover img {
+  width: 60px;
+}
+
+.rong-rtc .rong-stream-box[is-openvideo-byself="false"] .rong-user-name, .rong-rtc .rong-stream-box[is-openvideo-byother="false"] .rong-user-name {
+  color: black;
+}
+
+.rong-rtc .rong-stream-box[is-openvideo-byself="false"][is-openvideo-byother="false"] .rong-audiocover-title-other {
+  display: none;
+}
+
+.rong-rtc .rong-stream-box[is-screenshare="true"] .rong-share-cover {
+  display: block;
+}
+
+.rong-rtc .rong-stream-box[is-screenshare="true"] .rong-audio-cover-box p {
+  display: block;
+}
+
+.rong-rtc .rong-stream-box[is-screenshare="true"] .rong-user-name {
+  color: black;
+}
+
+.rong-rtc .rong-wb-box {
   display: none;
   position: absolute;
   left: 0;
@@ -410,7 +531,7 @@ input {
   background-color: black;
 }
 
-.rong-wb-box .rong-wb-close {
+.rong-rtc .rong-wb-box .rong-wb-close {
   width: 24px;
   height: 24px;
   line-height: 24px;
@@ -423,7 +544,7 @@ input {
   cursor: pointer;
 }
 
-.rong-wb-box .rong-whiteboard {
+.rong-rtc .rong-wb-box .rong-whiteboard {
   position: absolute;
   left: 0;
   top: 0;
@@ -433,132 +554,57 @@ input {
   background-color: black;
 }
 
-.rong-show-info {
+.rong-alert-box {
   position: absolute;
-  right: 5px;
-  top: 5px;
-  display: none;
-  background-color: rgba(255, 255, 255, 0.75);
-  color: #4a4a4a;
-  border-radius: 10px;
-  padding: 10px 15px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  max-width: 60%;
-  z-index: 15;
-}
-
-.rong-show-video-box {
-  position: absolute;
-  bottom: 4px;
+  left: 0;
+  top: 0;
   width: 100%;
-  z-index: 10;
-  /* 小屏展示时的操作按钮 */
+  height: 100%;
+  z-index: 200;
 }
 
-.rong-show-video-box .rong-video-opt {
-  width: 22px;
-  height: 22px;
-  margin: 0 5%;
+.rong-alert-box .rong-alert {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 330px;
+  min-height: 174px;
+  border: 1px solid #e0e3e1;
+  border-radius: 5px;
+  background-color: white;
+  padding: 10px 20px;
+  box-shadow: #484848 1px 2px 30px 0px;
+}
+
+.rong-alert-box .rong-alert-title {
+  font-size: 15px;
+}
+
+.rong-alert-box .rong-alert-content {
+  text-align: center;
+  font-size: 16px;
+  margin: 40px 0;
+}
+
+.rong-alert-box .rong-alert-btn-box {
+  text-align: right;
+}
+
+.rong-alert-box .rong-alert-btn-box button {
+  font-size: 12px;
   display: inline-block;
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-  z-index: 8;
+  width: 72px;
+  height: 30px;
+  border: 1px solid #a5a5a5;
+  border-radius: 20px;
+  margin-left: 8px;
+  background-color: white;
+  cursor: pointer;
 }
 
-.rong-video-box[rong-data-main="true"] {
-  /* 大屏展示时的操作按钮 */
-}
-
-.rong-video-box[rong-data-main="true"] .rong-video-opt {
-  width: 50px;
-  height: 50px;
-}
-
-.rong-video-box[rong-data-main="true"] .rong-show-info {
-  top: 45px;
-}
-
-.rong-video-box[rong-data-main="true"] .rong-show-share::before {
-  padding-top: 65px;
-  background-size: 55px;
-  font-size: 17px;
-}
-
-.rong-video-box:hover .rong-show-info {
-  display: block;
-}
-
-.rong-opt-camera {
-  background-image: url("./img/camera.png");
-}
-
-.rong-opt-camera:hover {
-  background-image: url("./img/camera_press.png");
-}
-
-.rong-opt-camera[rong-data-open='0'] {
-  background-image: url("./img/camera_close.png");
-}
-
-.rong-opt-camera[rong-data-open='0']:hover {
-  background-image: url("./img/camera_close_press.png");
-}
-
-.rong-opt-microphone {
-  background-image: url("./img/mute.png");
-}
-
-.rong-opt-microphone:hover {
-  background-image: url("./img/mute_press.png");
-}
-
-.rong-opt-microphone[rong-data-open='0'] {
-  background-image: url("./img/mute_close.png");
-}
-
-.rong-opt-microphone[rong-data-open='0']:hover {
-  background-image: url("./img/mute_close_press.png");
-}
-
-.rong-opt-voice {
-  background-image: url("./img/voice.png");
-}
-
-.rong-opt-voice:hover {
-  background-image: url("./img/voice_press.png");
-}
-
-.rong-opt-voice[rong-data-open="0"] {
-  background-image: url("./img/voice_close.png");
-}
-
-.rong-opt-voice[rong-data-open="0"]:hover {
-  background-image: url("./img/voice_close_press.png");
-}
-
-.rong-opt-share {
-  background-image: url("./img/share.png");
-}
-
-.rong-opt-share:hover {
-  background-image: url("./img/share_press.png");
-}
-
-.rong-opt-wb {
-  background-image: url("./img/whiteboard.png");
-}
-
-.rong-opt-wb:hover {
-  background-image: url("./img/whiteboard_press.png");
-}
-
-.rong-opt-hangup {
-  background-image: url("./img/hangup.png");
-}
-
-.rong-opt-hangup:hover {
-  background-image: url("./img/hangup_press.png");
+.rong-alert-box .rong-alert-btn-box button + button {
+  border: none;
+  background-color: #4e6caa;
+  color: white;
 }

@@ -10,5 +10,5 @@ window.global_config = {
   WS_NAV_URL: 'https://t-rtc.ronghub.com/nav/websocketlist',
   DOWNLOAD_SHARE_PLUGIN_URL: 'https://rtc.ronghub.com/plugin/chrome-addon.zip',
   IS_SHOW_WB: true,
-  APP_ID: 'e0x9wycfx7flq'
+  APP_ID: '0vnjpoad06xbz'
 };

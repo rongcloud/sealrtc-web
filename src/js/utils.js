@@ -73,6 +73,10 @@
     return Object.prototype.toString.call(str) === '[object String]';
   };
 
+  const isObject = (obj) => {
+    return Object.prototype.toString.call(obj) === '[object Object]';
+  };
+
   const getDom = function (name) {
     var selector = null;
     try {
@@ -142,7 +146,7 @@
     return child;
   };
 
-  const getSelected = function (name) {
+  const getSelectedDomByName = function (name) {
     let list = document.getElementsByName(name);
     let selectedEl;
     for (let i = 0, max = list.length; i < max; i++) {
@@ -154,6 +158,15 @@
     }
     return selectedEl;
   };
+
+  const download = (url) => {
+    var a = document.createElement('A');
+    a.href = url;
+    a.download = url.substr(url.lastIndexOf('/') + 1);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
   
   utils = {
     noop: noop,
@@ -164,9 +177,11 @@
     showDom: showDom,
     hideDom: hideDom,
     getDomById: getDomById,
-    getSelected: getSelected,
+    getSelectedDomByName: getSelectedDomByName,
     getBrotherDom: getBrotherDom,
-    getChildDom: getChildDom
+    getChildDom: getChildDom,
+    isObject: isObject,
+    download: download
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.utils = utils;

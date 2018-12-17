@@ -2,205 +2,74 @@
   const win = dependencies.win,
     RongRTC = dependencies.RongRTC,
     RongSeal = dependencies.RongSeal,
-    utils = RongSeal.utils,
+    globalConfig = dependencies.globalConfig;
+    
+  const utils = RongSeal.utils,
     common = RongSeal.common,
     getDom = utils.getDom,
-    getDomById = utils.getDomById,
-    globalConfig = dependencies.globalConfig,
-    naviUrl = globalConfig.WS_NAV_URL,
-    IdAttribute = common.SealEnum.IdAttribute,
-    ResourceType = RongRTC.ResourceType;
+    sealAlert = common.sealAlert;
 
-  const SelfVideoName = '.rong-self-video';
-  
-  let userResourceTypes = {};
-
-  let rongRTC, loginUserId, isOpenScreenShare;
+  let rongRTC, loginUserId, roomId, rtcToken, isOpenScreenShare
 
   /**
-   * 摄像头开关
-   * @param {event} event 
+   * 音频流开关
+   * @param {object} user
    */
-  const switchCamera = (event) => {
-    let Video = rongRTC.Stream.Video;
-    let cameraEl = event.target;
-    let isCameraOpen = !common.getSwitchOpen(cameraEl);
-    let id = cameraEl.getAttribute(IdAttribute) || loginUserId;
-    let user = {
-      id: id
+  const switchAudioBySelf = (user) => {
+    let userId = user.id;
+    let Stream = rongRTC.Stream;
+    let Audio = Stream.Audio;
+    let isAudioOpened = common.isOpenedAudioBySelf(userId);
+    isAudioOpened ? Audio.mute(user) : Audio.unmute(user);
+    common.switchAudioBySelf(userId);  // ui 层修改
+  };
+
+  /**
+   * 视频流开关
+   * @param {object} user
+   */
+  const switchVideoBySelf = (user) => {
+    let userId = user.id;
+    let Stream = rongRTC.Stream;
+    let Video = Stream.Video;
+    let isVideoOpened = common.isOpenedVideoBySelf(userId);
+    isVideoOpened ? Video.disable(user) : Video.enable(user);
+    common.switchVideoBySelf(userId);  // ui 层修改
+  };
+
+  /**
+   * 绑定视频点击事件
+   * @param {array<Element>} streamDoms 
+   * @param {object} user 
+   */
+  const bindStreamEvent = (streamDoms, user) => {
+    let boxDom = streamDoms.boxDom,
+      audioOptDom = streamDoms.audioOptDom,
+      videoOptDom = streamDoms.videoOptDom;
+    boxDom.onclick = () => {
+      // 放大展示视频流
+      common.zoomStream(user.id);
     };
-    // let isAudioStatus = userResourceTypes[id] === ResourceType.AUDIO;
-    if (isCameraOpen) {
-      Video.enable(user);
-      common.hideAudioCover(user.id);
-    } else {
-      Video.disable(user);
-      common.showAudioCover(user.id);
-    }
-    common.setSwitchOpen(cameraEl, isCameraOpen);
-  };
-
-  const switchVoice = (event) => {
-    let Audio = rongRTC.Stream.Audio;
-    let voiceEl = event.target;
-    let isVoiceOpen = !common.getSwitchOpen(voiceEl);
-    let id = voiceEl.getAttribute(IdAttribute) || loginUserId;
-    let user = {
-      id: id
+    audioOptDom.onclick = (e) => {
+      // 打开或关闭音频
+      switchAudioBySelf(user);
+      e.stopPropagation();  // 防止冒泡
     };
-    isVoiceOpen ? Audio.mute(user) : Audio.unmute(user);
-    common.setSwitchOpen(voiceEl, isVoiceOpen);
-  };
-
-  /**
-   * video 点击事件, 放大点击的视频
-   */
-  const viewVideo = (event) => {
-    let videoEl = event.currentTarget;
-    let boxEl = videoEl.parentElement;
-    common.viewDom(boxEl);
-  };
-
-  const bindStreamEvent = (videoEl) => {
-    const ClassName = common.ClassName;
-    const optBoxEl = utils.getBrotherDom(videoEl, ClassName.OptBox);
-    let audioCoverEl = utils.getBrotherDom(videoEl, ClassName.AudioShow);
-    let shareCoverEl = utils.getBrotherDom(videoEl, ClassName.ScreenCover);
-    let cameraEl = utils.getChildDom(optBoxEl, ClassName.CameraOpt);
-    let voiceEl = utils.getChildDom(optBoxEl, ClassName.VoiceOpt);
-    videoEl.onclick = viewVideo;
-    if (shareCoverEl) {
-      shareCoverEl.onclick = viewVideo;
-    }
-    if (audioCoverEl) {
-      audioCoverEl.onclick = viewVideo;
-    }
-    if (cameraEl) {
-      cameraEl.onclick = switchCamera;
-    }
-    if (voiceEl) {
-      voiceEl.onclick = switchVoice;
-    }
-  }
-
-  /**
-   * 收到视频流后, 展示
-   * @param {stream} stream 视频/音频流
-   * @param {object} user 用户信息
-   */
-  const showStream = (stream, user) => {
-    let userId = user.id,
-      streamEl = getDomById(userId),
-      isSelf = userId === loginUserId;
-    if (isSelf) {
-      streamEl = getDom(SelfVideoName);
-    }
-    if (!streamEl) {
-      let clickEvent = viewVideo;
-      streamEl = common.addVideoEl(userId, clickEvent);
-    }
-    streamEl.id = userId;
-    streamEl.srcObject = stream;
-    streamEl.autoplay = true;
-    bindStreamEvent(streamEl);
-  };
-
-  const removeStream = (user) => {
-    let id = user.id;
-    common.removeVideoEl(id);
-  };
-
-  /**
-   * 开始屏幕共享
-   */
-  const startScreenShare = () => {
-    let ScreenShare = rongRTC.ScreenShare;
-    let stop = function () {
-      ScreenShare.stop();
-      isOpenScreenShare = false;
-      common.hideScreenShareCover(loginUserId);
+    videoOptDom.onclick = (e) => {
+      // 打开或关闭视频
+      switchVideoBySelf(user);
+      e.stopPropagation();  // 防止冒泡
     };
-    isOpenScreenShare ? stop() : ScreenShare.start().then(function () {
-      isOpenScreenShare = true;
-      common.showScreenShareCover(loginUserId);
-    }, function (error) {
-      alert('屏幕共享失败: ' + error);
-    });
   };
 
   /**
-   * 展示白板
-   */
-  const showWhiteboard = () => {
-    var WhiteBoard = rongRTC.WhiteBoard;
-    WhiteBoard.create().then(function (whiteboard) {
-      let url = whiteboard.url;
-      common.showWhiteboard(url);
-    });
-  };
-
-  const hangup = () => {
-    var Room = rongRTC.Room;
-    window.onbeforeunload = utils.noop;
-    Room.leave().then(function () {
-      // console.log('离开房间');
-      window.location.reload();
-    }, function (error) {
-      alert('离开房间失败: ' + error);
-    });
-    setTimeout(() => {
-      window.location.reload();
-    }, 5000);
-  };
-
-  /**
-   * 绑定操作按钮的点击事件
-   */
-  const bindOptButtonEvent = () => {
-    const cameraSwitchBtn = getDom('.rong-opt-camera'),
-      micSwitchBtn = getDom('.rong-opt-microphone'),
-      shareBtn = getDom('.rong-opt-share'),
-      wbSwitchBtn = getDom('.rong-opt-wb'),
-      hangupSwitchBtn = getDom('.rong-opt-hangup');
-    cameraSwitchBtn.onclick = switchCamera;
-    micSwitchBtn.onclick = switchVoice;
-    shareBtn.onclick = startScreenShare;
-    wbSwitchBtn.onclick = showWhiteboard;
-    hangupSwitchBtn.onclick = hangup;
-    window.onbeforeunload = hangup;
-  };
-
-  const changeResource = (user) => {
-    let resource = user.resource,
-      resourceType = resource.type,
-      userId = user.id;
-    switch(resourceType) {
-    // 对方只开启音频
-    case ResourceType.AUDIO:
-      common.showAudioCover(userId);
-      break;
-    // 对方只开启视频
-    case ResourceType.VIDEO:
-      break;
-    // 对方同时开启视频和音频
-    case ResourceType.AUDIO_AND_VIDEO:
-      common.hideAudioCover(userId);
-      break;
-    default:
-      break;
-    }
-    userResourceTypes[userId] = resourceType;
-  };
-    
-  /**
-   * 监听 rongRTC 事件
+   * 监听 rtc 事件
    */
   const observeRTC = () => {
     let Observer = rongRTC.Observer;
     let observer = new Observer((mutation) => {
-      // console.log('\nrtc 监听', mutation + '\n');
       if (mutation.type === 'error') {
-        alert('初始化 RongRTC 失败');
+        sealAlert('初始化 RongRTC 失败');
       }
     });
     observer.observe(rongRTC, {
@@ -209,7 +78,7 @@
   };
 
   /**
-   * 监听 room 事件
+   * 监听 Room 事件
    */
   const observeRoom = () => {
     let Room = rongRTC.Room,
@@ -217,23 +86,16 @@
     let observer = new Observer((mutation) => {
       let type = mutation.type,
         user = mutation.user;
-      // console.log('room 监听', mutation);
       if (type === 'joined') {
-        // TODO joined
+        // TODO userJoined
       }
       if (type === 'left') {
-        removeStream(user);
-      }
-      if (type === 'changed_resource') {
-        changeResource(user);
+        common.userLeft(user);
       }
     });
     observer.observe(Room, {
       joined: true,
-      left: true,
-      changed: {
-        resource: true
-      }
+      left: true
     });
   };
 
@@ -247,136 +109,183 @@
       let type = mutation.type,
         user = mutation.user,
         stream = mutation.stream;
-      // console.log('stream 监听', mutation);
       if (type === 'added') {
-        showStream(stream, user);
+        let streamDoms = common.addStream({
+          stream: stream,
+          user: user
+        });
+        bindStreamEvent(streamDoms, user);
+      }
+      if (type === 'changed') {
+        common.changeResource(stream, user);
       }
     });
     observer.observe(Stream, {
-      added: true
+      added: true,
+      changed: true
     });
   };
 
   /**
-   * 获取 rtc token
-   * @param {object} params 
-   * @param {string} params.tokenUrl  获取 rtc token 的地址
-   * @param {string} params.userId  用户 id
-   * @param {string} params.appId  融云 appkey
-   * @param {function} callback  回调
+   * 登录用户加入房间
    */
-  const getRTCToken = (params, callback) => {
-    let tokenUrl = params.tokenUrl,
-      selfId = params.userId,
-      appId = params.appId;
-    utils.sendForm({
-      url: tokenUrl,
-      method: 'POST',
-      body: {
-        uid: selfId,
-        appid: appId
-      },
-      success: function (token) {
-        callback(null, token);
-      },
-      fail: function (error) {
-        callback(error);
-      }
-    });
-  };
-
-  /**
-   * 加入房间
-   * @param {object} params 
-   * @param {string} params.roomId 房间 id
-   * @param {string} params.userId 用户 id
-   * @param {string} params.token rtc token
-   */
-  const joinRoom = (params) => {
-    var roomId = params.roomId,
-      userId = params.userId,
-      token = params.token;
+  const joinRoom = () => {
     let room = {
       id: roomId,
       user: {
-        id: userId,
-        name: userId,
-        token: token
+        id: loginUserId,
+        name: loginUserId,
+        token: rtcToken
       }
     };
     let Room = rongRTC.Room;
-    Room.join(room).then(function () {
-      // console.log('加入房间成功');
-    }, function (error) {
-      alert('加入房间失败: ' + error.toString());
+    Room.join(room).then(() => {
+      // 加入房间成功
+    }, () => {
+      sealAlert('加入房间失败');
     });
   };
 
   /**
-   * 展示视频界面
-   * @param {string} params.roomId 房间号
-   * @param {string} params.userId 用户 id
-   * @param {string} params.rate 自己视频的分辨率, 格式如 640*480
+   * 设置视频展示窗口的宽度
+   * @param {object} resolution 分辨率, 格式如: 640*480
    */
-  const showMain = (params) => {
-    let setMainStyle = function () {
-      let showMainEl = getDom('.rong-main-show'),
-        rate = params.rate,
-        width = rate.width / rate.height * 100 + 'vh';
-      showMainEl.style.width = width;
+  const setMainVideoWidth = (resolution) => {
+    let mainDom = getDom('.rong-rtc-main');
+    let width = resolution.width / resolution.height * 100 + 'vh';
+    mainDom.style.width = width;
+  };
+
+  /**
+   * 设置房间号
+   * @param {string} roomId 房间号
+   */
+  const setRoomId = (roomId) => {
+    let roomIdDom = getDom('.rong-room-title');
+    roomIdDom.textContent = '会议 ID: ' + roomId;
+  };
+
+  /**
+   * 设置登录用户名
+   * @param {string} name 登录用户名
+   */
+  const setLoginUserName = (name) => {
+    let userNameDom = getDom('.rong-user-title');
+    userNameDom.textContent = '登录用户: ' + name;
+  };
+
+  /**
+   * @param {string} id 登录用户 id
+   */
+  const setLoginUserId = (id) => {
+    let selfStreamBoxDom = getDom('.rong-stream-box[is-self=\'true\']');
+    selfStreamBoxDom.id = id;
+  };
+
+  /**
+   * 挂断
+   */
+  const hangup = () => {
+    var Room = rongRTC.Room;
+    win.onbeforeunload = utils.noop;
+    Room.leave().then(function () {
+      win.location.reload();
+    }, function () {
+      sealAlert('离开房间失败');
+    });
+    setTimeout(() => {
+      win.location.reload();
+    }, 5000);
+  };
+
+  /**
+   * 开始白板
+   */
+  const startWhiteboard = () => {
+    var WhiteBoard = rongRTC.WhiteBoard;
+    WhiteBoard.create().then(function (whiteboard) {
+      let url = whiteboard.url;
+      common.startWhiteboard(url);
+    });
+  };
+
+  /**
+   * 开始屏幕共享
+   */
+  const startScreenShare = () => {
+    let ScreenShare = rongRTC.ScreenShare;
+    let stop = () => {
+      ScreenShare.stop();
+      isOpenScreenShare = false;
+      common.closeScreenShare(loginUserId);
     };
-    let setRoomName = () => {
-      let roomNameEl = getDom('.rong-room-name');
-      roomNameEl.textContent = '会议 ID: ' + params.roomId;
-    };
-    let setUserName = () => {
-      let userNameEl = getDom('.rong-user-name');
-      userNameEl.textContent = '登录用户: ' + params.userId;
-    };
+    isOpenScreenShare ? stop() : ScreenShare.start().then(function () {
+      isOpenScreenShare = true;
+      common.openScreenShare(loginUserId);
+    }, function () {
+      sealAlert('首次使用屏幕共享, 请下载并安装插件', {
+        isShowCancel: true,
+        confirmCallback: () => {
+          utils.download(globalConfig.DOWNLOAD_SHARE_PLUGIN_URL);
+        }
+      });
+    });
+  };
+
+  /**
+   * 展示音视频交互主界面
+   * @param {object} params 
+   * @param {string} params.roomId 房间号
+   * @param {string} params.userId 用户id
+   * @param {string} params.resolution 分辨率
+   */
+  const showRTCPage = (params) => {
+    const hangupBtnDom = getDom('.rong-opt-hangup'),
+      wbBtnDom = getDom('.rong-opt-wb'),
+      shareBtnDom = getDom('.rong-opt-share');
     utils.hideDom('.rong-login');
-    utils.showDom('.rong-main');
-    bindOptButtonEvent();
-    setMainStyle();
-    setRoomName();
-    setUserName();
+    utils.showDom('.rong-rtc');
+    setMainVideoWidth(params.resolution);
+    setRoomId(params.roomId);
+    setLoginUserName(params.userId);
+    setLoginUserId(params.userId);
+    shareBtnDom.onclick = startScreenShare;
+    wbBtnDom.onclick = startWhiteboard;
+    hangupBtnDom.onclick = hangup;
+    win.onbeforeunload = hangup;
   };
 
   /**
-   * 开始
+   * 开始实时音视频
+   * @param {object} params 
    * @param {string} params.roomId 房间号
-   * @param {string} params.userId 用户 id
-   * @param {string} params.rate 自己视频的分辨率, 格式如 640*480
+   * @param {string} params.userId 用户id
+   * @param {string} params.resolution 分辨率
    */
-  const startMeet = (params) => {
+  const startRTC = (params) => {
     loginUserId = params.userId;
+    roomId = params.roomId;
     rongRTC = new RongRTC({
-      url: naviUrl
+      url: globalConfig.WS_NAV_URL
     });
-    let getTokenParams = {
-        tokenUrl: globalConfig.TOKEN_URL,
-        userId: loginUserId,
-        appId: globalConfig.APP_ID
-      },
-      joinRoomParams = {
-        userId: loginUserId,
-        roomId: params.roomId,
-        token: ''
-      };
     observeRTC();
     observeRoom();
     observeStream();
-    getRTCToken(getTokenParams, function (error, token) {
-      if (error) {
-        return alert('get token error', error);
-      }
-      showMain(params);
-      joinRoomParams.token = token;
-      joinRoom(joinRoomParams);
+    common.getRTCToken({
+      tokenUrl: globalConfig.TOKEN_URL,
+      userId: loginUserId,
+      appId: globalConfig.APP_ID
+    }).then((token) => {
+      rtcToken = token;
+      showRTCPage(params);
+      joinRoom();
+    }, () => {
+      sealAlert('获取 rtc token 失败');
     });
   };
 
   win.RongSeal = win.RongSeal || {};
-  win.RongSeal.startMeet = startMeet;
+  win.RongSeal.startRTC = startRTC;
 
 })({
   win: window,
