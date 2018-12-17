@@ -9,7 +9,7 @@
     getDom = utils.getDom,
     sealAlert = common.sealAlert;
 
-  let rongRTC, loginUserId, roomId, rtcToken, isOpenScreenShare
+  let rongRTC, loginUserId, isOpenScreenShare
 
   /**
    * 音频流开关
@@ -114,6 +114,7 @@
           stream: stream,
           user: user
         });
+        stream.type && common.changeResource(stream, user);
         bindStreamEvent(streamDoms, user);
       }
       if (type === 'changed') {
@@ -129,18 +130,28 @@
   /**
    * 登录用户加入房间
    */
-  const joinRoom = () => {
+  const joinRoom = (params) => {
+    let user = {
+      id: params.userId,
+      name: params.userId,
+      token: params.rtcToken
+    };
     let room = {
-      id: roomId,
-      user: {
-        id: loginUserId,
-        name: loginUserId,
-        token: rtcToken
-      }
+      id: params.roomId,
+      user: user
     };
     let Room = rongRTC.Room;
     Room.join(room).then(() => {
-      // 加入房间成功
+      if (params.video) {
+        let Video = rongRTC.Stream.Video;
+        Video.disable(user);
+        common.closeVideoBySelf(user.id);
+      }
+      if (params.audio) {
+        let Audio = rongRTC.Stream.Audio;
+        Audio.mute(user);
+        common.closeAudioBySelf(user.id);
+      }
     }, () => {
       sealAlert('加入房间失败');
     });
@@ -261,10 +272,11 @@
    * @param {string} params.roomId 房间号
    * @param {string} params.userId 用户id
    * @param {string} params.resolution 分辨率
+   * @param {boolean} params.video 是否开启 video
+   * @param {boolean} params.audio 是否开启 audio
    */
   const startRTC = (params) => {
     loginUserId = params.userId;
-    roomId = params.roomId;
     rongRTC = new RongRTC({
       url: globalConfig.WS_NAV_URL
     });
@@ -276,9 +288,9 @@
       userId: loginUserId,
       appId: globalConfig.APP_ID
     }).then((token) => {
-      rtcToken = token;
+      params.rtcToken = token;
       showRTCPage(params);
-      joinRoom();
+      joinRoom(params);
     }, () => {
       sealAlert('获取 rtc token 失败');
     });

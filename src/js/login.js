@@ -38,19 +38,19 @@
   const startRTC = () => {
     if (checkRTCValue()) {
       const resolutionDom = utils.getSelectedDomByName('resolution'),
-        openVideoDom = utils.getSelectedDomByName('isOpenVideo'),
-        openAudioDom = utils.getSelectedDomByName('isOpenAudio');
+        closeVideoDom = utils.getSelectedDomByName('isCloseVideo'),
+        closeAudioDom = utils.getSelectedDomByName('isCloseAudio');
       let roomId = roomIdDom.value,
         userId = userIdDom.value,
         resolution = common.formatResolution(resolutionDom.value),
-        isOpenVideo = !!openVideoDom,
-        isOpenAudio = !!openAudioDom;
+        isCloseVideo = !!closeVideoDom,
+        isCloseAudio = !!closeAudioDom;
       RongSeal.startRTC({
         userId: userId,
         roomId: roomId,
         resolution: resolution,
-        video: isOpenVideo,
-        audio: isOpenAudio
+        video: isCloseVideo,
+        audio: isCloseAudio
       });
       Cache.set(StorageKeys.RoomId, roomId);
     }

@@ -426,6 +426,7 @@
     zoomStream: zoomStream,
     changeResource: changeResource,
 
+    closeVideoBySelf: closeVideoBySelf,
     switchVideoBySelf: switchVideoBySelf,
     switchAudioBySelf: switchAudioBySelf,
     isOpenedVideoBySelf: isOpenVideoBySelf,
