@@ -43,14 +43,14 @@
       let roomId = roomIdDom.value,
         userId = userIdDom.value,
         resolution = common.formatResolution(resolutionDom.value),
-        isCloseVideo = !!closeVideoDom,
-        isCloseAudio = !!closeAudioDom;
+        video = !closeVideoDom,
+        audio = !closeAudioDom;
       RongSeal.startRTC({
         userId: userId,
         roomId: roomId,
         resolution: resolution,
-        video: isCloseVideo,
-        audio: isCloseAudio
+        video: video,
+        audio: audio
       });
       Cache.set(StorageKeys.RoomId, roomId);
     }

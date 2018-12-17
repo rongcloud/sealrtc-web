@@ -427,6 +427,7 @@
     changeResource: changeResource,
 
     closeVideoBySelf: closeVideoBySelf,
+    closeAudioBySelf: closeAudioBySelf,
     switchVideoBySelf: switchVideoBySelf,
     switchAudioBySelf: switchAudioBySelf,
     isOpenedVideoBySelf: isOpenVideoBySelf,

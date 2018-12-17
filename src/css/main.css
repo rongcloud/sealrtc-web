@@ -403,19 +403,6 @@ input {
   background-color: white;
 }
 
-.rong-rtc .rong-stream-box .rong-share-cover {
-  z-index: 16;
-}
-
-.rong-rtc .rong-stream-box .rong-share-cover img {
-  width: 60px;
-  height: auto;
-}
-
-.rong-rtc .rong-stream-box .rong-share-cover p {
-  display: block;
-}
-
 .rong-rtc .rong-stream-box .rong-audio-cover-box {
   position: absolute;
   left: 50%;
@@ -429,6 +416,24 @@ input {
   display: none;
   font-size: 13px;
   background-color: white;
+}
+
+.rong-rtc .rong-stream-box .rong-share-cover {
+  background-color: #262626;
+  z-index: 16;
+}
+
+.rong-rtc .rong-stream-box .rong-share-cover img {
+  width: 60px;
+  height: auto;
+  position: relative;
+  top: 12px;
+}
+
+.rong-rtc .rong-stream-box .rong-share-cover p {
+  color: #adadad;
+  display: block;
+  background-color: #262626;
 }
 
 .rong-rtc .rong-stream-box[is-zoom="true"] {
@@ -473,7 +478,7 @@ input {
 }
 
 .rong-rtc .rong-stream-box[is-zoom="true"] .rong-stream-opt .rong-opt-audio {
-  background-position: 4px 1px;
+  background-position: 4px 2px;
 }
 
 .rong-rtc .rong-stream-box[is-openvideo-byself="false"] .rong-opt-video {
@@ -517,7 +522,7 @@ input {
 }
 
 .rong-rtc .rong-stream-box[is-screenshare="true"] .rong-user-name {
-  color: black;
+  color: #adadad;
 }
 
 .rong-rtc .rong-wb-box {

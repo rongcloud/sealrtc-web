@@ -371,16 +371,6 @@ input {
       height: 100%;
       background-color: white;
     }
-    .rong-share-cover {
-      z-index: 16;
-      img {
-        width: 60px;
-        height: auto;
-      }
-      p {
-        display: block;
-      }
-    }
     .rong-audio-cover-box {
       position: absolute;
       left: 50%;
@@ -392,6 +382,21 @@ input {
         display: none;
         font-size: 13px;
         background-color: white;
+      }
+    }
+    .rong-share-cover {
+      background-color: rgb(38, 38, 38);
+      z-index: 16;
+      img {
+        width: 60px;
+        height: auto;
+        position: relative;
+        top: 12px;
+      }
+      p {
+        color: rgb(173, 173, 173);
+        display: block;
+        background-color: rgb(38, 38, 38);
       }
     }
   }
@@ -430,7 +435,7 @@ input {
         margin: 0 25px;
       }
       .rong-opt-audio {
-        background-position: 4px 1px;
+        background-position: 4px 2px;
       }
     }
   }
@@ -488,7 +493,7 @@ input {
       display: block;
     }
     .rong-user-name {
-      color: black;
+      color: #adadad;
     }
   }
   .rong-wb-box {

@@ -142,12 +142,12 @@
     };
     let Room = rongRTC.Room;
     Room.join(room).then(() => {
-      if (params.video) {
+      if (!params.video) {
         let Video = rongRTC.Stream.Video;
         Video.disable(user);
         common.closeVideoBySelf(user.id);
       }
-      if (params.audio) {
+      if (!params.audio) {
         let Audio = rongRTC.Stream.Audio;
         Audio.mute(user);
         common.closeAudioBySelf(user.id);
