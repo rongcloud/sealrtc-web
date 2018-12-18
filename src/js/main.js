@@ -176,6 +176,11 @@
     });
   };
 
+  const setVideoConstraints = (constraints) => {
+    let Video = rongRTC.Stream.Video;
+    Video.set && Video.set(constraints);
+  };
+
   /**
    * 登录用户加入房间
    */
@@ -281,6 +286,19 @@
     win.onbeforeunload = hangup;
   };
 
+  const initRTCInstance = (params) => {
+    rongRTC = new RongRTC({
+      url: globalConfig.WS_NAV_URL
+    });
+    observeRTC();
+    observeRoom();
+    observeStream();
+    observeScreenShare();
+    setVideoConstraints({
+      video: params.resolution
+    });
+  };
+
   /**
    * 开始实时音视频
    * @param {object} params 
@@ -292,13 +310,7 @@
    */
   const startRTC = (params) => {
     loginUserId = params.userId;
-    rongRTC = new RongRTC({
-      url: globalConfig.WS_NAV_URL
-    });
-    observeRTC();
-    observeRoom();
-    observeStream();
-    observeScreenShare();
+    initRTCInstance(params);
     common.getRTCToken({
       tokenUrl: globalConfig.TOKEN_URL,
       userId: loginUserId,

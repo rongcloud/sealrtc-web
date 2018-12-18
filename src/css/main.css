@@ -420,6 +420,10 @@ input {
   width: 100%;
 }
 
+.rong-rtc .rong-stream-box .rong-audio-cover-box img {
+  width: 60px;
+}
+
 .rong-rtc .rong-stream-box .rong-audio-cover-box p {
   width: 100%;
   display: none;
@@ -428,21 +432,18 @@ input {
 }
 
 .rong-rtc .rong-stream-box .rong-share-cover {
-  background-color: #262626;
   z-index: 16;
 }
 
 .rong-rtc .rong-stream-box .rong-share-cover img {
-  width: 60px;
+  width: 70px;
   height: auto;
   position: relative;
   top: 12px;
 }
 
 .rong-rtc .rong-stream-box .rong-share-cover p {
-  color: #adadad;
   display: block;
-  background-color: #262626;
 }
 
 .rong-rtc .rong-stream-box[is-zoom="true"] {
@@ -463,6 +464,7 @@ input {
 
 .rong-rtc .rong-stream-box[is-zoom="true"] .rong-user-name {
   top: 55px;
+  font-size: 17px;
 }
 
 .rong-rtc .rong-stream-box[is-zoom="true"] .rong-audio-cover-box p {
@@ -473,6 +475,10 @@ input {
   width: 110px;
 }
 
+.rong-rtc .rong-stream-box[is-zoom="true"] .rong-share-cover img {
+  width: 140px;
+}
+
 .rong-rtc .rong-stream-box[is-zoom="true"] .rong-stream-opt {
   text-align: center;
   margin-bottom: 10px;
@@ -480,14 +486,19 @@ input {
 
 .rong-rtc .rong-stream-box[is-zoom="true"] .rong-stream-opt a {
   background-color: rgba(0, 0, 0, 0.5);
-  width: 31px;
-  height: 31px;
   border-radius: 50%;
   margin: 0 25px;
+  width: 45px;
+  height: 45px;
+  background-position: center;
+}
+
+.rong-rtc .rong-stream-box[is-zoom="true"] .rong-stream-opt .rong-opt-video {
+  background-size: 40px auto;
 }
 
 .rong-rtc .rong-stream-box[is-zoom="true"] .rong-stream-opt .rong-opt-audio {
-  background-position: 4px 2px;
+  background-size: auto 38px;
 }
 
 .rong-rtc .rong-stream-box[is-openvideo-byself="false"] .rong-opt-video {
@@ -510,12 +521,8 @@ input {
   display: block;
 }
 
-.rong-rtc .rong-stream-box[is-openvideo-byself="false"] .rong-audio-cover img, .rong-rtc .rong-stream-box[is-openvideo-byother="false"] .rong-audio-cover img {
-  width: 60px;
-}
-
 .rong-rtc .rong-stream-box[is-openvideo-byself="false"] .rong-user-name, .rong-rtc .rong-stream-box[is-openvideo-byother="false"] .rong-user-name {
-  color: black;
+  text-shadow: 0px 2px 4px #000;
 }
 
 .rong-rtc .rong-stream-box[is-openvideo-byself="false"][is-openvideo-byother="false"] .rong-audiocover-title-other {
@@ -531,7 +538,7 @@ input {
 }
 
 .rong-rtc .rong-stream-box[is-screenshare="true"] .rong-user-name {
-  color: #adadad;
+  text-shadow: 0px 2px 4px #000;
 }
 
 .rong-rtc .rong-wb-box {
