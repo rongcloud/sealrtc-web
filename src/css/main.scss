@@ -238,6 +238,7 @@ input {
     background-color: black;
     position: relative;
     min-width: 525px;
+    width: 100%;
   }
 
   .rong-rtc-opt {
@@ -408,6 +409,11 @@ input {
       }
     }
   }
+  .rong-stream-box[is-self="true"] {
+    video {
+      transform: rotateY(180deg);
+    }
+  }
   .rong-stream-box[is-zoom="true"] {
     position: absolute;
     margin: 0;
@@ -419,7 +425,7 @@ input {
     z-index: 2;
     border: none;
     video {
-      transform: rotateY(180deg);
+      object-fit: cover;
     }
     .rong-user-name {
       top: 55px;

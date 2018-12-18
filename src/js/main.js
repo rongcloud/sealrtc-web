@@ -212,16 +212,6 @@
   };
 
   /**
-   * 设置视频展示窗口的宽度
-   * @param {object} resolution 分辨率, 格式如: 640*480
-   */
-  const setMainVideoWidth = (resolution) => {
-    let mainDom = getDom('.rong-rtc-main');
-    let width = resolution.width / resolution.height * 100 + 'vh';
-    mainDom.style.width = width;
-  };
-
-  /**
    * 设置房间号
    * @param {string} roomId 房间号
    */
@@ -276,7 +266,6 @@
       shareBtnDom = getDom('.rong-opt-share');
     utils.hideDom('.rong-login');
     utils.showDom('.rong-rtc');
-    setMainVideoWidth(params.resolution);
     setRoomId(params.roomId);
     setLoginUserName(params.userId);
     setLoginUserId(params.userId);
