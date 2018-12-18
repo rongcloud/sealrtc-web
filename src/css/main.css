@@ -269,6 +269,15 @@ input {
   color: white;
   text-align: left;
   font-size: 14px;
+  box-sizing: border-box;
+  padding: 0 13px;
+}
+
+.rong-rtc .rong-rtc-opt .rong-room-title {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .rong-rtc .rong-rtc-opt span {
@@ -280,7 +289,7 @@ input {
   width: 30px;
   height: 30px;
   background-size: cover;
-  margin: 0 20px 0 10px;
+  margin: 0 20px 0 18px;
   position: relative;
   top: 50%;
   transform: translateY(-50%);
@@ -296,7 +305,7 @@ input {
 }
 
 .rong-rtc .rong-rtc-opt a + a {
-  margin: 0 10px;
+  margin: 0 18px;
 }
 
 .rong-rtc .rong-rtc-opt .rong-opt-hangup {

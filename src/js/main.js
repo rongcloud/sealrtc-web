@@ -63,6 +63,41 @@
   };
 
   /**
+   * 开始白板
+   */
+  const startWhiteboard = () => {
+    var WhiteBoard = rongRTC.WhiteBoard;
+    WhiteBoard.create().then(function (whiteboard) {
+      let url = whiteboard.url;
+      common.startWhiteboard(url);
+    });
+  };
+
+  /**
+   * 屏幕共享开关
+   */
+  const switchScreenShare = () => {
+    let ScreenShare = rongRTC.ScreenShare;
+    let stop = () => {
+      ScreenShare.stop();
+      isOpenScreenShare = false;
+      common.closeScreenShare(loginUserId);
+    };
+    isOpenScreenShare ? stop() : ScreenShare.start().then(function () {
+      isOpenScreenShare = true;
+      common.openScreenShare(loginUserId);
+    }, function () {
+      sealAlert('首次使用屏幕共享, 请下载并安装插件', {
+        isShowCancel: true,
+        confirmText: '下载插件',
+        confirmCallback: () => {
+          utils.download(globalConfig.DOWNLOAD_SHARE_PLUGIN_URL);
+        }
+      });
+    });
+  };
+
+  /**
    * 监听 rtc 事件
    */
   const observeRTC = () => {
@@ -124,6 +159,20 @@
     observer.observe(Stream, {
       added: true,
       changed: true
+    });
+  };
+  
+  const observeScreenShare = () => {
+    let ScreenShare = rongRTC.ScreenShare,
+      Observer = rongRTC.Observer;
+    let observer = new Observer((mutation) => {
+      let type = mutation.type;
+      if (type === 'finished') {
+        switchScreenShare();
+      }
+    });
+    observer.observe(ScreenShare, {
+      finished: true
     });
   };
 
@@ -210,40 +259,6 @@
   };
 
   /**
-   * 开始白板
-   */
-  const startWhiteboard = () => {
-    var WhiteBoard = rongRTC.WhiteBoard;
-    WhiteBoard.create().then(function (whiteboard) {
-      let url = whiteboard.url;
-      common.startWhiteboard(url);
-    });
-  };
-
-  /**
-   * 开始屏幕共享
-   */
-  const startScreenShare = () => {
-    let ScreenShare = rongRTC.ScreenShare;
-    let stop = () => {
-      ScreenShare.stop();
-      isOpenScreenShare = false;
-      common.closeScreenShare(loginUserId);
-    };
-    isOpenScreenShare ? stop() : ScreenShare.start().then(function () {
-      isOpenScreenShare = true;
-      common.openScreenShare(loginUserId);
-    }, function () {
-      sealAlert('首次使用屏幕共享, 请下载并安装插件', {
-        isShowCancel: true,
-        confirmCallback: () => {
-          utils.download(globalConfig.DOWNLOAD_SHARE_PLUGIN_URL);
-        }
-      });
-    });
-  };
-
-  /**
    * 展示音视频交互主界面
    * @param {object} params 
    * @param {string} params.roomId 房间号
@@ -260,7 +275,7 @@
     setRoomId(params.roomId);
     setLoginUserName(params.userId);
     setLoginUserId(params.userId);
-    shareBtnDom.onclick = startScreenShare;
+    shareBtnDom.onclick = switchScreenShare;
     wbBtnDom.onclick = startWhiteboard;
     hangupBtnDom.onclick = hangup;
     win.onbeforeunload = hangup;
@@ -283,6 +298,7 @@
     observeRTC();
     observeRoom();
     observeStream();
+    observeScreenShare();
     common.getRTCToken({
       tokenUrl: globalConfig.TOKEN_URL,
       userId: loginUserId,

@@ -160,12 +160,7 @@
   };
 
   const download = (url) => {
-    var a = document.createElement('A');
-    a.href = url;
-    a.download = url.substr(url.lastIndexOf('/') + 1);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    win.open(url);
   };
   
   utils = {
