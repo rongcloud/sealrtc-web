@@ -43,10 +43,12 @@ input {
   position: relative;
   width: 100%;
   height: 100%;
-  background-color: rgb(78, 107, 170);
+  background-color: rgb(74, 82, 103);
   text-align: center;
   overflow: scroll;
   display: $loginDisplay;
+  background-image: url('./img/cover.png');
+  background-size: cover;
 }
 .rong-login-logo {
   height: 120px;

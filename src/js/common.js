@@ -6,7 +6,7 @@
     getDom = utils.getDom,
     RongRTC = win.RongRTC;
   
-  const ResourceType = RongRTC.ResourceType;
+  const StreamType = RongRTC.StreamType;
 
   /* 
     此处通过向 rong-stream-list 中追加 rong-stream-box 组件
@@ -398,16 +398,16 @@
     let type = stream.type;
     let userId = user.id;
     switch (type) {
-    case ResourceType.AUDIO:
+    case StreamType.AUDIO:
       closeVideoByOther(userId);
       break;
-    case ResourceType.VIDEO:
+    case StreamType.VIDEO:
       openVideoByOther(userId);
       break;
-    case ResourceType.AUDIO_AND_VIDEO:
+    case StreamType.AUDIO_AND_VIDEO:
       openVideoByOther(userId);
       break;
-    case ResourceType.NONE:
+    case StreamType.NONE:
       closeVideoByOther(userId);
       break;
     default:

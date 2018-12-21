@@ -9,7 +9,7 @@
     getDom = utils.getDom,
     sealAlert = common.sealAlert;
 
-  let rongRTC, loginUserId, isOpenScreenShare
+  let rongRTC, loginUserId, isOpenScreenShare;
 
   /**
    * 音频流开关
@@ -176,9 +176,46 @@
     });
   };
 
-  const setVideoConstraints = (constraints) => {
-    let Video = rongRTC.Stream.Video;
-    Video.set && Video.set(constraints);
+  // const setVideoConstraints = (constraints) => {
+  //   let Video = rongRTC.Stream.Video;
+  //   Video.set && Video.set(constraints);
+  // };
+
+  const showSelfStream = () => {
+    let user = {
+      id: loginUserId
+    };
+    let Stream = rongRTC.Stream;
+    Stream.get(user).then((result) => {
+      let { user, stream } = result;
+      let streamDoms = common.addStream({
+        stream: stream,
+        user: user
+      });
+      stream.type && common.changeResource(stream, user);
+      bindStreamEvent(streamDoms, user);
+    }, () => {
+      sealAlert('获取本地视频流失败');
+    });
+  };
+
+  const setSelfVideo = (params) => {
+    let user = {
+      id: params.userId,
+      name: params.userId,
+      token: params.rtcToken 
+    };
+    if (!params.video) {
+      let Video = rongRTC.Stream.Video;
+      Video.disable(user);
+      common.closeVideoBySelf(user.id);
+    }
+    if (!params.audio) {
+      let Audio = rongRTC.Stream.Audio;
+      Audio.mute(user);
+      common.closeAudioBySelf(user.id);
+    }
+    showSelfStream();
   };
 
   /**
@@ -196,16 +233,7 @@
     };
     let Room = rongRTC.Room;
     Room.join(room).then(() => {
-      if (!params.video) {
-        let Video = rongRTC.Stream.Video;
-        Video.disable(user);
-        common.closeVideoBySelf(user.id);
-      }
-      if (!params.audio) {
-        let Audio = rongRTC.Stream.Audio;
-        Audio.mute(user);
-        common.closeAudioBySelf(user.id);
-      }
+      setSelfVideo(params);
     }, () => {
       sealAlert('加入房间失败');
     });
@@ -275,7 +303,7 @@
     win.onbeforeunload = hangup;
   };
 
-  const initRTCInstance = (params) => {
+  const initRTCInstance = () => {
     rongRTC = new RongRTC({
       url: globalConfig.WS_NAV_URL
     });
@@ -283,9 +311,9 @@
     observeRoom();
     observeStream();
     observeScreenShare();
-    setVideoConstraints({
-      video: params.resolution
-    });
+    // setVideoConstraints({
+    //   video: params.resolution
+    // });
   };
 
   /**

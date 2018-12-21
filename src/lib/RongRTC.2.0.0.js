@@ -281,8 +281,8 @@
     ROOM_SELF_LEFT: 'room_self_left',
     ROOM_USER_JOINED: 'room_user_joined',
     ROOM_USER_LEFT: 'room_user_left',
-    ROOM_USER_RESOURCE_CHANGED: 'room_user_resource_changed',
     STREAM_ADDED: 'stream_added',
+    STREAM_CHANGED: 'stream_changed',
     RTC_SERVER: 'rtc_server',
     RTC_SERVER_READY: 'rtc_server_ready',
     RTC_SERVER_COLSE: 'rtc_server_ready',
@@ -290,14 +290,16 @@
     WHITEBOARD_CREATED: 'whiteboard_created',
     WHITEBOARD_GETLIST: 'whiteboard_getlist',
     SCREEN_SHARE_START: 'screen_share_start',
-    SCREEN_SHARE_STOP: 'screen_share_stop'
+    SCREEN_SHARE_STOP: 'screen_share_stop',
+    SCREEN_SHARE_FINISHED: 'screen_share_finished'
   };
 
-  var ResourceType = {
+  var StreamType = {
     NONE: 0,
     AUDIO: 1,
     VIDEO: 2,
-    AUDIO_AND_VIDEO: 3
+    AUDIO_AND_VIDEO: 3,
+    SCREEN_SHARE: 4
   };
 
   var RoomEvents = [{
@@ -306,19 +308,24 @@
   }, {
     name: EventName.ROOM_USER_LEFT,
     type: 'left'
-  }, {
-    name: EventName.ROOM_USER_RESOURCE_CHANGED,
-    type: 'changed_resource'
   }];
 
   var StreamEvents = [{
     name: EventName.STREAM_ADDED,
     type: 'added'
+  }, {
+    name: EventName.STREAM_CHANGED,
+    type: 'changed'
   }];
 
   var ErrorEvents = [{
     name: EventName.RTC_ERROR,
     type: 'error'
+  }];
+
+  var ScreenShareEvents = [{
+    name: EventName.SCREEN_SHARE_FINISHED,
+    type: 'finished'
   }];
 
   function Room(rtc) {
@@ -379,6 +386,9 @@
       },
       enable: function enable(user) {
         return rtc.exec('enableVideo', user);
+      },
+      set: function set(constraints) {
+        rtc.exec('setProfiles', constraints);
       }
     };
   }
@@ -452,15 +462,48 @@
   }
 
   function ScreenShare(rtc) {
+    var eventEmitter = new EventEmitter();
+    utils.forEach(ScreenShareEvents, function (event) {
+      var name = event.name,
+          type = event.type;
+
+      rtc._on(name, function (error, result) {
+        result = result || {};
+        if (error) {
+          throw new Error(error);
+        }
+        utils.extend(result, {
+          type: type
+        });
+        eventEmitter.emit(type, result);
+      });
+    });
     var start = function start() {
       return rtc.exec('startScreenShare');
     };
     var stop = function stop() {
       return rtc.exec('stopScreenShare');
     };
+    var _on = function _on(name, event) {
+      return eventEmitter.on(name, function (error, result) {
+        if (error) {
+          throw new Error(error);
+        }
+        event(result);
+      });
+    };
+    var _off = function _off(name) {
+      return eventEmitter.off(name);
+    };
+    var _teardown = function _teardown() {
+      return eventEmitter.teardown();
+    };
     return {
       start: start,
-      stop: stop
+      stop: stop,
+      _on: _on,
+      _off: _off,
+      _teardown: _teardown
     };
   }
 
@@ -3501,7 +3544,7 @@
                   return s.track === track;
                 });
                 if (alreadyExists) {
-                  // throw new DOMException('Track already exists.', 'InvalidAccessError');
+                  throw new DOMException('Track already exists.', 'InvalidAccessError');
                 }
               });
               var existingSenders = pc.getSenders();
@@ -5662,11 +5705,16 @@
   };RongRTCConstant.OfferStatus = {
     SENDING: 'SENDING',
     DONE: 'DONE'
-    /**
-    * 会控操作类型
-    *
-    */
-  };RongRTCConstant.MeetingActionType = {
+  };
+  RongRTCConstant.ScreenShareReason = {
+    API: 1,
+    BROWER: 2
+  };
+  /**
+  * 会控操作类型
+  *
+  */
+  RongRTCConstant.MeetingActionType = {
     /** 与会人员能力管理 */
     RoleChange: {
       /** 将与会人降级为观察者 */
@@ -6714,7 +6762,7 @@
   * 关闭屏幕共享
   *
   */
-  RongRTCEngine.prototype.stopScreenShare = function () {
+  RongRTCEngine.prototype.stopScreenShare = function (option) {
     //	if (this.isScreenStreamSeparate) { // 屏幕共享流分离
     //		// stop后会关闭弹出的屏幕共享工具条
     //		this.localScreenStream.getVideoTracks()[0].stop();
@@ -6757,7 +6805,7 @@
         // 订阅分发版本且是start/stop track
         if (this.localVideoEnable) {
           var callback = function callback(rongRTCEngine) {
-            rongRTCEngine._stopScreenShare();
+            rongRTCEngine._stopScreenShare(option);
           };
           this.startLocalTrack(RongRTCConstant.DeviceType.Camera, callback);
           return;
@@ -6771,7 +6819,7 @@
         // RongRTCUtil.setMediaStream(this.userId, this.localStream);
       }
     }
-    this._stopScreenShare();
+    this._stopScreenShare(option);
   };
   /** ----- 屏幕共享能力 ----- */
   /** ----- 会控能力 ----- */
@@ -7758,9 +7806,11 @@
           'userId': userId,
           'videoType': videoType
         });
+        var user = rongRTCEngine.joinedUsers.get(userId);
         rongRTCEngine.rongRTCEngineEventHandle.call('onNotifyUserVideoCreated', {
-          'userId': userId,
-          'videoType': videoType
+          userId: userId,
+          videoType: videoType,
+          resource: user.resource
         });
       };
 
@@ -8302,7 +8352,9 @@
     this.localScreenVideoTrack = screenStream.getVideoTracks()[0];
     this.localScreenVideoTrack.onended = function () {
       // 关闭屏幕共享
-      rongRTCEngine.stopScreenShare();
+      rongRTCEngine.stopScreenShare({
+        reason: RongRTCConstant.ScreenShareReason.BROWER
+      });
     };
     if (this.isScreenStreamSeparate) {
       // 屏幕共享流分离
@@ -8361,7 +8413,8 @@
   * 关闭屏幕共享
   *
   */
-  RongRTCEngine.prototype._stopScreenShare = function () {
+  RongRTCEngine.prototype._stopScreenShare = function (option) {
+    option = option || { reason: RongRTCConstant.ScreenShareReason.API };
     this.screenSharingStatus = false;
     if (this.isSubscribeVersion()) {
       // 订阅分发版本
@@ -8372,7 +8425,8 @@
       this.update_resource(resource);
     }
     this.rongRTCEngineEventHandle.call('onStopScreenShareComplete', {
-      'isSuccess': true
+      isSuccess: true,
+      reason: option.reason
     });
 
     // offer
@@ -11199,14 +11253,6 @@
 
         var error = isJoined ? null : Error$1.JOIN_ERROR;
         eventEmitter.emit(EventName.ROOM_SELF_JOINED, user, error);
-
-        // 主动获取本地流，通知应用层
-        var stream = rtc.getLocalStream();
-        var result = {
-          user: user,
-          stream: stream
-        };
-        eventEmitter.emit(EventName.STREAM_ADDED, result);
       },
       // user = > {id: 'userId'}
       onLeaveComplete: function onLeaveComplete(data) {
@@ -11219,17 +11265,20 @@
         var error = isLeft ? null : Error$1.LEAVE_ERROR;
         eventEmitter.emit(EventName.ROOM_SELF_LEFT, user, error);
       },
-      onAddStream: function onAddStream(data) {
+      onNotifyUserVideoCreated: function onNotifyUserVideoCreated(data) {
         var userId = data.userId,
-            videoType = data.videoType;
+            type = data.resource;
 
         var user = {
           id: userId
         };
-        var stream = rtc.getRemoteStream(userId, videoType);
+        var stream = rtc.getRemoteStream(userId, type);
         var result = {
           user: user,
-          stream: stream
+          stream: {
+            type: type,
+            mediaStream: stream
+          }
         };
         eventEmitter.emit(EventName.STREAM_ADDED, result);
       },
@@ -11258,13 +11307,16 @@
             id = _user3.userId,
             type = _user3.resource;
 
-        user = {
-          id: id,
-          resource: {
-            type: type
+        user = { id: id };
+        var stream = rtc.getLocalStream();
+        var result = {
+          user: user,
+          stream: {
+            type: type,
+            mediaStream: stream
           }
         };
-        eventEmitter.emit(EventName.ROOM_USER_RESOURCE_CHANGED, user);
+        eventEmitter.emit(EventName.STREAM_CHANGED, result);
       },
       onConnectionStateChanged: function onConnectionStateChanged(network) {
         network = utils.rename(network, {
@@ -11313,9 +11365,13 @@
         var result = null;
         eventEmitter.emit(EventName.SCREEN_SHARE_START, result, error);
       },
-      onStopScreenShareComplete: function onStopScreenShareComplete() {
-        var result = null;
-        eventEmitter.emit(EventName.SCREEN_SHARE_STOP, result);
+      onStopScreenShareComplete: function onStopScreenShareComplete(result) {
+        var reason = result.reason;
+
+        if (reason === 2) {
+          return eventEmitter.emit(EventName.SCREEN_SHARE_FINISHED);
+        }
+        eventEmitter.emit(EventName.SCREEN_SHARE_STOP);
       },
       onNotifyRTCError: function onNotifyRTCError(result) {
         var code = result.code;
@@ -11392,16 +11448,26 @@
         });
       }
     }, {
+      key: 'setProfiles',
+      value: function setProfiles(constraints) {
+        rtc.setVideoParameters(constraints);
+      }
+    }, {
       key: 'getStream',
       value: function getStream(user) {
         return utils.deferred(function (resolve) {
           var method = isCrruentUser(user) ? 'getLocalStream' : 'getRemoteStream';
           var id = user.id;
+          // 临时做法，不应该关心 type ，应该在 Stream 中返回
 
-          var stream = rtc[method](id);
+          var type = StreamType.AUDIO_AND_VIDEO;
+          var mediaStream = rtc[method](type, id);
           resolve({
             user: user,
-            stream: stream
+            stream: {
+              type: StreamType.VIDEO,
+              mediaStream: mediaStream
+            }
           });
         });
       }
@@ -11576,8 +11642,9 @@
           return utils.Defer.reject(Error$1.INSTANCE_IS_DESTROYED);
         }
         var isInRoom = SessionCache.get(CacheName.IS_IN_ROOM);
-        var isJoin = name === 'joinRoom';
-        if (!isInRoom && !isJoin) {
+        var whitelist = ['joinRoom', 'setProfiles'];
+        var isInWhitelist = whitelist.indexOf(name) > -1;
+        if (!isInRoom && !isInWhitelist) {
           return utils.Defer.reject(Error$1.NOT_JOIN_ROOM);
         }
 
@@ -11673,7 +11740,7 @@
 
 
   utils.extend(RongRTC, {
-    ResourceType: ResourceType
+    StreamType: StreamType
   });
 
   return RongRTC;

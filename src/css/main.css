@@ -35,10 +35,12 @@ input {
   position: relative;
   width: 100%;
   height: 100%;
-  background-color: #4e6baa;
+  background-color: #4a5267;
   text-align: center;
   overflow: scroll;
   display: block;
+  background-image: url("./img/cover.png");
+  background-size: cover;
 }
 
 .rong-login-logo {
