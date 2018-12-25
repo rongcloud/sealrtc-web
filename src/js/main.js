@@ -192,6 +192,7 @@
         stream: stream,
         user: user
       });
+      win.selfStream = stream;
       stream.type && common.changeResource(stream, user);
       bindStreamEvent(streamDoms, user);
     }, () => {

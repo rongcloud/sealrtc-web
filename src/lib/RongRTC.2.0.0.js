@@ -3544,7 +3544,7 @@
                   return s.track === track;
                 });
                 if (alreadyExists) {
-                  throw new DOMException('Track already exists.', 'InvalidAccessError');
+                  // throw new DOMException('Track already exists.', 'InvalidAccessError');
                 }
               });
               var existingSenders = pc.getSenders();
@@ -3614,7 +3614,7 @@
                   return s.track === track;
                 });
                 if (alreadyExists) {
-                  throw new DOMException('Track already exists.', 'InvalidAccessError');
+                  // throw new DOMException('Track already exists.', 'InvalidAccessError');
                 }
               });
               // Add identity mapping for consistency with addTrack.
@@ -3657,7 +3657,7 @@
                 return s.track === track;
               });
               if (alreadyExists) {
-                throw new DOMException('Track already exists.', 'InvalidAccessError');
+                // throw new DOMException('Track already exists.', 'InvalidAccessError');
               }
 
               pc._streams = pc._streams || {};
@@ -6430,12 +6430,12 @@
       var videoState = status.videoState;
       if (!videoState) {
         var key = 'NOCAMERA';
-        console.error("navigator.mediaDevices.getUserMedia error", RongRTCReason.get(key));
+        console.error("navigator.mediaDevices.getUserMedia error");
         return;
       }
       if (!input) {
         var key = 'NOAUDIOINPUT';
-        console.error("navigator.mediaDevices.getUserMedia error", RongRTCReason.get(key));
+        console.error("navigator.mediaDevices.getUserMedia error");
         return;
       }
       rongRTCEngine.channelId = RongRTCConstant.ConnectionType.MEDIASERVER + channelId;
