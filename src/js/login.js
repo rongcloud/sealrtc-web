@@ -1,28 +1,28 @@
 (function (dependencies) {
-  const RongSeal = dependencies.RongSeal,
+  var RongSeal = dependencies.RongSeal,
     utils = RongSeal.utils,
     common = RongSeal.common,
     sealAlert = common.sealAlert,
     getDom = utils.getDom,
     Cache = utils.Cache;
 
-  const roomIdDom = getDom('#roomId'),
+  var roomIdDom = getDom('#roomId'),
     userIdDom = getDom('#userId'),
     startBtnDom = getDom('#start');
 
-  const StorageKeys = {
+  var StorageKeys = {
     RoomId: 'rong-sealv2-roomid'
   };
 
-  const setDefaultRTCInfo = () => {
-    let roomId = Cache.get(StorageKeys.RoomId);
+  var setDefaultRTCInfo = function() {
+    var roomId = Cache.get(StorageKeys.RoomId);
     if (roomId) {
       roomIdDom.value = roomId;
     }
   };
 
-  const checkRTCValue = () => {
-    let isRoomIdEmpty = !roomIdDom.value,
+  var checkRTCValue = function() {
+    var isRoomIdEmpty = !roomIdDom.value,
       isUserIdEmpty = !userIdDom.value;
     if (isRoomIdEmpty) {
       sealAlert('房间号不能为空');
@@ -35,12 +35,12 @@
     return true;
   };
 
-  const startRTC = () => {
+  var startRTC = () => {
     if (checkRTCValue()) {
-      const resolutionDom = utils.getSelectedDomByName('resolution'),
+      var resolutionDom = utils.getSelectedDomByName('resolution'),
         closeVideoDom = utils.getSelectedDomByName('isCloseVideo'),
         closeAudioDom = utils.getSelectedDomByName('isCloseAudio');
-      let roomId = roomIdDom.value,
+      var roomId = roomIdDom.value,
         userId = userIdDom.value,
         resolution = common.formatResolution(resolutionDom.value),
         video = !closeVideoDom,
@@ -56,7 +56,7 @@
     }
   };
 
-  const init = () => {
+  var init = () => {
     setDefaultRTCInfo();
     startBtnDom.onclick = startRTC;
   };

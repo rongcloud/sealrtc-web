@@ -416,6 +416,9 @@ input {
     video {
       transform: rotateY(180deg);
     }
+    .rong-user-name {
+      display: block;
+    }
   }
   .rong-stream-box[is-zoom="true"] {
     position: absolute;

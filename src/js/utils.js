@@ -1,24 +1,24 @@
 (function (dependencies) {
   var win = dependencies.win;
-  const noop = function () {};
-  let utils;
+  var noop = function () {};
+  var utils;
 
-  const tplEngine = (temp, data, regexp) => {
-    let replaceAction = function (object) {
+  var tplEngine = function (temp, data, regexp) {
+    var replaceAction = function (object) {
       return temp.replace(regexp || (/{([^}]+)}/g), function (match, name) {
         if (match.charAt(0) === '\\') return match.slice(1);
         return (object[name] !== undefined) ? object[name] : '{' + name + '}';
       });
     };
     if (!(Object.prototype.toString.call(data) === '[object Array]')) data = [data];
-    let ret = [];
-    for (let i = 0, j = data.length; i < j; i++) {
+    var ret = [];
+    for (var i = 0, j = data.length; i < j; i++) {
       ret.push(replaceAction(data[i]));
     }
     return ret.join('');
   };
 
-  const Cache = (function (config) {
+  var Cache = (function (config) {
     config = config || {};
     var prefix = config.prefix || 'rong-sealrtc-v2';
     var genKey = function (key) {
@@ -52,7 +52,7 @@
         fail: function(){}
       };
     */
-  const sendForm = function (option) {
+  var sendForm = function (option) {
     var formData = new FormData();
     var data = option.body || {};
     for (var key in data) {
@@ -69,15 +69,15 @@
     xhr.send(formData);
   };
 
-  const isString = (str) => {
+  var isString = function (str) {
     return Object.prototype.toString.call(str) === '[object String]';
   };
 
-  const isObject = (obj) => {
+  var isObject = function (obj) {
     return Object.prototype.toString.call(obj) === '[object Object]';
   };
 
-  const getDom = function (name) {
+  var getDom = function (name) {
     var selector = null;
     try {
       selector = win.document.querySelector(name);
@@ -87,11 +87,11 @@
     return selector;
   };
 
-  const getDomById = function (id) {
+  var getDomById = function (id) {
     return document.getElementById(id);
   };
 
-  const showDom = function (dom) {
+  var showDom = function (dom) {
     if (isString(dom)) {
       dom = utils.getDom(dom)
     }
@@ -100,7 +100,7 @@
     }
   };
 
-  const hideDom = function (dom) {
+  var hideDom = function (dom) {
     if (isString(dom)) {
       dom = utils.getDom(dom)
     }
@@ -109,18 +109,18 @@
     }
   };
 
-  const getBrotherDom = function (dom, brotherName) {
+  var getBrotherDom = function (dom, brotherName) {
     if (isString(dom)) {
       dom = utils.getDom(dom);
     }
     if (!isString(brotherName)) {
       brotherName = brotherName.className;
     }
-    let parent = dom.parentElement;
-    let brothers = parent.children;
-    let brother;
-    for (let i = 0, max = brothers.length; i < max; i++) {
-      let bro = brothers[i];
+    var parent = dom.parentElement;
+    var brothers = parent.children;
+    var brother;
+    for (var i = 0, max = brothers.length; i < max; i++) {
+      var bro = brothers[i];
       if (bro.className.indexOf(brotherName) !== -1) {
         brother = bro;
       }
@@ -128,17 +128,17 @@
     return brother;
   };
 
-  const getChildDom = function (dom, childName) {
+  var getChildDom = function (dom, childName) {
     if (isString(dom)) {
       dom = utils.getDom(dom);
     }
     if (!isString(childName)) {
       childName = childName.className;
     }
-    let children = dom.children;
-    let child;
-    for (let i = 0, max = children.length; i < max; i++) {
-      let bro = children[i];
+    var children = dom.children;
+    var child;
+    for (var i = 0, max = children.length; i < max; i++) {
+      var bro = children[i];
       if (bro.className.indexOf(childName) !== -1) {
         child = bro;
       }
@@ -146,11 +146,11 @@
     return child;
   };
 
-  const getSelectedDomByName = function (name) {
-    let list = document.getElementsByName(name);
-    let selectedEl;
-    for (let i = 0, max = list.length; i < max; i++) {
-      let el = list[i];
+  var getSelectedDomByName = function (name) {
+    var list = document.getElementsByName(name);
+    var selectedEl;
+    for (var i = 0, max = list.length; i < max; i++) {
+      var el = list[i];
       if (el.checked === true) {
         selectedEl = el;
         return selectedEl;
@@ -159,7 +159,7 @@
     return selectedEl;
   };
 
-  const download = (url) => {
+  var download = function (url) {
     win.open(url);
   };
   

@@ -1,25 +1,25 @@
 (function (dependencies) {
-  const win = dependencies.win,
+  var win = dependencies.win,
     RongRTC = dependencies.RongRTC,
     RongSeal = dependencies.RongSeal,
     globalConfig = dependencies.globalConfig;
     
-  const utils = RongSeal.utils,
+  var utils = RongSeal.utils,
     common = RongSeal.common,
     getDom = utils.getDom,
     sealAlert = common.sealAlert;
 
-  let rongRTC, loginUserId, isOpenScreenShare;
+  var rongRTC, loginUserId, isOpenScreenShare;
 
   /**
    * 音频流开关
    * @param {object} user
    */
-  const switchAudioBySelf = (user) => {
-    let userId = user.id;
-    let Stream = rongRTC.Stream;
-    let Audio = Stream.Audio;
-    let isAudioOpened = common.isOpenedAudioBySelf(userId);
+  var switchAudioBySelf = function (user) {
+    var userId = user.id;
+    var Stream = rongRTC.Stream;
+    var Audio = Stream.Audio;
+    var isAudioOpened = common.isOpenedAudioBySelf(userId);
     isAudioOpened ? Audio.mute(user) : Audio.unmute(user);
     common.switchAudioBySelf(userId);  // ui 层修改
   };
@@ -28,11 +28,11 @@
    * 视频流开关
    * @param {object} user
    */
-  const switchVideoBySelf = (user) => {
-    let userId = user.id;
-    let Stream = rongRTC.Stream;
-    let Video = Stream.Video;
-    let isVideoOpened = common.isOpenedVideoBySelf(userId);
+  var switchVideoBySelf = function (user) {
+    var userId = user.id;
+    var Stream = rongRTC.Stream;
+    var Video = Stream.Video;
+    var isVideoOpened = common.isOpenedVideoBySelf(userId);
     isVideoOpened ? Video.disable(user) : Video.enable(user);
     common.switchVideoBySelf(userId);  // ui 层修改
   };
@@ -42,20 +42,20 @@
    * @param {array<Element>} streamDoms 
    * @param {object} user 
    */
-  const bindStreamEvent = (streamDoms, user) => {
-    let boxDom = streamDoms.boxDom,
+  var bindStreamEvent = function (streamDoms, user) {
+    var boxDom = streamDoms.boxDom,
       audioOptDom = streamDoms.audioOptDom,
       videoOptDom = streamDoms.videoOptDom;
-    boxDom.onclick = () => {
+    boxDom.onclick = function() {
       // 放大展示视频流
       common.zoomStream(user.id);
     };
-    audioOptDom.onclick = (e) => {
+    audioOptDom.onclick = function(e) {
       // 打开或关闭音频
       switchAudioBySelf(user);
       e.stopPropagation();  // 防止冒泡
     };
-    videoOptDom.onclick = (e) => {
+    videoOptDom.onclick = function(e) {
       // 打开或关闭视频
       switchVideoBySelf(user);
       e.stopPropagation();  // 防止冒泡
@@ -65,10 +65,10 @@
   /**
    * 开始白板
    */
-  const startWhiteboard = () => {
+  var startWhiteboard = function () {
     var WhiteBoard = rongRTC.WhiteBoard;
     WhiteBoard.create().then(function (whiteboard) {
-      let url = whiteboard.url;
+      var url = whiteboard.url;
       common.startWhiteboard(url);
     });
   };
@@ -76,33 +76,35 @@
   /**
    * 屏幕共享开关
    */
-  const switchScreenShare = () => {
-    let ScreenShare = rongRTC.ScreenShare;
-    let stop = () => {
+  var switchScreenShare = function () {
+    var ScreenShare = rongRTC.ScreenShare;
+    var stop = function () {
       ScreenShare.stop();
       isOpenScreenShare = false;
       common.closeScreenShare(loginUserId);
     };
-    isOpenScreenShare ? stop() : ScreenShare.start().then(function () {
+    var start = function () {
       isOpenScreenShare = true;
       common.openScreenShare(loginUserId);
-    }, function () {
+    };
+    var failed = function () {
       sealAlert('首次使用屏幕共享, 请下载并安装插件', {
         isShowCancel: true,
         confirmText: '下载插件',
-        confirmCallback: () => {
+        confirmCallback: function () {
           utils.download(globalConfig.DOWNLOAD_SHARE_PLUGIN_URL);
         }
       });
-    });
+    };
+    isOpenScreenShare ? stop() : ScreenShare.start().then(start, failed);
   };
 
   /**
    * 监听 rtc 事件
    */
-  const observeRTC = () => {
-    let Observer = rongRTC.Observer;
-    let observer = new Observer((mutation) => {
+  var observeRTC = function () {
+    var Observer = rongRTC.Observer;
+    var observer = new Observer(function(mutation) {
       if (mutation.type === 'error') {
         sealAlert('初始化 RongRTC 失败');
       }
@@ -115,11 +117,11 @@
   /**
    * 监听 Room 事件
    */
-  const observeRoom = () => {
-    let Room = rongRTC.Room,
+  var observeRoom = function () {
+    var Room = rongRTC.Room,
       Observer = rongRTC.Observer;
-    let observer = new Observer((mutation) => {
-      let type = mutation.type,
+    var observer = new Observer(function(mutation) {
+      var type = mutation.type,
         user = mutation.user;
       if (type === 'joined') {
         // TODO userJoined
@@ -137,15 +139,15 @@
   /**
    * 监听 stream 事件
    */
-  const observeStream = () => {
-    let Stream = rongRTC.Stream,
+  var observeStream = function () {
+    var Stream = rongRTC.Stream,
       Observer = rongRTC.Observer;
-    let observer = new Observer((mutation) => {
-      let type = mutation.type,
+    var observer = new Observer(function (mutation) {
+      var type = mutation.type,
         user = mutation.user,
         stream = mutation.stream;
       if (type === 'added') {
-        let streamDoms = common.addStream({
+        var streamDoms = common.addStream({
           stream: stream,
           user: user
         });
@@ -162,11 +164,11 @@
     });
   };
   
-  const observeScreenShare = () => {
-    let ScreenShare = rongRTC.ScreenShare,
+  var observeScreenShare = function() {
+    var ScreenShare = rongRTC.ScreenShare,
       Observer = rongRTC.Observer;
-    let observer = new Observer((mutation) => {
-      let type = mutation.type;
+    var observer = new Observer(function(mutation) {
+      var type = mutation.type;
       if (type === 'finished') {
         switchScreenShare();
       }
@@ -181,38 +183,38 @@
   //   Video.set && Video.set(constraints);
   // };
 
-  const showSelfStream = () => {
-    let user = {
+  var showSelfStream = function() {
+    var user = {
       id: loginUserId
     };
-    let Stream = rongRTC.Stream;
-    Stream.get(user).then((result) => {
-      let { user, stream } = result;
-      let streamDoms = common.addStream({
+    var Stream = rongRTC.Stream;
+    Stream.get(user).then(function(result) {
+      var { user, stream } = result;
+      var streamDoms = common.addStream({
         stream: stream,
         user: user
       });
       win.selfStream = stream;
       stream.type && common.changeResource(stream, user);
       bindStreamEvent(streamDoms, user);
-    }, () => {
+    }, function() {
       sealAlert('获取本地视频流失败');
     });
   };
 
-  const setSelfVideo = (params) => {
-    let user = {
+  var setSelfVideo = function(params) {
+    var user = {
       id: params.userId,
       name: params.userId,
       token: params.rtcToken 
     };
     if (!params.video) {
-      let Video = rongRTC.Stream.Video;
+      var Video = rongRTC.Stream.Video;
       Video.disable(user);
       common.closeVideoBySelf(user.id);
     }
     if (!params.audio) {
-      let Audio = rongRTC.Stream.Audio;
+      var Audio = rongRTC.Stream.Audio;
       Audio.mute(user);
       common.closeAudioBySelf(user.id);
     }
@@ -222,20 +224,20 @@
   /**
    * 登录用户加入房间
    */
-  const joinRoom = (params) => {
-    let user = {
+  var joinRoom = function(params) {
+    var user = {
       id: params.userId,
       name: params.userId,
       token: params.rtcToken
     };
-    let room = {
+    var room = {
       id: params.roomId,
       user: user
     };
-    let Room = rongRTC.Room;
-    Room.join(room).then(() => {
+    var Room = rongRTC.Room;
+    Room.join(room).then(function() {
       setSelfVideo(params);
-    }, () => {
+    }, function() {
       sealAlert('加入房间失败');
     });
   };
@@ -244,8 +246,8 @@
    * 设置房间号
    * @param {string} roomId 房间号
    */
-  const setRoomId = (roomId) => {
-    let roomIdDom = getDom('.rong-room-title');
+  var setRoomId = function(roomId) {
+    var roomIdDom = getDom('.rong-room-title');
     roomIdDom.textContent = '会议 ID: ' + roomId;
   };
 
@@ -253,23 +255,23 @@
    * 设置登录用户名
    * @param {string} name 登录用户名
    */
-  const setLoginUserName = (name) => {
-    let userNameDom = getDom('.rong-user-title');
+  var setLoginUserName = function(name) {
+    var userNameDom = getDom('.rong-user-title');
     userNameDom.textContent = '登录用户: ' + name;
   };
 
   /**
    * @param {string} id 登录用户 id
    */
-  const setLoginUserId = (id) => {
-    let selfStreamBoxDom = getDom('.rong-stream-box[is-self=\'true\']');
+  var setLoginUserId = function(id) {
+    var selfStreamBoxDom = getDom('.rong-stream-box[is-self=\'true\']');
     selfStreamBoxDom.id = id;
   };
 
   /**
    * 挂断
    */
-  const hangup = () => {
+  var hangup = function() {
     var Room = rongRTC.Room;
     win.onbeforeunload = utils.noop;
     Room.leave().then(function () {
@@ -277,7 +279,7 @@
     }, function () {
       sealAlert('离开房间失败');
     });
-    setTimeout(() => {
+    setTimeout(function() {
       win.location.reload();
     }, 5000);
   };
@@ -289,8 +291,8 @@
    * @param {string} params.userId 用户id
    * @param {string} params.resolution 分辨率
    */
-  const showRTCPage = (params) => {
-    const hangupBtnDom = getDom('.rong-opt-hangup'),
+  var showRTCPage = function(params) {
+    var hangupBtnDom = getDom('.rong-opt-hangup'),
       wbBtnDom = getDom('.rong-opt-wb'),
       shareBtnDom = getDom('.rong-opt-share');
     utils.hideDom('.rong-login');
@@ -304,7 +306,7 @@
     win.onbeforeunload = hangup;
   };
 
-  const initRTCInstance = () => {
+  var initRTCInstance = function() {
     rongRTC = new RongRTC({
       url: globalConfig.WS_NAV_URL
     });
@@ -326,18 +328,18 @@
    * @param {boolean} params.video 是否开启 video
    * @param {boolean} params.audio 是否开启 audio
    */
-  const startRTC = (params) => {
+  var startRTC = function(params) {
     loginUserId = params.userId;
     initRTCInstance(params);
     common.getRTCToken({
       tokenUrl: globalConfig.TOKEN_URL,
       userId: loginUserId,
       appId: globalConfig.APP_ID
-    }).then((token) => {
+    }).then(function(token) {
       params.rtcToken = token;
       showRTCPage(params);
       joinRoom(params);
-    }, () => {
+    }, function() {
       sealAlert('获取 rtc token 失败');
     });
   };

@@ -454,6 +454,10 @@ input {
   transform: rotateY(180deg);
 }
 
+.rong-rtc .rong-stream-box[is-self="true"] .rong-user-name {
+  display: block;
+}
+
 .rong-rtc .rong-stream-box[is-zoom="true"] {
   position: absolute;
   margin: 0;
