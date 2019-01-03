@@ -265,7 +265,7 @@
    */
   var setLoginUserId = function(id) {
     var selfStreamBoxDom = getDom('.rong-stream-box[is-self=\'true\']');
-    selfStreamBoxDom.id = id;
+    selfStreamBoxDom.id = 'prefix' + id;
   };
 
   /**
@@ -278,10 +278,8 @@
       win.location.reload();
     }, function () {
       sealAlert('离开房间失败');
-    });
-    setTimeout(function() {
       win.location.reload();
-    }, 5000);
+    });
   };
 
   /**

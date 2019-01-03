@@ -180,8 +180,8 @@ input {
   text-align: left;
   font-size: 15px;
   color: #777;
-  padding-left: 20px;
   box-sizing: border-box;
+  padding: 10px 20px;
 }
 
 .rong-login-content .rong-inp-id::-webkit-input-placeholder {

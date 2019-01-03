@@ -29,7 +29,7 @@
 
   /* 视频区模板, 用于增加视频区 */
   var StreamBoxHTMLTpl = '' +
-    '<video></video>' + 
+    '<video id="{id}"></video>' + 
     '<div class="rong-audio-cover">' + 
       '<div class="rong-audio-cover-box">' +
         '<img src="./css/img/audio-cover.png">' +
@@ -159,6 +159,7 @@
    * @param {string} id 
    */
   var getStreamBox = function (id) {
+    id = 'prefix' + id;
     return utils.getDomById(id);
   };
 
@@ -184,7 +185,7 @@
     var streamListDom = getDom('.rong-stream-list');
     var streamBoxDom = document.createElement('div');
     streamBoxDom.className = 'rong-stream-box';
-    streamBoxDom.id = id;
+    streamBoxDom.id = 'prefix' + id;
     var innerHTML = utils.tplEngine(StreamBoxHTMLTpl, {
       id: id
     });

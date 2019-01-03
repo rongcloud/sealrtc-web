@@ -7945,7 +7945,15 @@
 
     var pcClient = this.preparePeerConnection(from);
     var pc = pcClient['pc'];
-    if (this.userType != RongRTCConstant.UserType.OBSERVER) {
+    var localStreamList = pc.getLocalStreams();
+    var hasLocalStream = false;
+    var localStream = this.localStream;
+    localStreamList.forEach(function (stream) {
+      if (stream === localStream) {
+        hasLocalStream = true;
+      }
+    });
+    if (this.userType != RongRTCConstant.UserType.OBSERVER && !hasLocalStream) {
       pc.addStream(this.localStream);
     }
     if (this.isScreenStreamSeparate && this.localScreenStream && this.screenSharingStatus) {
@@ -10019,7 +10027,15 @@
 
     var pcClient = this.preparePeerConnection(from);
     var pc = pcClient['pc'];
-    if (this.userType != RongRTCConstant.UserType.OBSERVER && this.localStream) {
+    var localStreamList = pc.getLocalStreams();
+    var hasLocalStream = false;
+    var localStream = this.localStream;
+    localStreamList.forEach(function (stream) {
+      if (stream === localStream) {
+        hasLocalStream = true;
+      }
+    });
+    if (this.userType != RongRTCConstant.UserType.OBSERVER && this.localStream && !hasLocalStream) {
       // 本地视频流
       pc.addStream(this.localStream);
     }
