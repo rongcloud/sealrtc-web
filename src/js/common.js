@@ -2,57 +2,24 @@
   var win = dependencies.win,
     RongSeal = dependencies.RongSeal,
     utils = RongSeal.utils,
-    getChildDom = utils.getChildDom,
-    getDom = utils.getDom,
-    RongRTC = win.RongRTC;
-  
-  var StreamType = RongRTC.StreamType;
+    Dom = utils.Dom,
+    addClass = Dom.addClass,
+    removeClass = Dom.removeClass,
+    getChildDom = Dom.getChild;
 
-  /* 
-    此处通过向 rong-stream-list 中追加 rong-stream-box 组件
-    实现音视频界面的展示, 详情 见 index.html
-   */
+  var StreamListTemp = Dom.getById('RongStreamList').innerText;
+  var StreamBoxTemp = Dom.getById('RongStreamBox').innerText;
+  var AlertHTMLTpl = Dom.getById('RongAlert').innerText;
 
-  /* 页面中使用标签的 attribute 做展示切换 */
-  var RongAttribute = {
-    isZoom: 'is-zoom',
-    isScreenShare: 'is-screenshare',
-    isOpenVideoBySelf: 'is-openvideo-byself',
-    isOpenAudioBySelf: 'is-openaudio-byself',
-    isOpenVideoByOther: 'is-openvideo-byother'
+  var ClassName = {
+    isSelf: 'rong-is-self',
+    isZoom: 'rong-is-zoom',
+    closeVideoBySelf: 'rong-video-self-close',
+    closeAudioBySelf: 'rong-audio-self-close',
+    closeVideoByOther: 'rong-video-other-close',
+    closeAudioByOther: 'rong-audio-other-close',
+    openScreenshare: 'rong-screenshare-open'
   };
-
-  /* ClassName */
-  var StreamOptBoxClassName = 'rong-stream-opt',
-    StreamOptVideoClassName = 'rong-opt-video',
-    StreamOptAudioClassName = 'rong-opt-audio';
-
-  /* 视频区模板, 用于增加视频区 */
-  var StreamBoxHTMLTpl = '' +
-    '<video id="{id}"></video>' + 
-    '<div class="rong-audio-cover">' + 
-      '<div class="rong-audio-cover-box">' +
-        '<img src="./css/img/audio-cover.png">' +
-        '<p class="rong-audiocover-title">摄像头已关闭</p>' +
-        '<p class="rong-audiocover-title-other">对方已关闭摄像头</p>' +
-      '</div>' +
-    '</div>' +
-    '<p class="rong-user-name">{id}</p>' +
-    '<div class="' + StreamOptBoxClassName + '">' +
-      '<a class="' + StreamOptVideoClassName + '"></a>' +
-      '<a class="' + StreamOptAudioClassName + '"></a>' +
-    '</div>';
-
-  /* alert 弹框模板 */
-  var AlertHTMLTpl = '' + 
-    '<div class="rong-alert">' +
-      '<p class="rong-alert-title">提示</p>' +
-      '<p class="rong-alert-content">{content}</p>' +
-      '<div class="rong-alert-btn-box">' +
-        '<button class="rong-alert-cancel" style="display: {cancelDisplay}">取消</button>' +
-        '<button class="rong-alert-confirm">{confirmText}</button>' +
-      '</div>' +
-    '</div>';
 
   /**
    * 提示弹框
@@ -91,6 +58,10 @@
     };
   };
 
+  var setClass = function (dom, className, isOpen) {
+    isOpen ? addClass(dom, className) : removeClass(dom, className);
+  };
+
   /**
    * 格式化分辨率
    * @param {string} rate 分辨率
@@ -104,6 +75,157 @@
       width: Number(width),
       height: Number(height)
     };
+  };
+
+  var StreamList = function (temp) {
+    temp = temp || StreamListTemp;
+
+    var self = this;
+    self.streamList = [];
+    self.dom = Dom.create(temp);
+
+    self.add = function (streamBox) {
+      if (!self.has(streamBox)) {
+        self.dom.appendChild(streamBox.dom);
+      }
+    };
+    self.remove = function (streamBox) {
+      if (self.has(streamBox)) {
+        self.dom.removeChild(streamBox.dom);
+      }
+    };
+    self.has = function (streamBox) {
+      var hasStreamBox = false;
+      var boxList = self.dom.children;
+      for (var i = 0; i < boxList.length; i++) {
+        if (boxList[i] === streamBox.dom) {
+          hasStreamBox = true;
+        }
+      }
+      return hasStreamBox;
+    };
+
+    return self;
+  };
+  
+  /* streamBox 集合 */
+  var StreamBoxList = {};
+  /* 清空所有 zoom class */
+  var clearStreamBoxZoom = function () {
+    for (var id in StreamBoxList) {
+      var streamBox = StreamBoxList[id];
+      removeClass(streamBox.dom, ClassName.isZoom);
+    }
+  };
+  /**
+   * @param {string} id 用户 id
+   * @param {object} params 其他选项(可扩展)
+   * @param {boolean} params.isSelf 是否为自己
+   * @param {string} temp 模板, 可选
+   */
+  var StreamBox = function (id, params, temp) {
+    params = params || {};
+    temp = temp || StreamBoxTemp;
+
+    var self = this;
+    var isSelf = params.isSelf;
+    temp = utils.tplEngine(temp, {
+      name: isSelf ? '自己' : id
+    });
+    var dom = Dom.create(temp);
+    var videoDom = Dom.getChild(dom, 'rong-video');
+    var optsDom = Dom.getChild(dom, 'rong-stream-opt');
+    var videoBtnDom = Dom.getChild(optsDom, 'rong-opt-video');
+    var audioBtnDom = Dom.getChild(optsDom, 'rong-opt-audio');
+
+    dom.onclick = function (e) {
+      self.zoom();
+      e.stopPropagation();
+    };
+    self.id = id;
+    self.dom = dom;
+    self.childDom = {
+      video: videoDom,
+      videoOptBtn: videoBtnDom,
+      audioOptBtn: audioBtnDom
+    };
+
+    self.setStream = function (stream) {
+      var videoDom = self.childDom.video;
+      if (videoDom) {
+        videoDom.srcObject = stream;
+      }
+    };
+    self.zoom = function () {
+      clearStreamBoxZoom();
+      addClass(self.dom, ClassName.isZoom);
+    };
+    self.isVideoCloseBySelf = function () {
+      return Dom.hasClass(self.dom, ClassName.closeVideoBySelf);
+    };
+    self.closeVideoBySelf = function () {
+      setClass(self.dom, ClassName.closeVideoBySelf, true);
+    };
+    self.openVideoBySelf = function () {
+      setClass(self.dom, ClassName.closeVideoBySelf, false);
+    };
+    self.isAudioCloseBySelf = function () {
+      return Dom.hasClass(self.dom, ClassName.closeAudioBySelf);
+    };
+    self.closeAudioBySelf = function () {
+      setClass(self.dom, ClassName.closeAudioBySelf, true);
+    };
+    self.openAudioBySelf = function () {
+      setClass(self.dom, ClassName.closeAudioBySelf, false);
+    };
+    self.closeVideoByOther = function () {
+      setClass(self.dom, ClassName.closeVideoByOther, true);
+    };
+    self.openVideoByOther = function () {
+      setClass(self.dom, ClassName.closeVideoByOther, false);
+    };
+    self.closeAudioByOther = function () {
+      // do nothing
+    };
+    self.openAudioByOther = function () {
+      // do nothing
+    };
+    self.openScreenShare = function () {
+      setClass(self.dom, ClassName.openScreenshare, true);
+    };
+    self.closeScreenShare = function () {
+      setClass(self.dom, ClassName.openScreenshare, false);
+    };
+
+    if (isSelf) {
+      setClass(dom, ClassName.isSelf, true);
+      self.zoom();
+    }
+
+    StreamBoxList[id] = self;
+    return self;
+  };
+  StreamBox.get = function (id) {
+    return StreamBoxList[id];
+  };
+
+  var WhiteBoard = function (domId) {
+    domId = domId || 'RongWB';
+    var self = this;
+    var dom = Dom.getById(domId);
+    var closeDom = Dom.getChild(dom, 'rong-wb-close');
+    closeDom.onclick = function () {
+      self.hide();
+    };
+    self.dom = dom;
+    self.closeDom = closeDom;
+    self.show = function () {
+      Dom.show(self.dom);
+    };
+    self.hide = function () {
+      Dom.hide(self.dom);
+    };
+    return self;
   };
 
   /**
@@ -135,307 +257,17 @@
     });
   };
 
-  /**
-   * ui 层开始白板
-   * @param {string} url 版本 url
-   */
-  var startWhiteboard = function (url) {
-    var whiteboardBox = getDom('.rong-wb-box');
-    var wbEl = utils.getDomById('rongWhiteboard');
-    if (whiteboardBox && wbEl) {
-      utils.showDom(whiteboardBox); // 展示白板 ui
-      wbEl.src = url;
-      var wbCloseEl = utils.getDom('.rong-wb-close');
-      // 绑定关闭白板事件
-      wbCloseEl.onclick = function () {
-        wbEl.src = '';
-        utils.hideDom(whiteboardBox);
-      };
-    }
+  var UI = {
+    StreamList: StreamList,
+    StreamBox: StreamBox,
+    WhiteBoard: WhiteBoard
   };
 
-  /**
-   * 获取音视频组件
-   * @param {string} id 
-   */
-  var getStreamBox = function (id) {
-    id = 'prefix' + id;
-    return utils.getDomById(id);
-  };
-
-  /**
-   * 获取音视频流的 video 节点
-   * @param {string} id 
-   */
-  var getVideo = function (id) {
-    var streamBox = getStreamBox(id);
-    var children = streamBox.children;
-    var videoDom;
-    if (children.length) {
-      videoDom = children[0];
-    }
-    return videoDom;
-  };
-
-  /**
-   * 创建音视频组件
-   * @param {string} id 
-   */
-  var createStreamBox = function (id) {
-    var streamListDom = getDom('.rong-stream-list');
-    var streamBoxDom = document.createElement('div');
-    streamBoxDom.className = 'rong-stream-box';
-    streamBoxDom.id = 'prefix' + id;
-    var innerHTML = utils.tplEngine(StreamBoxHTMLTpl, {
-      id: id
-    });
-    streamBoxDom.innerHTML = innerHTML;
-    streamListDom.appendChild(streamBoxDom);
-    return {
-      boxDom: streamBoxDom,
-      videoDom: streamBoxDom.children[0]
-    };
-  };
-
-  var userJoined = function () {
-    // TODO
-  };
-
-  /**
-   * 用户离开, 移除音视频组件
-   * @param {object} user 
-   */
-  var userLeft = function (user) {
-    var streamBoxDom = getStreamBox(user.id);
-    if (streamBoxDom) {
-      var parentDom = streamBoxDom.parentNode;
-      parentDom.removeChild(streamBoxDom);
-    }
-  };
-
-  /**
-   * 新增流
-   * @param {object} params 
-   * @param {object} params.user
-   * @param {string} params.user.id
-   * @param {object} params.stream
-   * @param {MediaStream} params.stream.mediaStream
-   */
-  var addStream = function (params) {
-    var stream = params.stream,
-      user = params.user,
-      userId = user.id;
-    if (utils.isObject(stream)) {
-      stream = stream.mediaStream;
-    }
-    var streamBoxDom = getStreamBox(userId);
-    var videoDom;
-    if (streamBoxDom) {
-      videoDom = getVideo(userId);
-    } else {
-      var streamParams = createStreamBox(userId);
-      videoDom = streamParams.videoDom;
-      streamBoxDom = streamParams.boxDom;
-    }
-    videoDom.srcObject = stream;
-    videoDom.autoplay = true;
-    var streamOptBoxDom = getChildDom(streamBoxDom, StreamOptBoxClassName);
-    return {
-      boxDom: streamBoxDom,
-      videoDom: videoDom,
-      audioOptDom: getChildDom(streamOptBoxDom, StreamOptAudioClassName),
-      videoOptDom: getChildDom(streamOptBoxDom, StreamOptVideoClassName)
-    };
-  };
-
-  /**
-   * 放大 id 相关音视频组件
-   * @param {string} id 
-   */
-  var zoomStream = function (id) {
-    var zoomKey = RongAttribute.isZoom,
-      zoomDom = getDom(`*[${zoomKey}='true']`),
-      streamBoxDom = getStreamBox(id);
-    if (zoomDom) {
-      zoomDom.setAttribute(zoomKey, false);
-    }
-    if (streamBoxDom) {
-      streamBoxDom.setAttribute(zoomKey, true);
-    }
-  };
-
-  /**
-   * 设置音视频组件的属性
-   * @param {string} id 
-   * @param {string} attribute 属性名
-   * @param {boolean} isOpen 是否开启
-   */
-  var setStreamAttribute = function (id, attribute, isOpen) {
-    var streamBoxDom = getStreamBox(id);
-    if (streamBoxDom) {
-      streamBoxDom.setAttribute(attribute, isOpen);
-    }
-  };
-
-  /**
-   * 获取音视频组件属性
-   * @param {string} id 
-   * @param {string} attribute 属性名
-   */
-  var getStreamAttribute = function (id, attribute) {
-    var streamBoxDom = getStreamBox(id);
-    if (streamBoxDom) {
-      var isOpened = streamBoxDom.getAttribute(attribute);
-      return isOpened !== 'false';
-    }
-    return false;
-  }
-
-  /**
-   * 登陆者开启 id 的视频流
-   * @param {string} id 
-   */
-  var openVideoBySelf = function (id) {
-    setStreamAttribute(id, RongAttribute.isOpenVideoBySelf, true);
-  };
-
-  /**
-   * 登陆者关闭 id 的音频流
-   * @param {string} id 
-   */
-  var closeVideoBySelf = function (id) {
-    setStreamAttribute(id, RongAttribute.isOpenVideoBySelf, false);
-  };
-
-  /**
-   * 获取登录者是否已开启 id 的视频流
-   * @param {string} id 
-   */
-  var isOpenVideoBySelf = function (id) {
-    return getStreamAttribute(id, RongAttribute.isOpenVideoBySelf);
-  };
-
-  /**
-   * 登陆者操作的视频流开关
-   * @param {string} id 
-   */
-  var switchVideoBySelf = function (id) {
-    var isOpened = getStreamAttribute(id, RongAttribute.isOpenVideoBySelf);
-    isOpened ? closeVideoBySelf(id) : openVideoBySelf(id);
-  };
-
-  /**
-   * 开启屏幕共享
-   * @param {string} id 
-   */
-  var openScreenShare = function (id) {
-    setStreamAttribute(id, RongAttribute.isScreenShare, true);
-  };
-
-  /**
-   * 关闭屏幕共享
-   * @param {string} id 
-   */
-  var closeScreenShare = function (id) {
-    setStreamAttribute(id, RongAttribute.isScreenShare, false);
-  };
-
-  /**
-   * 登陆者开启 id 的音频流
-   * @param {string} id 
-   */
-  var openAudioBySelf = function (id) {
-    setStreamAttribute(id, RongAttribute.isOpenAudioBySelf, true);
-  };
-
-  /**
-   * 登陆者关闭 id 的音频流
-   * @param {string} id 
-   */
-  var closeAudioBySelf = function (id) {
-    setStreamAttribute(id, RongAttribute.isOpenAudioBySelf, false);
-  };
-
-  /**
-   * 获取登录者是否已开启 id 的音频流
-   * @param {string} id 
-   */
-  var isOpenAudioBySelf = function (id) {
-    return getStreamAttribute(id, RongAttribute.isOpenAudioBySelf);
-  };
-
-  /**
-   * 登陆者操作的音频流开关
-   * @param {string} id
-   */
-  var switchAudioBySelf = function (id) {
-    var isOpened = getStreamAttribute(id, RongAttribute.isOpenAudioBySelf);
-    isOpened ? closeAudioBySelf(id) : openAudioBySelf(id);
-  };
-
-  /**
-   * 对方(id)开启视频流
-   * @param {string} id 
-   */
-  var openVideoByOther = function (id) {
-    setStreamAttribute(id, RongAttribute.isOpenVideoByOther, true);
-  };
-
-  /**
-   * 对方(id)关闭视频流
-   * @param {string} id
-   */
-  var closeVideoByOther = function (id) {
-    setStreamAttribute(id, RongAttribute.isOpenVideoByOther, false);
-  };
-
-  /**
-   * 用户(user)资源改变
-   * @param {object} stream 
-   * @param {object} user 
-   */
-  var changeResource = function (stream, user) {
-    var type = stream.type;
-    var userId = user.id;
-    switch (type) {
-    case StreamType.AUDIO:
-      closeVideoByOther(userId);
-      break;
-    case StreamType.VIDEO:
-      openVideoByOther(userId);
-      break;
-    case StreamType.AUDIO_AND_VIDEO:
-      openVideoByOther(userId);
-      break;
-    case StreamType.NONE:
-      closeVideoByOther(userId);
-      break;
-    default:
-      break;
-    }
-  };
-  
   var common = {
     sealAlert: sealAlert,
     formatResolution: formatResolution,
     getRTCToken: getRTCToken,
-
-    userJoined: userJoined,
-    userLeft: userLeft,
-    addStream: addStream,
-    zoomStream: zoomStream,
-    changeResource: changeResource,
-
-    closeVideoBySelf: closeVideoBySelf,
-    closeAudioBySelf: closeAudioBySelf,
-    switchVideoBySelf: switchVideoBySelf,
-    switchAudioBySelf: switchAudioBySelf,
-    isOpenedVideoBySelf: isOpenVideoBySelf,
-    isOpenedAudioBySelf: isOpenAudioBySelf,
-    openScreenShare: openScreenShare,
-    closeScreenShare: closeScreenShare,
-
-    startWhiteboard: startWhiteboard
+    UI: UI
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.common = common;

@@ -1,6 +1,6 @@
 /*
 * RongRTC.js v2.0.0
-* Copyright 2018 RongCloud
+* Copyright 2019 RongCloud
 * Released under the MIT License.
 */
 (function (global, factory) {
@@ -282,6 +282,7 @@
     ROOM_USER_JOINED: 'room_user_joined',
     ROOM_USER_LEFT: 'room_user_left',
     STREAM_ADDED: 'stream_added',
+    STREAM_REMOVED: 'stream_removed',
     STREAM_CHANGED: 'stream_changed',
     RTC_SERVER: 'rtc_server',
     RTC_SERVER_READY: 'rtc_server_ready',
@@ -302,6 +303,11 @@
     SCREEN_SHARE: 4
   };
 
+  var StreamSize = {
+    MAX: 1,
+    MIN: 2
+  };
+
   var RoomEvents = [{
     name: EventName.ROOM_USER_JOINED,
     type: 'joined'
@@ -314,6 +320,9 @@
     name: EventName.STREAM_ADDED,
     type: 'added'
   }, {
+    name: EventName.STREAM_REMOVED,
+    type: 'removed'
+  }, {
     name: EventName.STREAM_CHANGED,
     type: 'changed'
   }];
@@ -321,11 +330,6 @@
   var ErrorEvents = [{
     name: EventName.RTC_ERROR,
     type: 'error'
-  }];
-
-  var ScreenShareEvents = [{
-    name: EventName.SCREEN_SHARE_FINISHED,
-    type: 'finished'
   }];
 
   function Room(rtc) {
@@ -426,6 +430,15 @@
     var get = function get(user) {
       return rtc.exec('getStream', user);
     };
+    var add = function add(user) {
+      return rtc.exec('addStream', user);
+    };
+    var remove = function remove(user) {
+      return rtc.exec('removeStream', user);
+    };
+    var resize = function resize(user) {
+      return rtc.exec('resizeStream', user);
+    };
     var _on = function _on(name, event) {
       return eventEmitter.on(name, function (error, result) {
         if (error) {
@@ -444,6 +457,9 @@
       Video: $video,
       Audio: $audio,
       get: get,
+      add: add,
+      remove: remove,
+      resize: resize,
       _on: _on,
       _off: _off,
       _teardown: _teardown
@@ -458,52 +474,6 @@
       getList: function getList() {
         return rtc.exec('getWhiteBoardList');
       }
-    };
-  }
-
-  function ScreenShare(rtc) {
-    var eventEmitter = new EventEmitter();
-    utils.forEach(ScreenShareEvents, function (event) {
-      var name = event.name,
-          type = event.type;
-
-      rtc._on(name, function (error, result) {
-        result = result || {};
-        if (error) {
-          throw new Error(error);
-        }
-        utils.extend(result, {
-          type: type
-        });
-        eventEmitter.emit(type, result);
-      });
-    });
-    var start = function start() {
-      return rtc.exec('startScreenShare');
-    };
-    var stop = function stop() {
-      return rtc.exec('stopScreenShare');
-    };
-    var _on = function _on(name, event) {
-      return eventEmitter.on(name, function (error, result) {
-        if (error) {
-          throw new Error(error);
-        }
-        event(result);
-      });
-    };
-    var _off = function _off(name) {
-      return eventEmitter.off(name);
-    };
-    var _teardown = function _teardown() {
-      return eventEmitter.teardown();
-    };
-    return {
-      start: start,
-      stop: stop,
-      _on: _on,
-      _off: _off,
-      _teardown: _teardown
     };
   }
 
@@ -3543,9 +3513,10 @@
                 var alreadyExists = pc.getSenders().find(function (s) {
                   return s.track === track;
                 });
-                if (alreadyExists) {
-                  // throw new DOMException('Track already exists.', 'InvalidAccessError');
-                }
+                // if (alreadyExists) {
+                //   throw new DOMException('Track already exists.',
+                //       'InvalidAccessError');
+                // }
               });
               var existingSenders = pc.getSenders();
               origAddStream.apply(this, arguments);
@@ -3614,7 +3585,7 @@
                   return s.track === track;
                 });
                 if (alreadyExists) {
-                  // throw new DOMException('Track already exists.', 'InvalidAccessError');
+                  throw new DOMException('Track already exists.', 'InvalidAccessError');
                 }
               });
               // Add identity mapping for consistency with addTrack.
@@ -3657,7 +3628,7 @@
                 return s.track === track;
               });
               if (alreadyExists) {
-                // throw new DOMException('Track already exists.', 'InvalidAccessError');
+                throw new DOMException('Track already exists.', 'InvalidAccessError');
               }
 
               pc._streams = pc._streams || {};
@@ -5592,6 +5563,26 @@
   /** This library require adapter.js */
   initAdapter();
 
+  function Cache$1() {
+    var $cache = {};
+    var set = function set(key, value) {
+      $cache[key] = value;
+    };
+    var remove = function remove(key) {
+      delete $cache[key];
+    };
+    var get = function get(key) {
+      return $cache[key];
+    };
+    return {
+      set: set,
+      remove: remove,
+      get: get
+    };
+  }
+
+  var RemoteStreamCache = Cache$1();
+
   /** ----- 参数定义 ----- */
   var RongRTCGlobal = {
     /** 带宽设置计数器 */
@@ -6430,12 +6421,12 @@
       var videoState = status.videoState;
       if (!videoState) {
         var key = 'NOCAMERA';
-        console.error("navigator.mediaDevices.getUserMedia error");
+        console.error("navigator.mediaDevices.getUserMedia error", RongRTCReason.get(key));
         return;
       }
       if (!input) {
         var key = 'NOAUDIOINPUT';
-        console.error("navigator.mediaDevices.getUserMedia error");
+        console.error("navigator.mediaDevices.getUserMedia error", RongRTCReason.get(key));
         return;
       }
       rongRTCEngine.channelId = RongRTCConstant.ConnectionType.MEDIASERVER + channelId;
@@ -6534,6 +6525,10 @@
       return this.remoteScreenStreams.get(userId);
     }
     return this.remoteStreams.get(userId);
+  };
+  RongRTCEngine.prototype.getNewRemoteStream = function (userId, type) {
+    var uId = userId + '_' + type;
+    return RemoteStreamCache.get(uId);
   };
   /**
   * 创建本地视频视图
@@ -7761,87 +7756,76 @@
       var pc = new RTCPeerConnection();
       pc.onaddstream = function (evt) {
         console.debug(new Date(), "onaddstream", evt);
+        var stream = evt.stream;
+        var streamId = stream.id;
 
-        var streamId = evt.stream.id;
-        var userId = streamId;
-        var videoType = RongRTCConstant.VideoType.NORMAL;
-        if (streamId.lastIndexOf(RongRTCConstant.StreamSuffix.SCREEN) != -1) {
-          // 屏幕共享流
-          userId = streamId.substring(0, streamId.lastIndexOf(RongRTCConstant.StreamSuffix.SCREEN));
-          videoType = RongRTCConstant.VideoType.SCREEN;
-          rongRTCEngine.remoteScreenStreams.put(userId, evt.stream);
-        } else {
-          rongRTCEngine.remoteStreams.put(userId, evt.stream);
-          var user = rongRTCEngine.joinedUsers.get(userId);
-          var isNoVideo = false;
-          if (rongRTCEngine.isSubscribeVersion()) {
-            // 订阅分发版本
-            var resource = user.resource;
-            if (resource == RongRTCConstant.ResourceType.None || resource == RongRTCConstant.ResourceType.AudioOnly) {
-              // 无视频
-              isNoVideo = true;
-            }
-          } else {
-            var talkType = user.talkType;
-            if (talkType == RongRTCConstant.TalkType.OnlyAudio || talkType == RongRTCConstant.TalkType.None) {
-              // 无视频
-              isNoVideo = true;
-            }
-          }
-          if (isNoVideo) {
-            // 无视频
-            evt.stream.getVideoTracks().forEach(function (track) {
-              track.enabled = false;
-            });
-          }
-        }
+        // var userId = streamId;
+        // var videoType = RongRTCConstant.VideoType.NORMAL;
+        // if (streamId.lastIndexOf(RongRTCConstant.StreamSuffix.SCREEN) != -1) { // 屏幕共享流
+        //   userId = streamId.substring(0, streamId.lastIndexOf(RongRTCConstant.StreamSuffix.SCREEN));
+        //   videoType = RongRTCConstant.VideoType.SCREEN;
+        //   rongRTCEngine.remoteScreenStreams.put(userId, evt.stream);
+        // } else {
+        //   rongRTCEngine.remoteStreams.put(userId, evt.stream);
+        //   var user = rongRTCEngine.joinedUsers.get(userId);
+        //   var isNoVideo = false;
+        //   if (rongRTCEngine.isSubscribeVersion()) { // 订阅分发版本
+        //     var resource = user.resource;
+        //     if (resource == RongRTCConstant.ResourceType.None
+        //         || resource == RongRTCConstant.ResourceType.AudioOnly) { // 无视频
+        //       isNoVideo = true;
+        //     }
+        //   } else {
+        //     var talkType = user.talkType;
+        //     if (talkType == RongRTCConstant.TalkType.OnlyAudio
+        //         || talkType == RongRTCConstant.TalkType.None) { // 无视频
+        //       isNoVideo = true;
+        //     }
+        //   }
+        //   if (isNoVideo) { // 无视频
+        //     evt.stream.getVideoTracks().forEach(function (track) {
+        //       track.enabled = false;
+        //     });
+        //   }
+        // }
 
+
+        var params = streamId.split('_');
+        var userId = params[0];
+        // 没有类型，暂定为音视频
+        var resource = params[1] || 3;
+        var key = userId + '_' + resource;
         // 增加trackId和userId的对应关系
-        evt.stream.getTracks().forEach(function (track) {
-          rongRTCEngine.remoteTrackIdMap.put(track.id, evt.stream.id);
+        stream.getTracks().forEach(function (track) {
+          rongRTCEngine.remoteTrackIdMap.put(track.id, key);
         });
-
-        // @Deprecated
-        rongRTCEngine.rongRTCEngineEventHandle.call('onAddStream', {
-          'userId': userId,
-          'videoType': videoType
-        });
-        var user = rongRTCEngine.joinedUsers.get(userId);
+        RemoteStreamCache.set(key, stream);
         rongRTCEngine.rongRTCEngineEventHandle.call('onNotifyUserVideoCreated', {
           userId: userId,
-          videoType: videoType,
-          resource: user.resource
+          resource: resource
         });
       };
 
       pc.onremovestream = function (evt) {
         console.debug(new Date(), "onremovestream", evt);
-
         var streamId = evt.stream.id;
-        var userId = streamId;
-        var videoType = RongRTCConstant.VideoType.NORMAL;
-        if (streamId.lastIndexOf(RongRTCConstant.StreamSuffix.SCREEN) != -1) {
-          // 屏幕共享流
-          userId = streamId.substring(0, streamId.lastIndexOf(RongRTCConstant.StreamSuffix.SCREEN));
-          videoType = RongRTCConstant.VideoType.SCREEN;
-          rongRTCEngine.remoteScreenStreams.remove(userId);
-        } else {
-          rongRTCEngine.remoteStreams.remove(userId);
+        var params = streamId.split('_');
+        var userId = params[0];
+        // 没有类型，暂定为音视频
+        var type = params[1] || 3;
+        var key = userId + '_' + type;
+        if (params.length == 2) {
+          RemoteStreamCache.remove(params.join('_'));
         }
 
         // 移除trackId和userId的对应关系
         evt.stream.getTracks().forEach(function (track) {
-          rongRTCEngine.remoteTrackIdMap.remove(track.id);
+          rongRTCEngine.remoteTrackIdMap.remove(key);
         });
 
-        // @Deprecated
-        rongRTCEngine.rongRTCEngineEventHandle.call('onRemoveStream', {
-          'userId': userId,
-          'videoType': videoType
-        });
         rongRTCEngine.rongRTCEngineEventHandle.call('OnNotifyUserVideoDestroyed', {
-          'userId': userId,
-          'videoType': videoType
+          userId: userId,
+          type: type
         });
       };
 
@@ -7928,6 +7912,71 @@
     // peerConnection关闭，停止getStatsReport
     this.exitScheduleGetStatsReport();
   };
+
+  var getPeerConnection = function getPeerConnection(context) {
+    var peerConnections = context.peerConnections[context.userId] || {};
+    var peerConnection = peerConnections['pc'];
+    return peerConnection;
+  };
+  var StreamError = {
+    NOT_EXIST: 40001
+  };
+  var StreamCache = Cache$1();
+  var getSteamId = function getSteamId(user) {
+    var stream = user.stream;
+    return user.id + '_' + stream.type;
+  };
+  RongRTCEngine.prototype.addStream = function (user, callback) {
+    var context = this;
+    var peerConnection = getPeerConnection(context);
+    if (peerConnection) {
+      var stream = user.stream;
+      var mediaStream = stream.mediaStream;
+      var streamId = getSteamId(user);
+      peerConnection.addStream(mediaStream);
+      context.createOffer(peerConnection, context.userId, false, false, {
+        type: stream.type,
+        mediaStream: mediaStream
+      });
+      StreamCache.set(streamId, user);
+    }
+    var error = null;
+    callback(error, user);
+  };
+  RongRTCEngine.prototype.removeStream = function (user, callback) {
+    var context = this,
+        error = null;
+    var streamId = getSteamId(user);
+    user = StreamCache.get(streamId);
+    if (user) {
+      var stream = user.stream;
+      var mediaStream = stream.mediaStream;
+      var peerConnection = getPeerConnection(context);
+      if (peerConnection) {
+        peerConnection.removeStream(mediaStream);
+        context.createOffer(peerConnection, context.userId, false);
+        StreamCache.remove(streamId);
+      }
+      callback(error, user);
+      return;
+    }
+    error = {
+      error: StreamError.NOT_EXIST,
+      user: user
+    };
+    callback(error);
+  };
+  RongRTCEngine.prototype.resizeStream = function (user) {
+    var context = this;
+    var stream = user.stream;
+    var bodys = [{
+      uid: user.id,
+      flowType: stream.size
+    }];
+    context.sendMsg(RongRTCConstant.SignalType.FLOWSUBSCRIBE, bodys, {
+      key: context.channelId
+    });
+  };
   /**
   * handle offer
   *
@@ -7945,15 +7994,7 @@
 
     var pcClient = this.preparePeerConnection(from);
     var pc = pcClient['pc'];
-    var localStreamList = pc.getLocalStreams();
-    var hasLocalStream = false;
-    var localStream = this.localStream;
-    localStreamList.forEach(function (stream) {
-      if (stream === localStream) {
-        hasLocalStream = true;
-      }
-    });
-    if (this.userType != RongRTCConstant.UserType.OBSERVER && !hasLocalStream) {
+    if (this.userType != RongRTCConstant.UserType.OBSERVER) {
       pc.addStream(this.localStream);
     }
     if (this.isScreenStreamSeparate && this.localScreenStream && this.screenSharingStatus) {
@@ -8036,7 +8077,7 @@
   * create offer
   *
   */
-  RongRTCEngine.prototype.createOffer = function (pc, userId, isIceRestart, subscribeInfo) {
+  RongRTCEngine.prototype.createOffer = function (pc, userId, isIceRestart, subscribeInfo, stream) {
     if (this.offerStatus == RongRTCConstant.OfferStatus.SENDING) {
       // 已经创建过Offer，本次不创建
       console.warn(new Date(), "createOffer offerStatus sending");
@@ -8047,7 +8088,7 @@
     pc.createOffer(function (desc) {
       console.info(new Date(), "createOffer success");
       // 变更SDP信息
-      desc.sdp = rongRTCEngine.changeSdp(desc.sdp);
+      desc.sdp = rongRTCEngine.changeSdp(desc.sdp, stream);
       pc.setLocalDescription(desc, function () {
         console.info(new Date(), "createOffer setLocalDescription success");
         rongRTCEngine.offerStatus = RongRTCConstant.OfferStatus.SENDING;
@@ -8088,7 +8129,12 @@
   * 变更SDP信息
   *
   */
-  RongRTCEngine.prototype.changeSdp = function (sdp) {
+  RongRTCEngine.prototype.changeSdp = function (sdp, stream) {
+    if (stream) {
+      sdp = RongRTCUtil.changeStreamId(sdp, stream.mediaStream.id, this.userId + '_' + stream.type);
+      sdp = RongRTCUtil.changeVideoDesc(sdp);
+      return sdp;
+    }
     if (this.localStream) {
       // 本地视频流
       // change streamId use userId
@@ -10027,15 +10073,7 @@
 
     var pcClient = this.preparePeerConnection(from);
     var pc = pcClient['pc'];
-    var localStreamList = pc.getLocalStreams();
-    var hasLocalStream = false;
-    var localStream = this.localStream;
-    localStreamList.forEach(function (stream) {
-      if (stream === localStream) {
-        hasLocalStream = true;
-      }
-    });
-    if (this.userType != RongRTCConstant.UserType.OBSERVER && this.localStream && !hasLocalStream) {
+    if (this.userType != RongRTCConstant.UserType.OBSERVER && this.localStream) {
       // 本地视频流
       pc.addStream(this.localStream);
     }
@@ -11288,7 +11326,7 @@
         var user = {
           id: userId
         };
-        var stream = rtc.getRemoteStream(userId, type);
+        var stream = rtc.getNewRemoteStream(userId, type);
         var result = {
           user: user,
           stream: {
@@ -11297,6 +11335,21 @@
           }
         };
         eventEmitter.emit(EventName.STREAM_ADDED, result);
+      },
+      OnNotifyUserVideoDestroyed: function OnNotifyUserVideoDestroyed(data) {
+        var userId = data.userId,
+            type = data.type;
+
+        var user = {
+          id: userId
+        };
+        var result = {
+          user: user,
+          stream: {
+            type: type
+          }
+        };
+        eventEmitter.emit(EventName.STREAM_REMOVED, result);
       },
       onUserJoined: function onUserJoined(user) {
         var _user = user,
@@ -11486,6 +11539,35 @@
             }
           });
         });
+      }
+    }, {
+      key: 'addStream',
+      value: function addStream(user) {
+        return utils.deferred(function (resolve, reject) {
+          rtc.addStream(user, function (error, user) {
+            if (error) {
+              return reject(error);
+            }
+            resolve(user);
+          });
+        });
+      }
+    }, {
+      key: 'removeStream',
+      value: function removeStream(user) {
+        return utils.deferred(function (resolve, reject) {
+          rtc.removeStream(user, function (error, user) {
+            if (error) {
+              return reject(error);
+            }
+            resolve(user);
+          });
+        });
+      }
+    }, {
+      key: 'resizeStream',
+      value: function resizeStream(user) {
+        return utils.Defer.resolve(rtc.resizeStream(user));
       }
     }, {
       key: 'mute',
@@ -11694,7 +11776,7 @@
   var RongRTC = function RongRTC(option) {
     classCallCheck(this, RongRTC);
 
-    var that = this;
+    var context = this;
     var rtc = new RTCEngine(option);
     var eventEmitter = new EventEmitter();
     utils.forEach(ErrorEvents, function (event) {
@@ -11714,13 +11796,13 @@
     });
 
     var destroy = function destroy() {
-      if (that._isDestroyed) {
+      if (context._isDestroyed) {
         return utils.Defer.resolve();
       }
-      utils.extend(that, {
+      utils.extend(context, {
         _isDestroyed: true
       });
-      utils.forEach(that, function (module) {
+      utils.forEach(context, function (module) {
         module._teardown && module._teardown();
       });
       rtc.destroy();
@@ -11740,12 +11822,13 @@
       return eventEmitter.off(name);
     };
 
-    utils.extend(that, {
+    utils.extend(context, {
+      StreamType: StreamType,
+      StreamSize: StreamSize,
       Observer: Observer,
       Room: Room(rtc),
       Stream: Stream(rtc),
       WhiteBoard: WhiteBoard(rtc),
-      ScreenShare: ScreenShare(rtc),
       Device: Device(rtc),
       destroy: destroy,
       _isDestroyed: false,
@@ -11753,11 +11836,6 @@
       _off: _off
     });
   };
-
-
-  utils.extend(RongRTC, {
-    StreamType: StreamType
-  });
 
   return RongRTC;
 

@@ -3,66 +3,79 @@
     utils = RongSeal.utils,
     common = RongSeal.common,
     sealAlert = common.sealAlert,
-    getDom = utils.getDom,
+    Dom = utils.Dom,
+    getSelectedByName = Dom.getSelectedByName,
+    getDomById = Dom.getById,
     Cache = utils.Cache;
 
-  var roomIdDom = getDom('#roomId'),
-    userIdDom = getDom('#userId'),
-    startBtnDom = getDom('#start');
-
+  var roomDom = getDomById('roomId'),
+    userDom = getDomById('userId'),
+    startBtnDom = getDomById('start');
+  
   var StorageKeys = {
     RoomId: 'rong-sealv2-roomid'
   };
 
-  var setDefaultRTCInfo = function() {
+  var setDefaultRTCInfo = function () {
     var roomId = Cache.get(StorageKeys.RoomId);
     if (roomId) {
-      roomIdDom.value = roomId;
+      roomDom.value = roomId;
     }
   };
 
-  var checkRTCValue = function() {
-    var isRoomIdEmpty = !roomIdDom.value,
-      isUserIdEmpty = !userIdDom.value;
+  var checkRTCValue = function () {
+    var isRoomIdEmpty = !roomDom.value;
+    var isUserIdEmpty = !userDom.value;
+    var isValid = true;
+    var prompt = '';
     if (isRoomIdEmpty) {
-      sealAlert('房间号不能为空');
-      return false;
+      prompt = '房间号不能为空';
+      isValid = false;
     }
     if (isUserIdEmpty) {
-      sealAlert('用户名不能为空');
-      return false;
+      prompt = '用户名不能为空';
+      isValid = false;
     }
-    return true;
+    return {
+      isValid: isValid,
+      prompt: prompt
+    };
   };
 
-  var startRTC = () => {
-    if (checkRTCValue()) {
-      var resolutionDom = utils.getSelectedDomByName('resolution'),
-        closeVideoDom = utils.getSelectedDomByName('isCloseVideo'),
-        closeAudioDom = utils.getSelectedDomByName('isCloseAudio');
-      var roomId = roomIdDom.value,
-        userId = userIdDom.value,
-        resolution = common.formatResolution(resolutionDom.value),
-        video = !closeVideoDom,
-        audio = !closeAudioDom;
-      RongSeal.startRTC({
-        userId: userId,
-        roomId: roomId,
-        resolution: resolution,
-        video: video,
-        audio: audio
-      });
-      Cache.set(StorageKeys.RoomId, roomId);
+  var getRTCOption = function () {
+    var resolutionDom = getSelectedByName('resolution'),
+      closeVideoDom = getSelectedByName('isCloseVideo'),
+      closeAudioDom = getSelectedByName('isCloseAudio');
+    var roomId = roomDom.value,
+      userId = userDom.value,
+      resolution = common.formatResolution(resolutionDom.value),
+      videoEnable = !closeVideoDom,
+      audioEnable = !closeAudioDom;
+    return {
+      userId: userId,
+      roomId: roomId,
+      resolution: resolution,
+      videoEnable: videoEnable,
+      audioEnable: audioEnable
+    };
+  };
+
+  var startRTC = function () {
+    var checkContent = checkRTCValue();
+    if (checkContent.isValid) {
+      var option = getRTCOption();
+      RongSeal.startRTC(option);
+      Cache.set(StorageKeys.RoomId, option.roomId);
+    } else {
+      sealAlert(checkContent.prompt);
     }
   };
 
-  var init = () => {
+  (function init() {
     setDefaultRTCInfo();
     startBtnDom.onclick = startRTC;
-  };
-
-  init();
-
+  })();
+  
 })({
   win: window,
   RongSeal: window.RongSeal

@@ -1,6 +1,6 @@
 (function (dependencies) {
   var win = dependencies.win;
-  var noop = function () {};
+  var noop = function () { };
   var utils;
 
   var tplEngine = function (temp, data, regexp) {
@@ -77,6 +77,10 @@
     return Object.prototype.toString.call(obj) === '[object Object]';
   };
 
+  var download = function (url) {
+    win.open(url);
+  };
+
   var getDom = function (name) {
     var selector = null;
     try {
@@ -93,7 +97,7 @@
 
   var showDom = function (dom) {
     if (isString(dom)) {
-      dom = utils.getDom(dom)
+      dom = getDom(dom)
     }
     if (dom) {
       dom.style.display = 'block';
@@ -102,7 +106,7 @@
 
   var hideDom = function (dom) {
     if (isString(dom)) {
-      dom = utils.getDom(dom)
+      dom = getDom(dom)
     }
     if (dom) {
       dom.style.display = 'none';
@@ -111,7 +115,7 @@
 
   var getBrotherDom = function (dom, brotherName) {
     if (isString(dom)) {
-      dom = utils.getDom(dom);
+      dom = getDom(dom);
     }
     if (!isString(brotherName)) {
       brotherName = brotherName.className;
@@ -130,7 +134,7 @@
 
   var getChildDom = function (dom, childName) {
     if (isString(dom)) {
-      dom = utils.getDom(dom);
+      dom = getDom(dom);
     }
     if (!isString(childName)) {
       childName = childName.className;
@@ -159,24 +163,58 @@
     return selectedEl;
   };
 
-  var download = function (url) {
-    win.open(url);
+  var hasClass = function (dom, className) {
+    var classList = dom.classList;
+    var hasClass = false;
+    for (var i = 0; i < classList.length; i++) {
+      var name = classList[i];
+      if (name === className) {
+        hasClass = true;
+      }
+    }
+    return hasClass;
   };
-  
+
+  var addClass = function (dom, className) {
+    if (!hasClass(dom, className)) {
+      dom.classList.add(className);
+    }
+  };
+
+  var removeClass = function (dom, className) {
+    if (hasClass(dom, className)) {
+      dom.classList.remove(className);
+    }
+  };
+
+  var create = function (innerHTML) {
+    var div = document.createElement('div');
+    div.innerHTML = innerHTML;
+    return div.children[0];
+  };
+
+  var Dom = {
+    create: create,
+    get: getDom,
+    getById: getDomById,
+    show: showDom,
+    hide: hideDom,
+    getSelectedByName: getSelectedDomByName,
+    getBrother: getBrotherDom,
+    getChild: getChildDom,
+    addClass: addClass,
+    removeClass: removeClass,
+    hasClass: hasClass
+  };
+
   utils = {
     noop: noop,
     tplEngine: tplEngine,
     Cache: Cache,
     sendForm: sendForm,
-    getDom: getDom,
-    showDom: showDom,
-    hideDom: hideDom,
-    getDomById: getDomById,
-    getSelectedDomByName: getSelectedDomByName,
-    getBrotherDom: getBrotherDom,
-    getChildDom: getChildDom,
     isObject: isObject,
-    download: download
+    download: download,
+    Dom: Dom
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.utils = utils;
