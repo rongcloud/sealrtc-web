@@ -18,7 +18,8 @@
       leftError: '离开房间失败',
       getScreenError: '获取屏幕共享流失败',
       addScreenError: '加入屏幕共享流失败',
-      closeScreenError: '关闭屏幕共享失败'
+      closeScreenError: '关闭屏幕共享失败',
+      getWhiteboardError: '获取白板失败'
     },
     placeholder: {
       roomId: '请在这里输入会议 ID',

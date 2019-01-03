@@ -95,10 +95,10 @@
           screenShare.isOpened = true;
           streamBox.openScreenShare();
         }, function () {
-          sealAlert('加入屏幕共享流失败');
+          sealAlert(localeData.addScreenError);
         });
       }, function () {
-        sealAlert('获取屏幕共享流失败');
+        sealAlert(localeData.getScreenError);
       });
     }, function () {
       alertScreenSharePlugin();
@@ -115,7 +115,12 @@
 
   /* 展示白板 */
   var startWhiteboard = function () {
-    whiteBoard.show();
+    var WhiteBoard = rongRTC.WhiteBoard;
+    WhiteBoard.create().then(function (wb) {
+      whiteBoard.show(wb.url);
+    }, function () {
+      sealAlert(localeData.getWhiteboardError);
+    });
   };
 
   /**
@@ -255,6 +260,8 @@
    * @param {object} params.userId 用户 id
    * @param {object} params.roomId 房间 id
    * @param {object} params.rtcToken token
+   * @param {object} params.videoEnable 视频是否可用
+   * @param {object} params.audioEnable 音频是否可用
    */
   var joinRoom = function (params) {
     var user = {
@@ -270,6 +277,7 @@
     var Stream = rongRTC.Stream;
     return new Promise(function (resolve, reject) {
       Room.join(room).then(function () {
+        // setDefaultStream(params);
         Stream.get(user).then(function (result) {
           resolve(result);
         }, function (error) {
@@ -284,13 +292,13 @@
   /* 设置房间号展示 */
   var setRoomTitle = function (roomId) {
     var roomDom = Dom.getById('RongRoomTitle');
-    roomDom.textContent = '会议 ID' + ': ' + roomId;
+    roomDom.textContent = localeData.room + ': ' + roomId;
   };
 
   /* 设置用户名展示 */
   var setUserTitle = function (userName) {
     var userDom = Dom.getById('RongUserTitle');
-    userDom.textContent = '登录用户' + ': ' + userName;
+    userDom.textContent = localeData.user + ': ' + userName;
   };
 
   /**
@@ -447,7 +455,6 @@
       streamAdded: updateStreamBox,
       streamChanged: changeStreamBox
     });
-    setDefaultStream(params);
     var tokenParams = getTokenParams(loginUserId);
     getRTCToken(tokenParams).then(function (token) {
       params.rtcToken = token;
@@ -460,12 +467,13 @@
       joinRoom(params).then(function (result) {
         var stream = result.stream;
         var user = result.user;
+        setDefaultStream(params);
         updateStreamBox(user.id, stream.mediaStream, stream.type);
       }, function () {
-        sealAlert('加入房间失败');
+        sealAlert(localeData.joinError);
       });
     }, function () {
-      sealAlert('获取 token 失败');
+      sealAlert(localeData.getTokenError);
     });
   };
 

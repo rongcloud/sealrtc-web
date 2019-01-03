@@ -259,15 +259,18 @@
     var self = this;
     var dom = Dom.getById(domId);
     var closeDom = Dom.getChild(dom, 'rong-wb-close');
+    var iframeDom = Dom.getChild(dom, 'rong-whiteboard');
     closeDom.onclick = function () {
       self.hide();
     };
     self.dom = dom;
     self.closeDom = closeDom;
-    self.show = function () {
+    self.show = function (url) {
+      iframeDom.src = url;
       Dom.show(self.dom);
     };
     self.hide = function () {
+      iframeDom.src = '';
       Dom.hide(self.dom);
     };
     return self;
