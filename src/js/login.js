@@ -8,6 +8,9 @@
     getDomById = Dom.getById,
     Cache = utils.Cache;
 
+  var locale = RongSeal.locale[common.lang],
+    localeData = locale.data;
+
   var roomDom = getDomById('roomId'),
     userDom = getDomById('userId'),
     startBtnDom = getDomById('start');
@@ -29,11 +32,11 @@
     var isValid = true;
     var prompt = '';
     if (isRoomIdEmpty) {
-      prompt = '房间号不能为空';
+      prompt = localeData.roomIdEmpty;
       isValid = false;
     }
     if (isUserIdEmpty) {
-      prompt = '用户名不能为空';
+      prompt = localeData.userIdEmpty;
       isValid = false;
     }
     return {
@@ -74,6 +77,7 @@
   (function init() {
     setDefaultRTCInfo();
     startBtnDom.onclick = startRTC;
+    common.setLocale();
   })();
   
 })({

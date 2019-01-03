@@ -72,11 +72,14 @@ ul, li {
   .rong-opt-stream {
     margin: 30px 0;
   }
+  .rong-opt-checkbox + .rong-opt-checkbox {
+    margin: 0 0 0 20px;
+  }
   .rong-opt-checkbox {
     display: inline-block;
     text-align: left;
     position: relative;
-    margin: 0 20px;
+    margin: 0 20px 0 0;
     input[type="checkbox"] {
       display: none;
     }
@@ -423,6 +426,9 @@ ul, li {
       background-position: center;
       margin: 0 25px;
     }
+    .rong-user-name {
+      font-size: 18px;
+    }
   }
   .rong-video-close {
     .rong-audio-cover {
@@ -491,10 +497,10 @@ ul, li {
   }
   .rong-alert-btn-box {
     text-align: right;
-    button {
+    input[type="button"] {
       font-size: 12px;
       display: inline-block;
-      width: 72px;
+      min-width: 72px;
       height: 30px;
       border: 1px solid rgb(165, 165, 165);
       border-radius: 20px;
@@ -502,7 +508,7 @@ ul, li {
       background-color: white;
       cursor: pointer;
     }
-    button + button {
+    input[type="button"] + input[type="button"] {
       border: none;
       background-color: rgb(78, 108, 170);
       color: white;

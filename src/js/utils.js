@@ -92,7 +92,7 @@
   };
 
   var getDomById = function (id) {
-    return document.getElementById(id);
+    return win.document.getElementById(id);
   };
 
   var showDom = function (dom) {
@@ -151,7 +151,7 @@
   };
 
   var getSelectedDomByName = function (name) {
-    var list = document.getElementsByName(name);
+    var list = win.document.getElementsByName(name);
     var selectedEl;
     for (var i = 0, max = list.length; i < max; i++) {
       var el = list[i];
@@ -188,7 +188,7 @@
   };
 
   var create = function (innerHTML) {
-    var div = document.createElement('div');
+    var div = win.document.createElement('div');
     div.innerHTML = innerHTML;
     return div.children[0];
   };

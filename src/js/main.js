@@ -14,6 +14,9 @@
     sealAlert = common.sealAlert,
     getRTCToken = common.getRTCToken;
 
+  var locale = RongSeal.locale[common.lang],
+    localeData = locale.data;
+
   var rongRTC, // RongRTC 实例
     streamList, // SteramList(流列表 UI 操作) 实例
     loginUserId,
@@ -28,13 +31,13 @@
 
   /* 初始化失败提示 */
   var alertInitRTCError = function () {
-    sealAlert('初始化 RTC 失败');
+    sealAlert(localeData.rtcError);
   };
 
   var alertScreenSharePlugin = function () {
-    sealAlert('首次使用屏幕共享, 请下载并安装插件', {
+    sealAlert(localeData.installPrompt, {
       isShowCancel: true,
-      confirmText: '下载插件',
+      confirmText: localeData.downloadTitle,
       confirmCallback: function () {
         var downloadUrl = win.location.href + 'plugin/screenshare-addon.zip';
         utils.download(downloadUrl);
@@ -48,7 +51,7 @@
     Room.leave().then(function () {
       win.location.reload();
     }, function () {
-      sealAlert('离开房间失败');
+      sealAlert(localeData.leftError);
       win.location.reload();
     });
   };
@@ -70,7 +73,7 @@
         streamBox.closeScreenShare();
         screenShare.isOpened = false;
       }, function () {
-        sealAlert('关闭屏幕共享失败');
+        sealAlert(localeData.closeScreenError);
       });
     });
   };
@@ -281,13 +284,13 @@
   /* 设置房间号展示 */
   var setRoomTitle = function (roomId) {
     var roomDom = Dom.getById('RongRoomTitle');
-    roomDom.textContent = '会议 ID: ' + roomId;
+    roomDom.textContent = '会议 ID' + ': ' + roomId;
   };
 
   /* 设置用户名展示 */
   var setUserTitle = function (userName) {
     var userDom = Dom.getById('RongUserTitle');
-    userDom.textContent = '登录用户: ' + userName;
+    userDom.textContent = '登录用户' + ': ' + userName;
   };
 
   /**
@@ -417,12 +420,12 @@
       error: events.rtcError
     });
     observeRoom({
-      joined: events.joinRoom,
-      left: events.leftRoom
+      joined: events.roomJoined,
+      left: events.roomLefted
     });
     observeStream({
-      added: events.addStream,
-      changed: events.changeStream
+      added: events.streamAdded,
+      changed: events.streamChanged
     });
   };
 
@@ -439,13 +442,12 @@
     loginUserId = params.userId;
     initRTCInstance({
       rtcError: alertInitRTCError,
-      joinRoom: createStreamBox,
-      leftRoom: removeStreamBox,
-      addStream: updateStreamBox,
-      changeStream: changeStreamBox
+      roomJoined: createStreamBox,
+      roomLefted: removeStreamBox,
+      streamAdded: updateStreamBox,
+      streamChanged: changeStreamBox
     });
     setDefaultStream(params);
-    
     var tokenParams = getTokenParams(loginUserId);
     getRTCToken(tokenParams).then(function (token) {
       params.rtcToken = token;

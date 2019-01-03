@@ -1,40 +1,39 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="stylesheet" href="./css/main.css">
-  <link rel="icon" href="./css/img/logi-white.png" type="image/x-icon" />
+  <link rel="icon" href="./css/img/icon.png" type="image/x-icon" />
   <script src="./lib/RongRTC.2.0.0.js"></script>
   <script src="./lib/screenshare.js"></script>
   <script src="./config.js"></script>
   <title>SealRTC v2.0.0</title>
 </head>
-<body>
+<body lang="en">
   <div id="RongLogin" class="rong-wrap rong-login">
     <div class="rong-login-content">
       <img class="rong-login-logo" src="./css/img/logo.png">
       <h3 class="rong-login-title">SealRTC v2.0.0</h3>
-      <input id="roomId" class="rong-login-input" type="text" placeholder="请在这里输入会议 ID">
-      <input id="userId" class="rong-login-input" type="text" placeholder="请在这里输入用户名">
+      <input id="roomId" class="rong-login-input" type="text" lang-placeholder="roomId">
+      <input id="userId" class="rong-login-input" type="text" lang-placeholder="userId">
       <div class="rong-opt-stream">
         <div class="rong-opt-checkbox">
-          <input type="checkbox" id="isCloseVideo" name="isCloseVideo"><label for="isCloseVideo"></label><span>加入时不开启摄像头</span>
-        </div>
-        <div class="rong-opt-checkbox">
-          <input type="checkbox" id="isCloseAudio" name="isCloseAudio"><label for="isCloseAudio"></label><span>加入时不开启麦克风</span>
+          <input type="checkbox" id="isCloseVideo" name="isCloseVideo"><label for="isCloseVideo"></label><span lang-textContent="closeVideo"></span>
+        </div><div class="rong-opt-checkbox">
+          <input type="checkbox" id="isCloseAudio" name="isCloseAudio"><label for="isCloseAudio"></label><span lang-textContent="closeAudio"></span>
         </div>
       </div>
-      <input id="start" class="rong-btn-start" type="button" value="开始会议">
+      <input id="start" class="rong-btn-start" type="button" lang-value="startRTC">
     </div>
     <div class="rong-opt-resolution">
       <div class="rong-resolution-wrap">
         <div class="rong-resolution-content">
           <i class="rong-resolution-arrow"></i>
-          <h5 class="rong-resolution-title">通话设置</h5>
+          <h5 class="rong-resolution-title" lang-textContent="setting"></h5>
           <ul>
-            <li>分辨率</li>
+            <li lang-textContent="resolution"></li>
             <li>
               <input id="Rl-320-240" value="320*240" type="radio" name="resolution">
               <label for="Rl-320-240"></label>
@@ -64,9 +63,9 @@
     <div class="rong-rtc-opt">
       <span id="RongUserTitle" class="rong-rtc-title rong-user-title"></span>
       <span id="RongRoomTitle" class="rong-rtc-title"></span>
-      <a class="rong-rtc-btn rong-opt-hangup" title="挂断"></a>
-      <a class="rong-rtc-btn rong-opt-wb" title="白板"></a>
-      <a class="rong-rtc-btn rong-opt-share" title="屏幕共享"></a>
+      <a class="rong-rtc-btn rong-opt-hangup" lang-title="hangup"></a>
+      <a class="rong-rtc-btn rong-opt-wb" lang-title="whiteboard"></a>
+      <a class="rong-rtc-btn rong-opt-share" lang-title="screenshare"></a>
     </div>
     <div id="RongWB" class="rong-wb-box">
       <a class="rong-wb-close"></a>
@@ -85,14 +84,14 @@
       <div class="rong-share-cover rong-rtc-cover">
         <div class="rong-cover-content">
           <img src="./css/img/share-cover.png">
-          <p class="rong-sharecover-title">正在分享屏幕</p>
+          <p class="rong-sharecover-title" lang-textContent="screenshareBusy"></p>
         </div>
       </div>
       <div class="rong-audio-cover rong-rtc-cover">
         <div class="rong-cover-content">
           <img src="./css/img/audio-cover.png">
-          <p class="rong-audiocover-title">摄像头已关闭</p>
-          <p class="rong-audiocover-title-other">对方已关闭摄像头</p>
+          <p class="rong-audiocover-title" lang-textContent="videoClosed"></p>
+          <p class="rong-audiocover-title-other" lang-textContent="otherVideoClosed"></p>
         </div>
       </div>
       <p class="rong-user-name">{name}</p>
@@ -104,16 +103,20 @@
   </script>
 
   <script id="RongAlert" type="text/x-template">
-    <div class="rong-alert">
-      <p class="rong-alert-title">提示</p>
-      <p class="rong-alert-content">{content}</p>
-      <div class="rong-alert-btn-box">
-        <button class="rong-alert-cancel" style="display: {cancelDisplay}">取消</button>
-        <button class="rong-alert-confirm">{confirmText}</button>
+    <div class="rong-alert-box">
+      <div class="rong-alert">
+        <p class="rong-alert-title" lang-textContent="alertTitle"></p>
+        <p class="rong-alert-content">{content}</p>
+        <div class="rong-alert-btn-box">
+          <input class="rong-alert-cancel" style="display: {cancelDisplay}" type="button" lang-value="cancel">
+          <input class="rong-alert-confirm" type="button" lang-value="conform">
+        </div>
       </div>
-    </div>;
+    </div>
   </script>
 
+  <script src="./js/locale/en.js"></script>
+  <script src="./js/locale/zh.js"></script>
   <script src="./js/utils.js"></script>
   <script src="./js/common.js"></script>
   <script src="./js/login.js"></script>

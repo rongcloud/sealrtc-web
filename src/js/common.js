@@ -7,6 +7,9 @@
     removeClass = Dom.removeClass,
     getChildDom = Dom.getChild;
 
+  var lang = win.document.body.lang,
+    locale = RongSeal.locale[lang];
+
   var StreamListTemp = Dom.getById('RongStreamList').innerText;
   var StreamBoxTemp = Dom.getById('RongStreamBox').innerText;
   var AlertHTMLTpl = Dom.getById('RongAlert').innerText;
@@ -22,6 +25,48 @@
   };
 
   /**
+   * 设置多语言
+   * @param {object} params 
+   * @param {string} params.parentDom 父节点(只设置该节点下多语言)
+   * @param {string} params.parentSelector 父选择器(只设置该选择器下多语言, 若已设置 parentDom, 则在 parentDom 基础上生效)
+   */
+  var setLocale = function (params) {
+    params = params || {};
+    var parentSelector = params.parentSelector || '';
+    var parentDom = params.parentDom || win.document;
+    var prefix = 'lang';
+    if (locale) {
+      for (var key in locale) {
+        var lowerKey = key.toLocaleLowerCase();
+        var attribute = '{prefix}-{key}';
+        attribute = utils.tplEngine(attribute, {
+          prefix: prefix,
+          key: lowerKey
+        });
+        var selector = '{parent} *[{attribute}]';
+        selector = utils.tplEngine(selector, {
+          attribute: attribute,
+          parent: parentSelector
+        });
+        var domList = parentDom.querySelectorAll(selector);
+        for (var i = 0; i < domList.length; i++) {
+          var dom = domList[i];
+          var localeKey = dom.getAttribute(attribute);
+          dom[key] = locale[key][localeKey];
+        }
+      }
+    }
+  };
+
+  var createLocaleDom = function (temp) {
+    var dom = Dom.create(temp);
+    setLocale({
+      parentDom: dom
+    });
+    return dom;
+  };
+
+  /**
    * 提示弹框
    * @param {string} str 提示信息
    * @param {object} params
@@ -33,28 +78,28 @@
   var sealAlert = function (str, params) {
     params = params || {};
     var cancelDisplay = params.isShowCancel ? 'inline-block' : 'none';
-    var alertBox = document.createElement('div');
-    alertBox.className = 'rong-alert-box';
     var innerHTML = utils.tplEngine(AlertHTMLTpl, {
       content: str,
-      cancelDisplay: cancelDisplay,
-      confirmText: params.confirmText || '确定'
+      cancelDisplay: cancelDisplay
     });
-    alertBox.innerHTML = innerHTML;
+    var alertBox = createLocaleDom(innerHTML);
     var alertDom = getChildDom(alertBox, 'rong-alert');
     var btnBoxDom = getChildDom(alertDom, 'rong-alert-btn-box');
     var cancelBtnDom = getChildDom(btnBoxDom, 'rong-alert-cancel');
     var confirmBtnDom = getChildDom(btnBoxDom, 'rong-alert-confirm');
-    document.body.appendChild(alertBox);
+    if (params.confirmText) {
+      confirmBtnDom.value = params.confirmText;
+    }
+    win.document.body.appendChild(alertBox);
     cancelBtnDom = cancelBtnDom || {};
     confirmBtnDom = confirmBtnDom || {};
     cancelBtnDom.onclick = function () {
       params.cancelCallback && params.cancelCallback();
-      document.body.removeChild(alertBox);
+      win.document.body.removeChild(alertBox);
     };
     confirmBtnDom.onclick = function () {
       params.confirmCallback && params.confirmCallback();
-      document.body.removeChild(alertBox);
+      win.document.body.removeChild(alertBox);
     };
   };
 
@@ -82,7 +127,7 @@
 
     var self = this;
     self.streamList = [];
-    self.dom = Dom.create(temp);
+    self.dom = createLocaleDom(temp);
 
     self.add = function (streamBox) {
       if (!self.has(streamBox)) {
@@ -130,9 +175,9 @@
     var self = this;
     var isSelf = params.isSelf;
     temp = utils.tplEngine(temp, {
-      name: isSelf ? '自己' : id
+      name: isSelf ? locale.data.self : id
     });
-    var dom = Dom.create(temp);
+    var dom = createLocaleDom(temp);
     var videoDom = Dom.getChild(dom, 'rong-video');
     var optsDom = Dom.getChild(dom, 'rong-stream-opt');
     var videoBtnDom = Dom.getChild(optsDom, 'rong-opt-video');
@@ -267,7 +312,9 @@
     sealAlert: sealAlert,
     formatResolution: formatResolution,
     getRTCToken: getRTCToken,
-    UI: UI
+    UI: UI,
+    setLocale: setLocale,
+    lang: lang
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.common = common;

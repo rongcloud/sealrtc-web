@@ -76,11 +76,15 @@ ul, li {
   margin: 30px 0;
 }
 
+.rong-login .rong-opt-checkbox + .rong-opt-checkbox {
+  margin: 0 0 0 20px;
+}
+
 .rong-login .rong-opt-checkbox {
   display: inline-block;
   text-align: left;
   position: relative;
-  margin: 0 20px;
+  margin: 0 20px 0 0;
 }
 
 .rong-login .rong-opt-checkbox input[type="checkbox"] {
@@ -477,6 +481,10 @@ ul, li {
   margin: 0 25px;
 }
 
+.rong-stream-wrap .rong-is-zoom .rong-user-name {
+  font-size: 18px;
+}
+
 .rong-stream-wrap .rong-video-close .rong-audio-cover, .rong-stream-wrap .rong-video-self-close .rong-audio-cover, .rong-stream-wrap .rong-video-other-close .rong-audio-cover {
   display: block;
 }
@@ -547,10 +555,10 @@ ul, li {
   text-align: right;
 }
 
-.rong-alert-box .rong-alert-btn-box button {
+.rong-alert-box .rong-alert-btn-box input[type="button"] {
   font-size: 12px;
   display: inline-block;
-  width: 72px;
+  min-width: 72px;
   height: 30px;
   border: 1px solid #a5a5a5;
   border-radius: 20px;
@@ -559,7 +567,7 @@ ul, li {
   cursor: pointer;
 }
 
-.rong-alert-box .rong-alert-btn-box button + button {
+.rong-alert-box .rong-alert-btn-box input[type="button"] + input[type="button"] {
   border: none;
   background-color: #4e6caa;
   color: white;
