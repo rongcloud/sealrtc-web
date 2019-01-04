@@ -348,7 +348,6 @@ ul, li {
   top: 0;
   width: 100%;
   height: 100%;
-  transform: rotateY(180deg);
 }
 
 .rong-stream-wrap .rong-stream-box .rong-user-name {
@@ -435,6 +434,10 @@ ul, li {
   display: inline-block;
 }
 
+.rong-stream-wrap .rong-is-self .rong-video {
+  transform: rotateY(180deg);
+}
+
 .rong-stream-wrap .rong-is-self .rong-user-name {
   display: inline-block;
 }
@@ -510,6 +513,14 @@ ul, li {
 }
 
 .rong-stream-wrap .rong-video-other-close .rong-audiocover-title-other {
+  display: block;
+}
+
+.rong-stream-wrap .rong-video-other-close.rong-video-self-close .rong-audio-cover .rong-audiocover-title {
+  display: none;
+}
+
+.rong-stream-wrap .rong-video-other-close.rong-video-self-close .rong-audiocover-title-other {
   display: block;
 }
 
