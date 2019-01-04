@@ -91,6 +91,9 @@
             mediaStream: stream
           }
         };
+        stream.oninactive = function () {
+          closeScreenShare(id);
+        };
         Stream.add(user).then(function () {
           screenShare.isOpened = true;
           streamBox.openScreenShare();
@@ -279,7 +282,6 @@
       Room.join(room).then(function () {
         // setDefaultStream(params);
         Stream.get(user).then(function (result) {
-          window.mediaStreamA = result.stream.mediaStream;
           resolve(result);
         }, function (error) {
           reject(error);
