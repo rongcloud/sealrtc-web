@@ -3,6 +3,42 @@
   var noop = function () { };
   var utils;
 
+  var isString = function (str) {
+    return Object.prototype.toString.call(str) === '[object String]';
+  };
+
+  var isObject = function (obj) {
+    return Object.prototype.toString.call(obj) === '[object Object]';
+  };
+
+  var isArray = function (obj) {
+    return Object.prototype.toString.call(obj) === '[object Array]';
+  };
+
+  var isNodeList = function (obj) {
+    return Object.prototype.toString.call(obj) === '[object NodeList]';
+  };
+
+  var forEach = function (obj, callback) {
+    callback = callback || noop;
+    var loopObj = function () {
+      for (var key in obj) {
+        callback(obj[key], key, obj);
+      }
+    };
+    var loopArr = function () {
+      for (var i = 0, len = obj.length; i < len; i++) {
+        callback(obj[i], i);
+      }
+    };
+    if (isObject(obj)) {
+      loopObj();
+    }
+    if (isArray(obj) || isNodeList(obj)) {
+      loopArr();
+    }
+  };
+
   var tplEngine = function (temp, data, regexp) {
     var replaceAction = function (object) {
       return temp.replace(regexp || (/{([^}]+)}/g), function (match, name) {
@@ -69,14 +105,6 @@
     xhr.send(formData);
   };
 
-  var isString = function (str) {
-    return Object.prototype.toString.call(str) === '[object String]';
-  };
-
-  var isObject = function (obj) {
-    return Object.prototype.toString.call(obj) === '[object Object]';
-  };
-
   var download = function (url) {
     win.open(url);
   };
@@ -85,6 +113,16 @@
     var selector = null;
     try {
       selector = win.document.querySelector(name);
+    } catch (e) {
+      // console.error(e);
+    }
+    return selector;
+  };
+
+  var getDomList = function (name) {
+    var selector = null;
+    try {
+      selector = win.document.querySelectorAll(name);
     } catch (e) {
       // console.error(e);
     }
@@ -196,6 +234,7 @@
   var Dom = {
     create: create,
     get: getDom,
+    getList: getDomList,
     getById: getDomById,
     show: showDom,
     hide: hideDom,
@@ -209,6 +248,7 @@
 
   utils = {
     noop: noop,
+    forEach: forEach,
     tplEngine: tplEngine,
     Cache: Cache,
     sendForm: sendForm,

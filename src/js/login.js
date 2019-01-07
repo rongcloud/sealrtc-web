@@ -13,7 +13,8 @@
 
   var roomDom = getDomById('roomId'),
     userDom = getDomById('userId'),
-    startBtnDom = getDomById('start');
+    startBtnDom = getDomById('start'),
+    inputDomList = Dom.getList('.rong-login-input');
   
   var StorageKeys = {
     RoomId: 'rong-sealv2-roomid'
@@ -73,10 +74,19 @@
       sealAlert(checkContent.prompt);
     }
   };
+  
+  var pressInput = function (e) {
+    if ((e.keyCode || e.which) == 13) {
+      startRTC();
+    }
+  };
 
   (function init() {
     setDefaultRTCInfo();
     startBtnDom.onclick = startRTC;
+    utils.forEach(inputDomList, function (dom) {
+      dom.onkeydown = pressInput;
+    });
     common.setLocale();
   })();
   
