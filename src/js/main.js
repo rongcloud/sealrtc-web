@@ -26,7 +26,7 @@
     };
 
   var CustomizeMediaType = {
-    ScreenShare: 1001
+    ScreenShare: 'screen'
   };
 
   /* 初始化失败提示 */
