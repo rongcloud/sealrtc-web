@@ -9,6 +9,7 @@ module.exports = {
     "sourceType": "module"
   },
   "rules": {
+    "no-console": "warn",
     "quotes": [2, "single"],
     // "no-alert": "error",
     "no-irregular-whitespace": "error",

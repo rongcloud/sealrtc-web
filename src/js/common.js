@@ -4,277 +4,60 @@
     utils = RongSeal.utils,
     Dom = utils.Dom,
     addClass = Dom.addClass,
-    removeClass = Dom.removeClass,
-    getChildDom = Dom.getChild;
+    removeClass = Dom.removeClass;
 
-  var lang = win.document.body.lang,
-    locale = RongSeal.locale[lang];
+  var StreamListTemp = Dom.getById('RongStreamList').innerText; // 音视频列表展示模板
+  var StreamBoxTemp = Dom.getById('RongStreamBox').innerText; // 单个音视频流展示模板
+  var AlertTemp = Dom.getById('RongAlert').innerText; // 提示弹框展示模板
 
-  var StreamListTemp = Dom.getById('RongStreamList').innerText;
-  var StreamBoxTemp = Dom.getById('RongStreamBox').innerText;
-  var AlertHTMLTpl = Dom.getById('RongAlert').innerText;
-
-  var ClassName = {
+  var OptClassName = {
     isSelf: 'rong-is-self',
-    isZoom: 'rong-is-zoom',
-    closeVideoBySelf: 'rong-video-self-close',
-    closeAudioBySelf: 'rong-audio-self-close',
-    closeVideoByOther: 'rong-video-other-close',
-    closeAudioByOther: 'rong-audio-other-close',
-    openScreenshare: 'rong-screenshare-open'
+    IS_ZOOM: 'rong-is-zoom',
+    CLOSE_VIDEO_BY_SELF: 'rong-video-self-close',
+    CLOSE_AUDIO_BY_SELF: 'rong-audio-self-close',
+    CLOSE_VIDEO_BY_OTHER: 'rong-video-other-close',
+    OPEN_SCREENSHARE: 'rong-screenshare-open'
   };
 
   /**
    * 设置多语言
    * @param {object} params 
-   * @param {string} params.parentDom 父节点(只设置该节点下多语言)
-   * @param {string} params.parentSelector 父选择器(只设置该选择器下多语言, 若已设置 parentDom, 则在 parentDom 基础上生效)
+   * @param {string} params.dom 只设置该节点下多语言
+   * @param {string} params.selector 只设置该选择器下多语言, 若已设置 dom, 则在 dom 基础上再选择 selector 生效
    */
-  var setLocale = function (params) {
+  function setLocale(params) {
     params = params || {};
-    var parentSelector = params.parentSelector || '';
-    var parentDom = params.parentDom || win.document;
-    var prefix = 'lang';
-    if (locale) {
-      for (var key in locale) {
-        var lowerKey = key.toLocaleLowerCase();
-        var attribute = '{prefix}-{key}';
-        attribute = utils.tplEngine(attribute, {
-          prefix: prefix,
-          key: lowerKey
-        });
-        var selector = '{parent} *[{attribute}]';
-        selector = utils.tplEngine(selector, {
-          attribute: attribute,
-          parent: parentSelector
-        });
-        var domList = parentDom.querySelectorAll(selector);
-        for (var i = 0; i < domList.length; i++) {
-          var dom = domList[i];
-          var localeKey = dom.getAttribute(attribute);
-          dom[key] = locale[key][localeKey];
-        }
-      }
-    }
-  };
+    var lang = win.document.body.lang,
+      locale = RongSeal.locale[lang], // locale 数据值
+      prefix = 'lang';
 
-  var createLocaleDom = function (temp) {
-    var dom = Dom.create(temp);
-    setLocale({
-      parentDom: dom
-    });
+    if (!locale) {
+      return;
+    }
+    var selector = params.selector || '',
+      dom = params.dom || win.document;
+
+    for (var langKey in locale) {
+      var lowerLangKey = langKey.toLocaleLowerCase(),
+        attributeTpl = '{prefix}-{key}',
+        selectorTpl = '{selector} *[{attribute}]';
+      var attribute = utils.tplEngine(attributeTpl, {
+        prefix: prefix,
+        key: lowerLangKey
+      });
+      var langSelector = utils.tplEngine(selectorTpl, {
+        attribute: attribute,
+        selector: selector
+      });
+      var langDomList = dom.querySelectorAll(langSelector);
+      for (var i = 0; i < langDomList.length; i++) {
+        var langDom = langDomList[i];
+        var localeKey = langDom.getAttribute(attribute);
+        langDom[langKey] = locale[langKey][localeKey];
+      }
+    } 
     return dom;
-  };
-
-  /**
-   * 提示弹框
-   * @param {string} str 提示信息
-   * @param {object} params
-   * @param {object} params.isShowCancel 是否展示取消按钮
-   * @param {object} params.confirmText 确定按钮文字, 默认为 '确定'
-   * @param {object} params.confirmCallback 点击确定的回调
-   * @param {object} params.cancelCallback 点击取消的回调
-   */
-  var sealAlert = function (str, params) {
-    params = params || {};
-    var cancelDisplay = params.isShowCancel ? 'inline-block' : 'none';
-    var innerHTML = utils.tplEngine(AlertHTMLTpl, {
-      content: str,
-      cancelDisplay: cancelDisplay
-    });
-    var alertBox = createLocaleDom(innerHTML);
-    var alertDom = getChildDom(alertBox, 'rong-alert');
-    var btnBoxDom = getChildDom(alertDom, 'rong-alert-btn-box');
-    var cancelBtnDom = getChildDom(btnBoxDom, 'rong-alert-cancel');
-    var confirmBtnDom = getChildDom(btnBoxDom, 'rong-alert-confirm');
-    if (params.confirmText) {
-      confirmBtnDom.value = params.confirmText;
-    }
-    win.document.body.appendChild(alertBox);
-    cancelBtnDom = cancelBtnDom || {};
-    confirmBtnDom = confirmBtnDom || {};
-    cancelBtnDom.onclick = function () {
-      params.cancelCallback && params.cancelCallback();
-      win.document.body.removeChild(alertBox);
-    };
-    confirmBtnDom.onclick = function () {
-      params.confirmCallback && params.confirmCallback();
-      win.document.body.removeChild(alertBox);
-    };
-  };
-
-  var setClass = function (dom, className, isOpen) {
-    isOpen ? addClass(dom, className) : removeClass(dom, className);
-  };
-
-  /**
-   * 格式化分辨率
-   * @param {string} rate 分辨率
-   * @return {object} 包含 width、height
-   */
-  var formatResolution = function (rate) {
-    var index = rate.indexOf('*');
-    var width = rate.substring(0, index);
-    var height = rate.substring(index + 1);
-    return {
-      width: Number(width),
-      height: Number(height)
-    };
-  };
-
-  var StreamList = function (temp) {
-    temp = temp || StreamListTemp;
-
-    var self = this;
-    self.streamList = [];
-    self.dom = createLocaleDom(temp);
-
-    self.add = function (streamBox) {
-      if (!self.has(streamBox)) {
-        self.dom.appendChild(streamBox.dom);
-      }
-    };
-    self.remove = function (streamBox) {
-      if (self.has(streamBox)) {
-        self.dom.removeChild(streamBox.dom);
-      }
-    };
-    self.has = function (streamBox) {
-      var hasStreamBox = false;
-      var boxList = self.dom.children;
-      for (var i = 0; i < boxList.length; i++) {
-        if (boxList[i] === streamBox.dom) {
-          hasStreamBox = true;
-        }
-      }
-      return hasStreamBox;
-    };
-
-    return self;
-  };
-  
-  /* streamBox 集合 */
-  var StreamBoxList = {};
-  /* 清空所有 zoom class */
-  var clearStreamBoxZoom = function () {
-    for (var id in StreamBoxList) {
-      var streamBox = StreamBoxList[id];
-      removeClass(streamBox.dom, ClassName.isZoom);
-    }
-  };
-  /**
-   * @param {string} id 用户 id
-   * @param {object} params 其他选项(可扩展)
-   * @param {boolean} params.isSelf 是否为自己
-   * @param {string} temp 模板, 可选
-   */
-  var StreamBox = function (id, params, temp) {
-    params = params || {};
-    temp = temp || StreamBoxTemp;
-
-    var self = this;
-    var isSelf = params.isSelf;
-    temp = utils.tplEngine(temp, {
-      name: isSelf ? locale.data.self : id
-    });
-    var dom = createLocaleDom(temp);
-    var videoDom = Dom.getChild(dom, 'rong-video');
-    var optsDom = Dom.getChild(dom, 'rong-stream-opt');
-    var videoBtnDom = Dom.getChild(optsDom, 'rong-opt-video');
-    var audioBtnDom = Dom.getChild(optsDom, 'rong-opt-audio');
-
-    dom.onclick = function (e) {
-      self.zoom();
-      e.stopPropagation();
-    };
-    self.id = id;
-    self.dom = dom;
-    self.childDom = {
-      video: videoDom,
-      videoOptBtn: videoBtnDom,
-      audioOptBtn: audioBtnDom
-    };
-
-    self.setStream = function (stream) {
-      var videoDom = self.childDom.video;
-      if (videoDom) {
-        videoDom.srcObject = stream;
-      }
-    };
-    self.zoom = function () {
-      clearStreamBoxZoom();
-      addClass(self.dom, ClassName.isZoom);
-    };
-    self.isVideoCloseBySelf = function () {
-      return Dom.hasClass(self.dom, ClassName.closeVideoBySelf);
-    };
-    self.closeVideoBySelf = function () {
-      setClass(self.dom, ClassName.closeVideoBySelf, true);
-    };
-    self.openVideoBySelf = function () {
-      setClass(self.dom, ClassName.closeVideoBySelf, false);
-    };
-    self.isAudioCloseBySelf = function () {
-      return Dom.hasClass(self.dom, ClassName.closeAudioBySelf);
-    };
-    self.closeAudioBySelf = function () {
-      setClass(self.dom, ClassName.closeAudioBySelf, true);
-    };
-    self.openAudioBySelf = function () {
-      setClass(self.dom, ClassName.closeAudioBySelf, false);
-    };
-    self.closeVideoByOther = function () {
-      setClass(self.dom, ClassName.closeVideoByOther, true);
-    };
-    self.openVideoByOther = function () {
-      setClass(self.dom, ClassName.closeVideoByOther, false);
-    };
-    self.closeAudioByOther = function () {
-      // do nothing
-    };
-    self.openAudioByOther = function () {
-      // do nothing
-    };
-    self.openScreenShare = function () {
-      setClass(self.dom, ClassName.openScreenshare, true);
-    };
-    self.closeScreenShare = function () {
-      setClass(self.dom, ClassName.openScreenshare, false);
-    };
-
-    if (isSelf) {
-      setClass(dom, ClassName.isSelf, true);
-      self.zoom();
-    }
-
-    StreamBoxList[id] = self;
-    return self;
-  };
-  StreamBox.get = function (id) {
-    return StreamBoxList[id];
-  };
-
-  var WhiteBoard = function (domId) {
-    domId = domId || 'RongWB';
-    var self = this;
-    var dom = Dom.getById(domId);
-    var closeDom = Dom.getChild(dom, 'rong-wb-close');
-    var iframeDom = Dom.getChild(dom, 'rong-whiteboard');
-    closeDom.onclick = function () {
-      self.hide();
-    };
-    self.dom = dom;
-    self.closeDom = closeDom;
-    self.show = function (url) {
-      iframeDom.src = url;
-      Dom.show(self.dom);
-    };
-    self.hide = function () {
-      iframeDom.src = '';
-      Dom.hide(self.dom);
-    };
-    return self;
-  };
+  }
 
   /**
    * 获取 rtc token
@@ -283,7 +66,7 @@
    * @param {object} params.userId 用户 id
    * @param {object} params.appId
    */
-  var getRTCToken = function (params, callback) {
+  function getRTCToken(params, callback) {
     callback = callback || utils.noop;
     return new Promise(function (resolve, reject) {
       utils.sendForm({
@@ -303,7 +86,258 @@
         }
       });
     });
+  }
+
+  /**
+   * 格式化分辨率
+   * @param {string} rate 分辨率
+   * @return {object} 包含 width、height
+   */
+  var formatResolution = function (rate) {
+    var index = rate.indexOf('*');
+    var width = rate.substring(0, index);
+    var height = rate.substring(index + 1);
+    return {
+      width: Number(width),
+      height: Number(height)
+    };
   };
+
+  /**
+   * 根据模板创建 dom
+   * @param {string} temp 模板
+   */
+  function createLocaleDom(temp) {
+    var dom = Dom.create(temp);
+    return setLocale({ dom: dom });
+  }
+
+  /**
+   * 提示弹框
+   * @param {string} str 提示信息
+   * @param {object} params.isShowCancel 是否展示取消按钮
+   * @param {object} params.confirmText 确定按钮文字, 默认为 '确定'
+   * @param {object} params.confirmCallback 点击确定的回调
+   * @param {object} params.cancelCallback 点击取消的回调
+   */
+  function sealAlert(str, params) {
+    params = params || {};
+    var cancelDisplay = params.isShowCancel ? 'inline-block' : 'none';
+    var innerHTML = utils.tplEngine(AlertTemp, {
+      content: str,
+      cancelDisplay: cancelDisplay
+    });
+    var alertBox = createLocaleDom(innerHTML);
+    var cancelBtnDom = alertBox.querySelector('.rong-alert-cancel');
+    var confirmBtnDom = alertBox.querySelector('.rong-alert-confirm');
+    if (params.confirmText) {
+      confirmBtnDom.value = params.confirmText;
+    }
+    win.document.body.appendChild(alertBox);
+    cancelBtnDom = cancelBtnDom || {};
+    confirmBtnDom = confirmBtnDom || {};
+    cancelBtnDom.onclick = function () {
+      params.cancelCallback && params.cancelCallback();
+      win.document.body.removeChild(alertBox);
+    };
+    confirmBtnDom.onclick = function () {
+      params.confirmCallback && params.confirmCallback();
+      win.document.body.removeChild(alertBox);
+    };
+  }
+
+  /**
+   * 音视频列表
+   * @param {string} temp 模板(可选)
+   */
+  var StreamList = (function () {
+
+    function hasBox(streamBox) {
+      var self = this;
+      var hasStreamBox = false;
+      var boxList = self.dom.children;
+      for (var i = 0; i < boxList.length; i++) {
+        if (boxList[i] === streamBox.dom) {
+          hasStreamBox = true;
+        }
+      }
+      return hasStreamBox;
+    }
+
+    function addBox(streamBox) {
+      var self = this;
+      if (!self.hasBox(streamBox)) {
+        self.dom.appendChild(streamBox.dom);
+      }
+    }
+
+    function removeBox(streamBox) {
+      var self = this;
+      if (self.has(streamBox)) {
+        self.dom.removeChild(streamBox.dom);
+      }
+    }
+
+    return function (temp) {
+      temp = temp || StreamListTemp;
+      var self = this;
+      self.streamList = [];
+      self.dom = createLocaleDom(temp);
+      
+      self.addBox = addBox;
+      self.removeBox = removeBox;
+      self.hasBox = hasBox;
+      
+      return self;
+    };
+  })();
+
+  /**
+   * 单个音视频展示框
+   * @param {string} id 用户 id
+   * @param {object} params 其他选项(可扩展)
+   * @param {boolean} params.isZoom 是否放大
+   * @param {string} temp 模板, 可选
+   */
+  var StreamBoxList = {}; // streamBox 集合
+  var StreamBox = (function () {
+    var setClass = function (dom, className, isOpen) {
+      isOpen ? addClass(dom, className) : removeClass(dom, className);
+    };
+    
+    // 清空所有 zoom class
+    function clearStreamBoxZoom() {
+      for (var id in StreamBoxList) {
+        var streamBox = StreamBoxList[id];
+        removeClass(streamBox.dom, OptClassName.IS_ZOOM);
+      }
+    }
+
+    // 展示流
+    function showStream(stream) {
+      var videoDom = this.childDom.video;
+      if (videoDom) {
+        videoDom.srcObject = stream;
+      }
+    }
+
+    function zoom() {
+      clearStreamBoxZoom();
+      addClass(this.dom, OptClassName.IS_ZOOM)
+    }
+    function closeVideoBySelf() {
+      setClass(this.dom, OptClassName.CLOSE_VIDEO_BY_SELF, true);
+      this.isVideoOpenedBySelf = false;
+    }
+    function openVideoBySelf() {
+      setClass(this.dom, OptClassName.CLOSE_VIDEO_BY_SELF, false);
+      this.isVideoOpenedBySelf = true;
+    }
+    function closeAudioBySelf() {
+      setClass(this.dom, OptClassName.CLOSE_AUDIO_BY_SELF, true);
+      this.isAudioOpenedBySelf = false;
+    }
+    function openAudioBySelf() {
+      setClass(this.dom, OptClassName.CLOSE_AUDIO_BY_SELF, false);
+      this.isAudioOpenedBySelf = true;
+    }
+    function closeVideoByOther() {
+      setClass(this.dom, OptClassName.CLOSE_VIDEO_BY_OTHER, true);
+      this.isVideoOpenedByOther = false;
+    }
+    function openVideoByOther() {
+      setClass(this.dom, OptClassName.CLOSE_VIDEO_BY_OTHER, false);
+      this.isVideoOpenedByOther = true;
+    }
+    function closeAudioByOther() {
+      this.isAudioOpenedByOther = false;
+    }
+    function openAudioByOther() {
+      this.isAudioOpenedByOther = true;
+    }
+    function openScreenShare() {
+      this.isScreenShareOpened = true;
+      setClass(this.dom, OptClassName.OPEN_SCREENSHARE, true);
+    }
+    function closeScreenShare() {
+      this.isScreenShareOpened = false;
+      setClass(this.dom, OptClassName.OPEN_SCREENSHARE, false);
+    }
+
+    return function (id, params, temp) {
+      params = params || {};
+      temp = temp || StreamBoxTemp;
+
+      var self = this;
+      temp = utils.tplEngine(temp, {
+        name: id
+      });
+      var dom = createLocaleDom(temp),
+        videoDom = Dom.getChild(dom, 'rong-video'),
+        videoBtnDom = dom.querySelector('.rong-opt-video'),
+        audioBtnDom = dom.querySelector('.rong-opt-audio');
+      dom.onclick = function (e) {
+        self.zoom();
+        e.stopPropagation();
+      };
+
+      self.dom = dom;
+      self.childDom = {
+        video: videoDom,
+        videoBtn: videoBtnDom,
+        audioBtn: audioBtnDom
+      };
+      self.isVideoOpenedBySelf = true;
+      self.isAudioOpenedBySelf = true;
+      self.isVideoOpenedByOther = true;
+      self.isAudioOpenedByOther = true;
+      self.isScreenShareOpened = false;
+
+      self.showStream = showStream;
+      self.zoom = zoom;
+      self.openVideoBySelf = openVideoBySelf;
+      self.closeVideoBySelf = closeVideoBySelf;
+      self.openAudioBySelf = openAudioBySelf;
+      self.closeAudioBySelf = closeAudioBySelf;
+      self.openVideoByOther = openVideoByOther;
+      self.closeVideoByOther = closeVideoByOther;
+      self.openAudioByOther = openAudioByOther;
+      self.closeAudioByOther = closeAudioByOther;
+      self.openScreenShare = openScreenShare;
+      self.closeScreenShare = closeScreenShare;
+
+      StreamBoxList[id] = self;
+
+      return self;
+    };
+  })();
+  StreamBox.get = function (id) {
+    return StreamBoxList[id];
+  };
+
+  var WhiteBoard = (function () {
+    return function (domId) {
+      domId = domId || 'RongWB';
+      var self = this;
+      var dom = Dom.getById(domId);
+      var closeDom = Dom.getChild(dom, 'rong-wb-close');
+      var iframeDom = Dom.getChild(dom, 'rong-whiteboard');
+      closeDom.onclick = function () {
+        self.hide();
+      };
+      self.dom = dom;
+      self.closeDom = closeDom;
+      self.show = function (url) {
+        iframeDom.src = url;
+        Dom.show(self.dom);
+      };
+      self.hide = function () {
+        iframeDom.src = '';
+        Dom.hide(self.dom);
+      };
+      return self;
+    };
+  })();
 
   var UI = {
     StreamList: StreamList,
@@ -317,10 +351,11 @@
     getRTCToken: getRTCToken,
     UI: UI,
     setLocale: setLocale,
-    lang: lang
+    lang: win.document.body.lang
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.common = common;
+
 })({
   win: window,
   RongSeal: window.RongSeal

@@ -67,9 +67,26 @@
   var startRTC = function () {
     var checkContent = checkRTCValue();
     if (checkContent.isValid) {
-      var option = getRTCOption();
-      RongSeal.startRTC(option);
-      Cache.set(StorageKeys.RoomId, option.roomId);
+      var connectParams = {
+        appKey: 'e0x9wycfx7flq',
+        token: 'HDrQ2AOdSm8t9GSlrETOhf8d3dyrkUjx04znTXDsPzzpNDJX9spyavYF93rNcbq9iMz2Bzd7e5fWX6SftOHOCYLPgPfFBJHe',
+        navi: 'http://navxq.rongcloud.net'
+      };
+      if (window.location.search !== '') {
+        connectParams = {
+          appKey: 'e0x9wycfx7flq',
+          token: 'JbaTDlVIxTkQ+Z8GVhThVwpRCpGrPzwCFuGMdWXYpP4WzyoeiDeGOarK7N/zbQ977nPcAqg8RBHIAFslIksyEacJF/wOnBc4',
+          navi: 'http://navxq.rongcloud.net'
+        };
+      }
+      RongSeal.im.connect(connectParams, {
+        connected: function (/* userId */) {
+          var option = getRTCOption();
+          option.userId = window.location.search !== '' ? 'rtcTest2' : 'rtcTest1';
+          RongSeal.startRTC(option);
+          Cache.set(StorageKeys.RoomId, option.roomId);
+        }
+      });
     } else {
       sealAlert(checkContent.prompt);
     }

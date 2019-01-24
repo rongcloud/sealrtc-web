@@ -6,10 +6,12 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="stylesheet" href="./css/main.css">
   <link rel="icon" href="./css/img/icon.png" type="image/x-icon" />
-  <script src="./lib/RongRTC.2.0.0.js"></script>
+  <script src="./lib/protobuf-2.3.4.min.js"></script>
+  <script src="./lib/RongIMLib-2.4.0.js"></script>
+  <script src="./lib/RongRTC.3.0.0.js"></script>
   <script src="./lib/frameImage.js"></script>
   <script src="./lib/screenshare.js"></script>
-  <!-- <script src="./lib/media.js"></script> -->
+  <script src="./lib/media.js"></script>
   <script src="./config.js"></script>
   <title>SealRTC v2.0.0</title>
 </head>
@@ -66,8 +68,8 @@
   <!-- RTC -->
   <div id="RongRTC" class="rong-wrap rong-rtc">
     <div class="rong-rtc-opt">
-      <span id="RongUserTitle" class="rong-rtc-title rong-user-title"></span>
-      <span id="RongRoomTitle" class="rong-rtc-title"></span>
+      <span class="rong-rtc-title rong-user-title"></span>
+      <span class="rong-rtc-title rong-room-title"></span>
       <a class="rong-rtc-btn rong-opt-hangup" lang-title="hangup"></a>
       <a class="rong-rtc-btn rong-opt-wb" lang-title="whiteboard"></a>
       <a class="rong-rtc-btn rong-opt-share" lang-title="screenshare"></a>
@@ -124,7 +126,9 @@
   <script src="./js/locale/zh.js"></script>
   <script src="./js/utils.js"></script>
   <script src="./js/common.js"></script>
+  <script src="./js/im.js"></script>
   <script src="./js/login.js"></script>
-  <script src="./js/main.js"></script>
+  <!-- <script src="./js/main.js"></script> -->
+  <script src="./js/main_new.js"></script>
 </body>
 </html>

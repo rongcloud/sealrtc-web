@@ -62,7 +62,9 @@
     return formatedDevices;
   }
 
-  var get = mediaDevices.getUserMedia;
+  var get = function (option) {
+    return mediaDevices.getUserMedia(option);
+  };
 
   var getDeviceList = function (callback) {
     callback = callback || noop;

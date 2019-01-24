@@ -119,6 +119,10 @@
     return selector;
   };
 
+  var getDomByClass = function (className) {
+    return getDom('.' + className);
+  };
+
   var getDomList = function (name) {
     var selector = null;
     try {
@@ -142,6 +146,10 @@
     }
   };
 
+  var showDomByClass = function (className) {
+    showDom('.' + className);
+  };
+
   var hideDom = function (dom) {
     if (isString(dom)) {
       dom = getDom(dom)
@@ -149,6 +157,10 @@
     if (dom) {
       dom.style.display = 'none';
     }
+  };
+
+  var hideDomByClass = function (className) {
+    hideDom('.' + className);
   };
 
   var getBrotherDom = function (dom, brotherName) {
@@ -234,10 +246,13 @@
   var Dom = {
     create: create,
     get: getDom,
+    getByClass: getDomByClass,
     getList: getDomList,
     getById: getDomById,
     show: showDom,
+    showByClass: showDomByClass,
     hide: hideDom,
+    hideByClass: hideDomByClass,
     getSelectedByName: getSelectedDomByName,
     getBrother: getBrotherDom,
     getChild: getChildDom,
