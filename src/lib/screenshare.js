@@ -47,26 +47,28 @@
       video: {
         mandatory: {
           chromeMediaSource: 'desktop',
-          maxWidth: ShareProfile.width,
-          maxHeight: ShareProfile.height,
           chromeMediaSourceId: sourceId
         },
-        optional: [{ googTemporalLayeredScreencast: true }]
+        // optional: [{ googTemporalLayeredScreencast: true }]
       }
     };
     return screenMediaConfig;
   };
 
+  var testSourceId = null;
+
   var getScreenMedia = function (sourceId) {
     return new Promise(function (resolve, reject) {
       var mediaConfig = getScreenMediaConfig(sourceId);
+      console.log(mediaConfig);
       win.navigator.mediaDevices.getUserMedia(mediaConfig).then(function (stream) {
         resolve(stream);
-      }, function (err) {
+      }, function (err, test) {
         reject(err);
       });
     });
   };
+  window.getScreenMedia = getScreenMedia;
 
   var check = function (callback) {
     return new Promise(function (resolve, reject) {

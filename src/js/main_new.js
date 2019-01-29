@@ -30,6 +30,17 @@
   var streamList;
   var userStreams = {
     users: {},
+    getList: function (id) {
+      return userStreams.users[id];
+    },
+    getStream: function (id) {
+      var list = userStreams.users[id] || [];
+      var stream = null;
+      if (list.length) {
+        stream = list[list.length - 1];
+      }
+      return stream;
+    },
     add: function (user) {
       var id = user.id;
       userStreams.users[id] = userStreams.users[id] || [];
@@ -69,7 +80,7 @@
   }
 
   function joinRoomError(error) {
-    sealAlert(localeData.joinError + ' ' + error.toString());
+    sealAlert(localeData.joinError + ' ' + JSON.stringify(error));
   }
 
   function getSelfMediaStreamError(error) {
@@ -160,9 +171,10 @@
   }
 
   function removeUserStream(user) {
+    console.log('remove user stream', user);
     userStreams.remove(user);
     rongRTCStream.unsubscribe(user);
-    var list = userStreams.users[user.id];
+    var list = userStreams.getList(user.id);
     if (list.length) {
       user = list[list.length - 1];
       showUserStream(user);
@@ -170,7 +182,7 @@
   }
 
   function closeScreenShare() {
-    var list = userStreams.users[loginUserId];
+    var list = userStreams.getList(loginUserId);
     list.forEach(function (user) {
       var stream = user.stream;
       var tag = stream.tag;
@@ -238,7 +250,7 @@
 
   function openVideo(user) {
     var video = rongRTCStream.video;
-    var streamList = userStreams.users[user.id];
+    var streamList = userStreams.getList(user.id);
     user = streamList[streamList.length - 1];
     video.enable(user).then(function () {
       showUserStream(user);
@@ -251,7 +263,7 @@
 
   function closeVideo(user) {
     var video = rongRTCStream.video;
-    var streamList = userStreams.users[user.id];
+    var streamList = userStreams.getList(user.id);
     user = streamList[streamList.length - 1];
     video.disable(user).then(function () {
       showUserStream(user);
@@ -264,7 +276,7 @@
 
   function openAudio(user) {
     var audio = rongRTCStream.audio;
-    var streamList = userStreams.users[user.id];
+    var streamList = userStreams.getList(user.id);
     user = streamList[streamList.length - 1];
     audio.unmute(user).then(function () {
       showUserStream(user);
@@ -277,7 +289,7 @@
 
   function closeAudio(user) {
     var audio = rongRTCStream.audio;
-    var streamList = userStreams.users[user.id];
+    var streamList = userStreams.getList(user.id);
     user = streamList[streamList.length - 1];
     audio.mute(user).then(function () {
       showUserStream(user);
@@ -288,10 +300,28 @@
     });
   }
 
+  function resizeStream(isZoom, id) {
+    var StreamSize = rongRTC.StreamSize;
+    var size = isZoom ? StreamSize.MAX : StreamSize.MIN;
+    var user = userStreams.getStream(id);
+    if (!user) {
+      return;
+    }
+    user.stream.size = size;
+    rongRTCStream.resize(user).then(function () {
+      console.log('resize success')
+    }, function () {
+      sealAlert('切换流失败');
+    });
+  }
+
   function addUserBox(user) {
     var id = user.id,
       isSelf = id === loginUserId;
-    var streamBox = new StreamBox(id);
+    var resizeEvent = isSelf ? null : resizeStream;
+    var streamBox = new StreamBox(id, {
+      resizeEvent: resizeEvent
+    });
     streamList.addBox(streamBox);
     if (isSelf) {
       streamBox.zoom();

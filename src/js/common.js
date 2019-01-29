@@ -197,6 +197,7 @@
    * @param {string} id 用户 id
    * @param {object} params 其他选项(可扩展)
    * @param {boolean} params.isZoom 是否放大
+   * @param {boolean} params.resizeEvent 是否放大
    * @param {string} temp 模板, 可选
    */
   var StreamBoxList = {}; // streamBox 集合
@@ -209,6 +210,7 @@
     function clearStreamBoxZoom() {
       for (var id in StreamBoxList) {
         var streamBox = StreamBoxList[id];
+        streamBox.resizeEvent(false, id);
         removeClass(streamBox.dom, OptClassName.IS_ZOOM);
       }
     }
@@ -278,9 +280,11 @@
         audioBtnDom = dom.querySelector('.rong-opt-audio');
       dom.onclick = function (e) {
         self.zoom();
+        self.resizeEvent(true, id);
         e.stopPropagation();
       };
 
+      self.resizeEvent = params.resizeEvent || utils.noop;
       self.dom = dom;
       self.childDom = {
         video: videoDom,

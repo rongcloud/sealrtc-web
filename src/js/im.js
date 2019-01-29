@@ -29,6 +29,7 @@
         switch (status) {
         case RongIMLib.ConnectionStatus['CONNECTED']:
         case 0:
+          callbacks.connected && callbacks.connected();
           break;
         case RongIMLib.ConnectionStatus['CONNECTING']:
         case 1:
@@ -71,7 +72,6 @@
 
     RongIMClient.connect(token, {
       onSuccess: function (userId) {
-        callbacks.connected && callbacks.connected(userId);
         console.log('连接成功', userId);
       },
       onTokenIncorrect: function () {

@@ -311,7 +311,7 @@
     name: DownEvent.STREAM_MUTED,
     type: 'muted'
   }, {
-    name: DownEvent.RTC_UNMOUNTED,
+    name: DownEvent.STREAM_UNMUTED,
     type: 'unmuted'
   }];
 
@@ -500,16 +500,21 @@
             parent = _props[0],
             child = _props[1];
 
-        var tData = data[parent];
-        isIllegal = utils.isUndefined(tData);
+        var parentData = data[parent];
+        isIllegal = utils.isUndefined(parentData);
         if (isIllegal) {
           return name = parent;
         }
-        var childData = tData[child];
-        isIllegal = utils.isUndefined(childData);
-        if (isIllegal) {
-          return name = child;
+        if (!utils.isArray(parentData)) {
+          parentData = [parentData];
         }
+        utils.forEach(parentData, function (parent) {
+          var childData = parent[child];
+          isIllegal = utils.isUndefined(childData);
+          if (isIllegal) {
+            return name = child;
+          }
+        });
       }
     });
     return getBody();
@@ -988,9 +993,16 @@
       value: function addStream(user) {
         var context = this;
         var pc = context.pc;
-        var mediaStream = user.stream.mediaStream;
+        var stream = user.stream;
 
-        pc.addStream(mediaStream);
+        if (!utils.isArray(stream)) {
+          stream = [stream];
+        }
+        utils.forEach(stream, function (_ref) {
+          var mediaStream = _ref.mediaStream;
+
+          pc.addStream(mediaStream);
+        });
         return context.createOffer(user);
       }
     }, {
@@ -998,9 +1010,16 @@
       value: function removeStream(user) {
         var context = this;
         var pc = context.pc;
-        var mediaStream = user.stream.mediaStream;
+        var stream = user.stream;
 
-        pc.removeStream(mediaStream);
+        if (!utils.isArray(stream)) {
+          stream = [stream];
+        }
+        utils.forEach(stream, function (_ref2) {
+          var mediaStream = _ref2.mediaStream;
+
+          pc.removeStream(mediaStream);
+        });
         return context.createOffer(user);
       }
     }, {
@@ -1041,12 +1060,18 @@
       value: function createOffer(user) {
         var context = this;
         var pc = context.pc;
-        var mediaStream = user.stream.mediaStream;
+        var stream = user.stream;
 
+        if (!utils.isArray(stream)) {
+          stream = [stream];
+        }
         var option = context.getOption();
         return pc.createOffer(option).then(function (desc) {
-          if (mediaStream) {
-            var newStreamId = context.getStreamId(user);
+          utils.forEach(stream, function (_ref3) {
+            var mediaStream = _ref3.mediaStream,
+                size = _ref3.size;
+
+            var newStreamId = context.getStreamId(user, size);
             var streamId = mediaStream.id;
             var _desc = desc,
                 sdp = _desc.sdp;
@@ -1058,8 +1083,8 @@
             utils.extend(desc, {
               sdp: sdp
             });
-            desc = context.renameCodec(desc);
-          }
+          });
+          desc = context.renameCodec(desc);
           utils.extend(context, {
             desc: desc
           });
@@ -1170,11 +1195,22 @@
       }
     }, {
       key: 'getStreamId',
-      value: function getStreamId(user) {
+      value: function getStreamId(user, size) {
         var tpl = '{userId}_{tag}';
         var userId = user.id,
-            tag = user.stream.tag;
+            stream = user.stream;
 
+        if (!utils.isArray(stream)) {
+          stream = [stream];
+        }
+
+        var _stream = stream,
+            _stream2 = slicedToArray(_stream, 1),
+            tag = _stream2[0].tag;
+
+        if (utils.isEqual(size, StreamSize.MIN)) {
+          tpl = '{userId}_{tag}_tiny';
+        }
         return utils.tplEngine(tpl, {
           userId: userId,
           tag: tag
@@ -1256,13 +1292,17 @@
         if (uris) {
           streams = utils.uniq(uris, function (target) {
             var streamId = target.streamId,
-                tag = target.tag;
+                tag = target.tag,
+                mediaType = target.mediaType,
+                state = target.state;
 
             return {
               key: [streamId, tag].join('_'),
               value: {
                 tag: tag,
-                uris: uris
+                uris: uris,
+                mediaType: mediaType,
+                state: state
               }
             };
           });
@@ -1829,7 +1869,14 @@
         if (utils.isEmpty(users)) {
           DataCache.set(DataCacheName.IS_NOTIFY_READY, true);
         }
+
+        var _im$getUser = im.getUser(),
+            currentUserId = _im$getUser.id;
+
         utils.forEach(users, function (data, id) {
+          if (utils.isEqual(currentUserId, id)) {
+            return;
+          }
           var uris = data.uris;
 
           uris = JSON.parse(uris);
@@ -1889,8 +1936,8 @@
       });
     };
     var isCurrentUser = function isCurrentUser(user) {
-      var _im$getUser = im.getUser(),
-          id = _im$getUser.id;
+      var _im$getUser2 = im.getUser(),
+          id = _im$getUser2.id;
 
       return utils.isEqual(user.id, id);
     };
@@ -1988,8 +2035,10 @@
             isAdd = false;
           }
         });
+        var msid = pc.getStreamId(user);
         if (isAdd) {
           subs.push({
+            msid: msid,
             uri: uri,
             type: type,
             tag: tag
@@ -2042,12 +2091,16 @@
       var size = user.stream.size,
           id = user.id;
 
+      var streams = SubscribeCache.get(id);
+      if (utils.isUndefined(streams)) {
+        return utils.Defer.reject(ErrorType.Inner.STREAM_NOT_EXIST);
+      }
       return getBody().then(function (body) {
-        var streams = SubscribeCache.get(id);
         var streamId = pc.getStreamId(user);
         var stream = utils.filter(streams, function (stream) {
-          var isVideo = utils.isEqual(stream.type, StreamType.VIDEO);
-          return utils.isEqual(streamId, stream.streamId) && isVideo;
+          var msid = stream.msid;
+
+          return utils.isEqual(streamId, msid);
         })[0];
         if (!stream) {
           return utils.Defer.reject(ErrorType.Inner.STREAM_NOT_EXIST);
@@ -2088,25 +2141,23 @@
         });
         var tracks = stream[type]();
         utils.forEach(tracks, function (track) {
-          track.enable = isEnable;
+          track.enabled = isEnable;
         });
       }
     };
 
     var getFitUris = function getFitUris(user, type, state) {
-      var streamId = pc.getStreamId(user);
-      var uris = PubResourceCache.get(streamId) || [];
-      var id = user.id,
-          tag = user.stream.tag;
+      var id = user.id;
 
-      var targetId = [id, tag].join('_');
+      var uris = PubResourceCache.get(id) || [];
+      var targetId = pc.getStreamId(user);
       uris = utils.filter(uris, function (stream) {
-        var streamId = stream.streamId,
+        var msid = stream.msid,
             mediaType = stream.mediaType;
 
-        var isSameStream = utils.isEqual(targetId, streamId),
+        var isSameStream = utils.isEqual(targetId, msid),
             isSameType = utils.isEqual(mediaType, type);
-        var isFit = !isSameStream && !isSameType;
+        var isFit = isSameStream && isSameType;
         // state 默认为 TrackState.ENABLE，为 DISABLE 未发布资源
         if (isFit) {
           utils.extend(stream, {
@@ -2130,25 +2181,28 @@
       }
       return utils.Defer.resolve();
     };
-    var modifyTrack = function modifyTrack(user, type, state) {
-      var isEnable = utils.isEqual(state, TrackState.ENABLE);
-      trackHandler(user, type, isEnable);
+    var modifyTrack = function modifyTrack(user, type, state, isEnabled) {
+      trackHandler(user, type, isEnabled);
       if (isCurrentUser(user)) {
         sendModify(user, type, state);
       }
       return utils.Defer.resolve();
     };
     var mute = function mute(user) {
-      return modifyTrack(user, StreamType.AUDIO, TrackState.DISBALE);
+      var isEnabled = false;
+      return modifyTrack(user, StreamType.AUDIO, TrackState.DISBALE, isEnabled);
     };
     var unmute = function unmute(user) {
-      return modifyTrack(user, StreamType.AUDIO, TrackState.ENABLE);
+      var isEnabled = true;
+      return modifyTrack(user, StreamType.AUDIO, TrackState.ENABLE, isEnabled);
     };
     var disable = function disable(user) {
-      return modifyTrack(user, StreamType.VIDEO, TrackState.DISBALE);
+      var isEnabled = false;
+      return modifyTrack(user, StreamType.VIDEO, TrackState.DISBALE, isEnabled);
     };
     var enable = function enable(user) {
-      return modifyTrack(user, StreamType.VIDEO, TrackState.ENABLE);
+      var isEnabled = true;
+      return modifyTrack(user, StreamType.VIDEO, TrackState.ENABLE, isEnabled);
     };
     var dispatch = function dispatch(event, args) {
       switch (event) {
@@ -7279,6 +7333,9 @@
       im.on(DownEvent.STREAM_MUTED, function (error, user) {
         eventHandler(DownEvent.STREAM_MUTED, user, error);
       });
+      im.on(DownEvent.STREAM_UNMUTED, function (error, user) {
+        eventHandler(DownEvent.STREAM_UNMUTED, user, error);
+      });
       request$1.setOption(option);
       return _this;
     }
@@ -7328,7 +7385,7 @@
       var context = this;
       var option = {
         url: 'https://ms-xq.rongcloud.net/',
-        // url: 'http://10.12.8.87:7788/',
+        // url: 'http://10.12.8.134:7788/',
         created: function created() {},
         mounted: function mounted() {},
         unmounted: function unmounted() {},
