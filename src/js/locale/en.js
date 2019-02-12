@@ -18,7 +18,15 @@
       leftError: 'Left room failed',
       getScreenError: 'Get screenshare failed',
       addScreenError: 'Add screenshare failed',
-      closeScreenError: 'Close screenshare failed'
+      closeScreenError: 'Close screenshare failed',
+      publishError: 'Publish stream failed',
+      getLocalStreamError: 'Failed to get local video stream',
+      subscriptError: 'Subscription failed',
+      closeVideoError: 'Failed to close the camera',
+      openVideoError: 'Failed to open the camera',
+      closeAudioError: 'Turn off the microphone failed',
+      openAudioError: 'Turning on the microphone failed',
+      switchStreamError: 'Switching stream failed'
     },
     placeholder: {
       roomId: 'Please enter the RoomId',

@@ -72,7 +72,7 @@
   }
 
   function publishStreamError(error) {
-    sealAlert('推送流失败' + ' ' + JSON.stringify(error));
+    sealAlert(localeData.publishError + ' ' + JSON.stringify(error));
   }
 
   function rtcTokenError(error) {
@@ -84,7 +84,7 @@
   }
 
   function getSelfMediaStreamError(error) {
-    sealAlert('获取本地视频流失败' + ' ' + error.toString());
+    sealAlert(localeData.getLocalStreamError + ' ' + error.toString());
   }
 
   function getStreamType(videoEnable, audioEnable) {
@@ -128,7 +128,7 @@
     var closeVideo = isSelf ? streamBox.closeVideoBySelf : streamBox.closeVideoByOther;
     var openVideo = isSelf ? streamBox.openVideoBySelf : streamBox.openVideoByOther;
     var closeAudio = isSelf ? streamBox.closeAudioBySelf : streamBox.closeAudioByOther;
-    var openAudio = isSelf ? streamBox.openAudioBySelf : streamBox.openAudioByOthe;
+    var openAudio = isSelf ? streamBox.openAudioBySelf : streamBox.openAudioByOther;
     switch(type) {
     case StreamType.AUDIO:
       closeVideo.apply(streamBox);
@@ -171,7 +171,7 @@
         showUserStream(user);
         userStreams.add(user);
       }, function (error) {
-        sealAlert('订阅失败' + JSON.stringify(error));
+        sealAlert(localeData.subscriptError + JSON.stringify(error));
       });
     }
   }
@@ -263,7 +263,7 @@
       var streamBox = StreamBox.get(user.id);
       streamBox.openVideoBySelf();
     }, function () {
-      sealAlert('关闭摄像头失败');
+      sealAlert(localeData.openVideoError);
     });
   }
 
@@ -276,7 +276,7 @@
       var streamBox = StreamBox.get(user.id);
       streamBox.closeVideoBySelf();
     }, function () {
-      sealAlert('关闭摄像头失败');
+      sealAlert(localeData.closeVideoError);
     });
   }
 
@@ -289,7 +289,7 @@
       var streamBox = StreamBox.get(user.id);
       streamBox.openAudioBySelf();
     }, function () {
-      sealAlert('关闭摄像头失败');
+      sealAlert(localeData.openAudioError);
     });
   }
 
@@ -302,7 +302,7 @@
       var streamBox = StreamBox.get(user.id);
       streamBox.closeAudioBySelf();
     }, function () {
-      sealAlert('关闭摄像头失败');
+      sealAlert(localeData.closeAudioError);
     });
   }
 
@@ -317,14 +317,14 @@
     rongRTCStream.resize(user).then(function () {
       console.log('resize success')
     }, function () {
-      sealAlert('切换流失败');
+      sealAlert(localeData.switchStreamError);
     });
   }
 
   function addUserBox(user) {
     var id = user.id,
       isSelf = id === loginUserId;
-    var name = isSelf ? '自己' : id;
+    var name = isSelf ? localeData.self : id;
     var resizeEvent = isSelf ? null : resizeStream;
     var streamBox = new StreamBox(id, {
       resizeEvent: resizeEvent,

@@ -19,7 +19,15 @@
       getScreenError: '获取屏幕共享流失败',
       addScreenError: '加入屏幕共享流失败',
       closeScreenError: '关闭屏幕共享失败',
-      getWhiteboardError: '获取白板失败'
+      getWhiteboardError: '获取白板失败',
+      publishError: '推送流失败',
+      getLocalStreamError: '获取本地视频流失败',
+      subscriptError: '订阅失败',
+      closeVideoError: '关闭摄像头失败',
+      openVideoError: '打开摄像头失败',
+      closeAudioError: '关闭麦克风失败',
+      openAudioError: '打开麦克风失败',
+      switchStreamError: '切换流失败'
     },
     placeholder: {
       roomId: '请在这里输入会议 ID',
