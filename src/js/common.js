@@ -272,7 +272,7 @@
 
       var self = this;
       temp = utils.tplEngine(temp, {
-        name: id
+        name: params.name || id
       });
       var dom = createLocaleDom(temp),
         videoDom = Dom.getChild(dom, 'rong-video'),

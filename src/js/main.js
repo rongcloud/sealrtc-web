@@ -1,38 +1,66 @@
 (function (dependencies) {
   var win = dependencies.win,
-    RongRTC = dependencies.RongRTC,
-    RongSeal = dependencies.RongSeal,
-    RongScreenShare = dependencies.RongScreenShare,
-    RongMedia = dependencies.RongMedia,
-    globalConfig = dependencies.globalConfig;
+    RongSeal = win.RongSeal,
+    RongRTC = win.RongRTC;
   var common = RongSeal.common,
     utils = RongSeal.utils,
-    // noop = utils.noop,
     Dom = utils.Dom,
-    UI = common.UI,
-    StreamBox = UI.StreamBox,
-    getDom = Dom.get,
     sealAlert = common.sealAlert,
-    getRTCToken = common.getRTCToken;
-
-  var locale = RongSeal.locale[common.lang],
+    locale = RongSeal.locale[common.lang],
     localeData = locale.data;
 
-  var rongRTC, // RongRTC 实例
-    rongRTCRoom, // RongRTC Room 实例
-    rongRTCStream, // RongRTC Stream 实例
-    streamList, // SteramList(流列表 UI 操作) 实例
-    loginUserId,
-    whiteBoard = new UI.WhiteBoard(), // 操作白板 UI 的实例
-    screenShare = {
-      isOpened: false
-    };
+  var RongMedia = dependencies.RongMedia;
+  var RongScreenShare = dependencies.RongScreenShare;
+  
+  var StreamBox = common.UI.StreamBox;
+  var StreamList = common.UI.StreamList;
 
-  var CustomizeMediaType = {
-    ScreenShare: 'screen'
+  var ClassName = {
+    LOGIN_PAGE: 'rong-login',
+    RTC_PAGE: 'rong-rtc',
+    USER_TITLE: 'rong-user-title',
+    ROOM_TITLE: 'rong-room-title',
+    HANGUP_BUTTON: 'rong-opt-hangup',
+    WHITEBOARD_BUTTON: 'rong-opt-wb',
+    SCREENSHARE_BUTTON: 'rong-opt-share',
+    STREAM_BOX: 'rong-stream-wrap'
   };
 
-  var alertScreenSharePlugin = function () {
+  var loginUserId, rongRTC, rongRTCRoom, rongRTCStream;
+  var streamList;
+  var userStreams = {
+    users: {},
+    getList: function (id) {
+      return userStreams.users[id];
+    },
+    getStream: function (id) {
+      var list = userStreams.users[id] || [];
+      var stream = null;
+      if (list.length) {
+        stream = list[list.length - 1];
+      }
+      return stream;
+    },
+    add: function (user) {
+      var id = user.id;
+      userStreams.users[id] = userStreams.users[id] || [];
+      userStreams.users[id].push(user);
+    },
+    remove: function (user) {
+      var id = user.id;
+      var streams = userStreams.users[id];
+      var index = streams.indexOf(user);
+      streams.splice(index, 1);
+    }
+  };
+
+  var CustomizeTag = {
+    NORMAL: 'normal',
+    SCREENSHARE: 'screenshare'
+  };
+
+  function getScreenShareError(error) {
+    console.log('screenshare error', error);
     sealAlert(localeData.installPrompt, {
       isShowCancel: true,
       confirmText: localeData.downloadTitle,
@@ -41,279 +69,353 @@
         utils.download(downloadUrl);
       }
     });
-  };
+  }
 
-  var getSelfMedia = function (opt) {
-    opt = opt || {};
+  function publishStreamError(error) {
+    sealAlert('推送流失败' + ' ' + JSON.stringify(error));
+  }
+
+  function rtcTokenError(error) {
+    sealAlert(localeData.getTokenError + ' ' + error.toString());
+  }
+
+  function joinRoomError(error) {
+    sealAlert(localeData.joinError + ' ' + JSON.stringify(error));
+  }
+
+  function getSelfMediaStreamError(error) {
+    sealAlert('获取本地视频流失败' + ' ' + error.toString());
+  }
+
+  function getStreamType(videoEnable, audioEnable) {
     var StreamType = rongRTC.StreamType;
-    var constraints = {
-      video: opt.videoEnable,
-      audio: opt.audioEnable
-    };
     var type = StreamType.NONE;
-    if (opt.videoEnable && opt.audioEnable) {
-      type = StreamType.VIDEO_AND_AUDIO
-    } else if (opt.videoEnable) {
+    if (videoEnable && audioEnable) {
+      type = StreamType.AUDIO_AND_VIDEO
+    } else if (videoEnable) {
       type = StreamType.VIDEO;
-    } else if (opt.audioEnable) {
+    } else if (audioEnable) {
       type = StreamType.AUDIO;
     }
+    return type;
+  }
+
+  function getSelfMediaStream(videoEnable, audioEnable, resolution) {
+    var videoConfig = videoEnable ? resolution : videoEnable;
+    var constraints = {
+      video: videoConfig,
+      audio: audioEnable
+    };
     return new Promise(function (resolve, reject) {
       RongMedia.get(constraints).then(function (stream) {
         var user = {
           id: loginUserId,
           stream: {
             mediaStream: stream,
-            type: type
+            type: getStreamType(constraints.video, constraints.audio),
+            tag: CustomizeTag.NORMAL
           }
         };
         resolve(user);
-      }, function (error) {
-        reject(error);
-      });
-    });
-  };
+      }, reject);
+    })
+  }
 
-  var hangup = function () {
-    win.onbeforeunload = utils.noop;
-    rongRTCRoom.leave().then(function () {
-      win.location.reload();
-    }, function () {
-      sealAlert(localeData.leftError);
-      win.location.reload();
-    });
-  };
-
-  /* 关闭屏幕共享 */
-  var closeScreenShare = function (id) {
-    var streamBox = StreamBox.get(id);
-    var user = {
-      id: id,
-      stream: {
-        type: CustomizeMediaType.ScreenShare
-      }
-    };
-    rongRTCStream.get(user).then(function (result) {
-      var mediaStream = result.stream.mediaStream;
-      user.stream.mediaStream = mediaStream;
-      return rongRTCStream.unpublish(user);
-    }, function () {
-      sealAlert('获取屏幕共享流失败');
-    }).then(function () {
-      streamBox.closeScreenShare();
-      screenShare.isOpened = false;
-    }, function () {
-      sealAlert(localeData.closeScreenError);
-    });
-  };
-
-  /* 展示屏幕共享 */
-  var openScreenShare = function (id) {
-    var streamBox = StreamBox.get(id);
-    RongScreenShare.check().then(function () {
-      return new RongScreenShare.get();
-    }, function () {
-      alertScreenSharePlugin();
-    }).then(function (stream) {
-      var user = {
-        id: id,
-        stream: {
-          type: CustomizeMediaType.ScreenShare,
-          mediaStream: stream
-        }
-      };
-      stream.oninactive = function () {
-        closeScreenShare(id);
-      };
-      return rongRTCStream.publish(user);
-    }, function () {
-      sealAlert('获取屏幕共享流失败');
-    }).then(function () {
-      screenShare.isOpened = true;
-      streamBox.openScreenShare();
-    }, function () {
-      sealAlert('推送失败');
-    });
-  };
-
-  /**
-   * 屏幕共享开关
-   * @param {string} id 
-   */
-  var switchScreenShare = function (id) {
-    screenShare.isOpened ? closeScreenShare(id) : openScreenShare(id);
-  };
-
-  /* 展示白板 */
-  var startWhiteboard = function () {
-    var WhiteBoard = rongRTC.WhiteBoard;
-    WhiteBoard.create().then(function (wb) {
-      whiteBoard.show(wb.url);
-    }, function () {
-      sealAlert(localeData.getWhiteboardError);
-    });
-  };
-
-  /**
-   * 视频流开关(登录用户操作)
-   * @param {string} id 用户id
-   */
-  var switchVideo = function (id) {
-    var user = { id: id };
-    var videoStream = rongRTCStream.video.videoStream;
-    var streamBox = StreamBox.get(id);
-    var isClosed = streamBox.isVideoCloseBySelf();
-    if (isClosed) {
-      videoStream.enable(user);
-      streamBox.openVideoBySelf();
-    } else {
-      videoStream.disable(user);
-      streamBox.closeVideoBySelf();
-    }
-  };
-
-  /**
-   * 音频流开关
-   * @param {string} id 用户id
-   */
-  var switchAudio = function (id) {
-    var user = { id: id };
-    var audioStream = rongRTCStream.audio.audioStream;
-    var streamBox = StreamBox.get(id);
-    var isClosed = streamBox.isAudioCloseBySelf();
-    if (isClosed) {
-      audioStream.unmute(user);
-      streamBox.openAudioBySelf()
-    } else {
-      audioStream.mute(user);
-      streamBox.closeAudioBySelf()
-    }
-  };
-
-  /**
-   * 创建用户展示框, 包含绑定点击事件
-   * @param {string} id 用户id
-   */
-  var createStreamBox = function (user) {
-    var id = user.id;
-    var streamBox = new StreamBox(id, {
-      isSelf: id === loginUserId
-    });
-    var childDom = streamBox.childDom;
-    childDom.videoOptBtn.onclick = function (e) {
-      switchVideo(id);
-      e.stopPropagation();
-    };
-    childDom.audioOptBtn.onclick = function (e) {
-      switchAudio(id);
-      e.stopPropagation();
-    };
-    streamList.add(streamBox);
-  };
-
-  /**
-   * 删除用户的展示框
-   * @param {string} id 用户id
-   */
-  var removeStreamBox = function (user) {
-    var id = user.id;
-    var streamBox = StreamBox.get(id);
-    streamList.remove(streamBox);
-  };
-
-  /**
-   * 改变用户资源展示
-   * @param {string} id  用户 id
-   * @param {int}  mediaType 资源类型
-   */
-  var changeStreamBox = function (user) {
-    var id = user.id,
-      mediaType = user.stream.type;
+  function setStreamBox(id, type) {
     var StreamType = rongRTC.StreamType;
     var streamBox = StreamBox.get(id);
-    switch (mediaType) {
+    var isSelf = id === loginUserId;
+    var closeVideo = isSelf ? streamBox.closeVideoBySelf : streamBox.closeVideoByOther;
+    var openVideo = isSelf ? streamBox.openVideoBySelf : streamBox.openVideoByOther;
+    var closeAudio = isSelf ? streamBox.closeAudioBySelf : streamBox.closeAudioByOther;
+    var openAudio = isSelf ? streamBox.openAudioBySelf : streamBox.openAudioByOthe;
+    switch(type) {
     case StreamType.AUDIO:
-      streamBox.closeVideoByOther();
-      streamBox.openAudioByOther();
+      closeVideo.apply(streamBox);
+      openAudio.apply(streamBox);
       break;
     case StreamType.VIDEO:
-      streamBox.openVideoByOther();
-      streamBox.closeAudioByOther();
+      openVideo.apply(streamBox);
+      closeAudio.apply(streamBox);
       break;
-    case StreamType.VIDEO_AND_AUDIO:
-      streamBox.openVideoByOther();
-      streamBox.openAudioByOther();
+    case StreamType.AUDIO_AND_VIDEO:
+      openVideo.apply(streamBox);
+      openAudio.apply(streamBox);
       break;
     case StreamType.NONE:
-      streamBox.closeVideoByOther();
-      streamBox.closeAudioByOther();
+      closeVideo.apply(streamBox);
+      closeAudio.apply(streamBox);
       break;
     default:
       break;
     }
-  };
+  }
 
-  /**
-   * 更新用户展示的流
-   * @param {string} id 
-   * @param {mediaStream} mediaStream 流
-   * @param {int} mediaType 资源类型
-   */
-  var updateStreamBox = function (user) {
+  function showUserStream(user) {
     var id = user.id,
-      mediaType = user.stream.type,
+      type = user.stream.type,
       mediaStream = user.stream.mediaStream;
     var streamBox = StreamBox.get(id);
-    streamBox.setStream(mediaStream);
-    mediaType && changeStreamBox(user);
-  };
+    streamBox.showStream(mediaStream);
+    setStreamBox(id, type);
+  }
 
-  /* 设置房间号展示 */
-  var setRoomTitle = function (roomId) {
-    var roomDom = Dom.getById('RongRoomTitle');
-    roomDom.textContent = localeData.room + ': ' + roomId;
-  };
+  function addUserStream(user) {
+    var isSelf = user.id === loginUserId;
+    if (isSelf) {
+      showUserStream(user);
+      userStreams.add(user);
+    } else {
+      user.stream.type = rongRTC.StreamType.AUDIO_AND_VIDEO;
+      rongRTCStream.subscribe(user).then(function (user) {
+        showUserStream(user);
+        userStreams.add(user);
+      }, function (error) {
+        sealAlert('订阅失败' + JSON.stringify(error));
+      });
+    }
+  }
 
-  /* 设置用户名展示 */
-  var setUserTitle = function (userName) {
-    var userDom = Dom.getById('RongUserTitle');
-    userDom.textContent = localeData.user + ': ' + userName;
-  };
+  function removeUserStream(user) {
+    console.log('remove user stream', user);
+    userStreams.remove(user);
+    rongRTCStream.unsubscribe(user);
+    var list = userStreams.getList(user.id);
+    if (list.length) {
+      user = list[list.length - 1];
+      showUserStream(user);
+    }
+  }
+
+  function closeScreenShare() {
+    var list = userStreams.getList(loginUserId);
+    list.forEach(function (user) {
+      var stream = user.stream;
+      var tag = stream.tag;
+      if (tag === CustomizeTag.SCREENSHARE) {
+        var streamBox = StreamBox.get(loginUserId);
+        streamBox.closeScreenShare();
+        removeUserStream(user);
+      }
+    });
+  }
+
+  function openScreenshare() {
+    var user = {
+      id: loginUserId,
+      stream: {
+        tag: CustomizeTag.SCREENSHARE,
+        type: rongRTC.StreamType.AUDIO_AND_VIDEO,
+        mediaStream: null
+      }
+    };
+    RongScreenShare.get().then(function (stream) {
+      user.stream.mediaStream = stream;
+      stream.oninactive = function () {
+        closeScreenShare(user.id);
+      };
+      return rongRTCStream.publish(user);
+    }, getScreenShareError).then(function () {
+      addUserStream(user);
+      var streamBox = StreamBox.get(loginUserId);
+      streamBox.openScreenShare();
+    }, publishStreamError);
+  }
+
+  function hideUserVideo(user) {
+    var id = user.id,
+      mediaStream = user.stream.mediaStream;
+    var streamBox = StreamBox.get(id);
+    streamBox.showStream(mediaStream);
+    streamBox.closeVideoByOther();
+  }
+
+  function showUserVideo(user) {
+    var id = user.id,
+      mediaStream = user.stream.mediaStream;
+    var streamBox = StreamBox.get(id);
+    streamBox.showStream(mediaStream);
+    streamBox.openVideoByOther();
+  }
+
+  function hideUserAudio(user) {
+    var id = user.id,
+      mediaStream = user.stream.mediaStream;
+    var streamBox = StreamBox.get(id);
+    streamBox.showStream(mediaStream);
+    streamBox.closeAudioByOther();
+  }
+
+  function showUserAudio(user) {
+    var id = user.id,
+      mediaStream = user.stream.mediaStream;
+    var streamBox = StreamBox.get(id);
+    streamBox.showStream(mediaStream);
+    streamBox.openAudioByOther();
+  }
+
+  function openVideo(user) {
+    var video = rongRTCStream.video;
+    var streamList = userStreams.getList(user.id);
+    user = streamList[streamList.length - 1];
+    video.enable(user).then(function () {
+      showUserStream(user);
+      var streamBox = StreamBox.get(user.id);
+      streamBox.openVideoBySelf();
+    }, function () {
+      sealAlert('关闭摄像头失败');
+    });
+  }
+
+  function closeVideo(user) {
+    var video = rongRTCStream.video;
+    var streamList = userStreams.getList(user.id);
+    user = streamList[streamList.length - 1];
+    video.disable(user).then(function () {
+      showUserStream(user);
+      var streamBox = StreamBox.get(user.id);
+      streamBox.closeVideoBySelf();
+    }, function () {
+      sealAlert('关闭摄像头失败');
+    });
+  }
+
+  function openAudio(user) {
+    var audio = rongRTCStream.audio;
+    var streamList = userStreams.getList(user.id);
+    user = streamList[streamList.length - 1];
+    audio.unmute(user).then(function () {
+      showUserStream(user);
+      var streamBox = StreamBox.get(user.id);
+      streamBox.openAudioBySelf();
+    }, function () {
+      sealAlert('关闭摄像头失败');
+    });
+  }
+
+  function closeAudio(user) {
+    var audio = rongRTCStream.audio;
+    var streamList = userStreams.getList(user.id);
+    user = streamList[streamList.length - 1];
+    audio.mute(user).then(function () {
+      showUserStream(user);
+      var streamBox = StreamBox.get(user.id);
+      streamBox.closeAudioBySelf();
+    }, function () {
+      sealAlert('关闭摄像头失败');
+    });
+  }
+
+  function resizeStream(isZoom, id) {
+    var StreamSize = rongRTC.StreamSize;
+    var size = isZoom ? StreamSize.MAX : StreamSize.MIN;
+    var user = userStreams.getStream(id);
+    if (!user) {
+      return;
+    }
+    user.stream.size = size;
+    rongRTCStream.resize(user).then(function () {
+      console.log('resize success')
+    }, function () {
+      sealAlert('切换流失败');
+    });
+  }
+
+  function addUserBox(user) {
+    var id = user.id,
+      isSelf = id === loginUserId;
+    var name = isSelf ? '自己' : id;
+    var resizeEvent = isSelf ? null : resizeStream;
+    var streamBox = new StreamBox(id, {
+      resizeEvent: resizeEvent,
+      name: name
+    });
+    streamList.addBox(streamBox);
+    if (isSelf) {
+      streamBox.zoom();
+    }
+    var childDom = streamBox.childDom;
+    childDom.videoBtn.onclick = function (e) {
+      streamBox.isVideoOpenedBySelf ? closeVideo(user) : openVideo(user);
+      e.stopPropagation();
+    };
+    childDom.audioBtn.onclick = function (e) {
+      streamBox.isAudioOpenedBySelf ? closeAudio(user) : openAudio(user);
+      e.stopPropagation();
+    };
+  }
+
+  function removeUserBox(user) {
+    var id = user.id;
+    var streamBox = StreamBox.get(id);
+    streamList.remove(streamBox);
+  }
+
+  function publishSelfMediaStream(videoEnable, audioEnable, resolution) {
+    return new Promise(function (resolve, reject) {
+      getSelfMediaStream(videoEnable, audioEnable, resolution).then(function (user) {
+        rongRTCStream.publish(user).then(function () {
+          resolve(user);
+        }, reject);
+      }, getSelfMediaStreamError);
+    });
+  }
+
+  function joinRoom(roomId) {
+    return RongSeal.im.getRTCToken(roomId).then(function (token) {
+      var user = {
+        id: loginUserId,
+        token: token
+      };
+      return rongRTCRoom.join(user);
+    }, rtcTokenError);
+  }
 
   /**
    * 展示音视频交互主界面
    * @param {object} params
    * @param {string} params.roomId 房间号
    * @param {string} params.userId 用户id
-   * @param {string} params.resolution 分辨率
    */
-  var showRTCPage = function (params, events) {
-    events = events || {};
-    var hangupBtnDom = getDom('.rong-opt-hangup'),
-      wbBtnDom = getDom('.rong-opt-wb'),
-      shareBtnDom = getDom('.rong-opt-share'),
-      wrapDom = getDom('.rong-stream-wrap');
-    streamList = new UI.StreamList();
-    wrapDom.appendChild(streamList.dom);
-    Dom.hide('.rong-login');
-    Dom.show('.rong-rtc');
-    setRoomTitle(params.roomId);
-    setUserTitle(params.userId);
-    shareBtnDom.onclick = function () {
-      events.switchScreenShare(params.userId);
-    };
-    wbBtnDom.onclick = events.startWhiteboard;
-    hangupBtnDom.onclick = events.hangup;
-    win.onbeforeunload = events.hangup;
-  };
+  function showRTCPage(params) {
+    // 隐藏 login, 展示 rtc
+    Dom.hideByClass(ClassName.LOGIN_PAGE);
+    Dom.showByClass(ClassName.RTC_PAGE);
+    
+    // 设置 UI 上的房间号和个人信息
+    var roomTitleDom = Dom.getByClass(ClassName.ROOM_TITLE);
+    roomTitleDom.textContent = localeData.room + ': ' + params.roomId;
+    var userTitleDom = Dom.getByClass(ClassName.USER_TITLE);
+    userTitleDom.textContent = localeData.user + ': ' + params.userId;
+    
+    // 创建流列表 UI
+    var rtcBoxDom = Dom.getByClass(ClassName.STREAM_BOX);
+    streamList = new StreamList();
+    rtcBoxDom.appendChild(streamList.dom);
+  }
 
-  var getTokenParams = function (userId) {
-    return {
-      tokenUrl: globalConfig.TOKEN_URL,
-      userId: userId,
-      appId: globalConfig.APP_ID
-    };
-  };
+  function switchScreenShare() {
+    var streamBox = StreamBox.get(loginUserId);
+    streamBox.isScreenShareOpened ? closeScreenShare() : openScreenshare();
+  }
+
+  function quit() {
+    rongRTCRoom.leave().then(function () {
+      win.location.reload();
+    }, function () {
+      // leave error
+    });
+  }
+
+  function bindRTCBtnEvent() {
+    var hangupBtn = Dom.getByClass(ClassName.HANGUP_BUTTON),
+      // whiteboardBtn = Dom.getByClass(ClassName.WHITEBOARD_BUTTON),
+      screenShareBtn = Dom.getByClass(ClassName.SCREENSHARE_BUTTON);
+    hangupBtn.onclick = quit;
+    // whiteboardBtn.onclick = '';
+    screenShareBtn.onclick = switchScreenShare;
+    win.onbeforeunload = quit;
+  }
 
   /**
   * 开始实时音视频
@@ -325,58 +427,45 @@
   * @param {boolean} params.audioEnable 是否开启 audio
   */
   var startRTC = function (params) {
+    showRTCPage(params);
+    bindRTCBtnEvent();
+
     loginUserId = params.userId;
     rongRTC = new RongRTC({
-      url: globalConfig.WS_NAV_URL
+      RongIMLib: win.RongIMLib,
+      mode: RongRTC.RTC,
+      mounted: function () {}
     });
     rongRTCRoom = new rongRTC.Room({
-      roomId: params.roomId,
-      joined: createStreamBox,
-      left: removeStreamBox
+      id: params.roomId,
+      joined: addUserBox,
+      left: removeUserBox
     });
     rongRTCStream = new rongRTC.Stream({
-      autoOpen: true,
-      // readied: updateStreamBox,
-      opened: updateStreamBox,
-      // closed: ,
-      changed: changeStreamBox
+      published: addUserStream,
+      unpublished: removeUserStream,
+      disabled: hideUserVideo,
+      enabled: showUserVideo,
+      muted: hideUserAudio,
+      unmuted: showUserAudio
     });
-    showRTCPage(params, {
-      startWhiteboard: startWhiteboard,
-      hangup: hangup,
-      switchScreenShare: switchScreenShare
-    });
-
-    createStreamBox(loginUserId);
-
-    var tokenParams = getTokenParams(loginUserId);
-    getRTCToken(tokenParams).then(function (token) {
-      var user = {
-        id: params.userId,
-        token: token
-      };
-      return rongRTCRoom.join(user);
-    }, function () {
-      sealAlert(localeData.getTokenError);
-    }).then(function () {
-      return getSelfMedia(params);
-    }, function () {
-      sealAlert(localeData.joinError);
-    }).then(function (user) {
-      rongRTCStream.publish(user);
-      updateStreamBox(user);
-    }, function () {
-      sealAlert('获取本地视频流失败');
-    });
+    joinRoom(params.roomId).then(function () {
+      var videoEnable = params.videoEnable,
+        audioEnable = params.audioEnable,
+        resolution = params.resolution;
+      addUserBox({ id: loginUserId });
+      publishSelfMediaStream(videoEnable, audioEnable, resolution).then(
+        addUserStream, publishStreamError);
+    }, joinRoomError);
   };
 
-  win.RongSeal = win.RongSeal || {};
-  win.RongSeal.startRTC = startRTC;
+  RongSeal.startRTC = startRTC;
 
 })({
   win: window,
   RongRTC: window.RongRTC,
   RongSeal: window.RongSeal,
   RongScreenShare: window.RongScreenShare,
+  RongMedia: window.RongMedia,
   globalConfig: window.global_config
 });

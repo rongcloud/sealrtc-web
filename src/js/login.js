@@ -52,7 +52,7 @@
       closeAudioDom = getSelectedByName('isCloseAudio');
     var roomId = roomDom.value,
       userId = userDom.value,
-      resolution = common.formatResolution(resolutionDom.value),
+      resolution = common.formatResolution(resolutionDom.value), // 格式如: { width: 640, height: 320 }
       videoEnable = !closeVideoDom,
       audioEnable = !closeAudioDom;
     return {
