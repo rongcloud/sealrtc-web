@@ -407,6 +407,7 @@ ul, li {
     z-index: 12;
     video {
       object-fit: cover;
+      transform: rotateY(180deg);
     }
     .rong-cover-content {
       p {

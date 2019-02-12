@@ -1,4 +1,5 @@
 (function (dependencies) {
+  var win = dependencies.win;
   var RongSeal = dependencies.RongSeal,
     utils = RongSeal.utils,
     common = RongSeal.common,
@@ -12,7 +13,7 @@
     localeData = locale.data;
 
   var roomDom = getDomById('roomId'),
-    userDom = getDomById('userId'),
+    // userDom = getDomById('userId'),
     startBtnDom = getDomById('start'),
     inputDomList = Dom.getList('.rong-login-input');
   
@@ -29,17 +30,17 @@
 
   var checkRTCValue = function () {
     var isRoomIdEmpty = !roomDom.value;
-    var isUserIdEmpty = !userDom.value;
+    // var isUserIdEmpty = !userDom.value;
     var isValid = true;
     var prompt = '';
     if (isRoomIdEmpty) {
       prompt = localeData.roomIdEmpty;
       isValid = false;
     }
-    if (isUserIdEmpty) {
-      prompt = localeData.userIdEmpty;
-      isValid = false;
-    }
+    // if (isUserIdEmpty) {
+    //   prompt = localeData.userIdEmpty;
+    //   isValid = false;
+    // }
     return {
       isValid: isValid,
       prompt: prompt
@@ -51,12 +52,12 @@
       closeVideoDom = getSelectedByName('isCloseVideo'),
       closeAudioDom = getSelectedByName('isCloseAudio');
     var roomId = roomDom.value,
-      userId = userDom.value,
+      // userId = userDom.value,
       resolution = common.formatResolution(resolutionDom.value), // 格式如: { width: 640, height: 320 }
       videoEnable = !closeVideoDom,
       audioEnable = !closeAudioDom;
     return {
-      userId: userId,
+      // userId: userId,
       roomId: roomId,
       resolution: resolution,
       videoEnable: videoEnable,
@@ -67,22 +68,14 @@
   var startRTC = function () {
     var checkContent = checkRTCValue();
     if (checkContent.isValid) {
-      var connectParams = {
-        appKey: 'e0x9wycfx7flq',
-        token: 'HDrQ2AOdSm8t9GSlrETOhf8d3dyrkUjx04znTXDsPzzpNDJX9spyavYF93rNcbq9iMz2Bzd7e5fWX6SftOHOCYLPgPfFBJHe',
-        navi: 'http://navxq.rongcloud.net'
-      };
-      if (window.location.search !== '') {
-        connectParams = {
-          appKey: 'e0x9wycfx7flq',
-          token: 'JbaTDlVIxTkQ+Z8GVhThVwpRCpGrPzwCFuGMdWXYpP4WzyoeiDeGOarK7N/zbQ977nPcAqg8RBHIAFslIksyEacJF/wOnBc4',
-          navi: 'http://navxq.rongcloud.net'
-        };
-      }
-      RongSeal.im.connect(connectParams, {
+      var user = win.mockUserList[Math.floor(Math.random() * 50) + 1];
+      user.appKey = win.global_config.APP_ID;
+      user.navi = 'http://navxq.rongcloud.net';
+      console.log('user', user);
+      RongSeal.im.connect(user, {
         connected: function (/* userId */) {
           var option = getRTCOption();
-          option.userId = window.location.search !== '' ? 'rtcTest2' : 'rtcTest1';
+          option.userId = user.userId;
           RongSeal.startRTC(option);
           Cache.set(StorageKeys.RoomId, option.roomId);
         }

@@ -130,7 +130,6 @@
       getKeys: getKeys
     };
   };
-  var Logger = console;
   var request = function request(url, option) {
     return fetch(url, option);
   };
@@ -181,16 +180,22 @@
       type: 'interval'
     };
     extend(option, _option);
-    var timer = 0;
+    var timers = [];
     var _timeout = option.timeout,
         type = option.type;
 
-    var timers = {
+    var timerType = {
       resume: {
-        interval: function interval(callback) {
+        interval: function interval(callback, immediate) {
+          if (immediate) {
+            callback();
+          }
           return setInterval(callback, _timeout);
         },
-        timeout: function timeout(callback) {
+        timeout: function timeout(callback, immediate) {
+          if (immediate) {
+            callback();
+          }
           return setTimeout(callback, _timeout);
         }
       },
@@ -203,22 +208,75 @@
         }
       }
     };
-    this.resume = function (callback) {
+    this.resume = function (callback, immediate) {
       callback = callback || noop;
-      var resume = timers.resume;
+      var resume = timerType.resume;
 
-      timer = resume[type](callback);
+      var timer = resume[type](callback, immediate);
+      timers.push(timer);
     };
     this.pause = function () {
-      var pause = timers.pause;
+      var pause = timerType.pause;
 
-      pause[type](timer);
+      forEach(timers, function (timer) {
+        pause[type](timer);
+      });
     };
   }
   var isInclude = function isInclude(str, match) {
     return str.indexOf(match) > -1;
   };
+  function Observer() {
+    var observers = [];
+    this.add = function (observer) {
+      if (isFunction(observer)) {
+        observers.push(observer);
+      }
+    };
+    this.remove = function (observer) {
+      observers = filter(observers, function (_observer) {
+        return _observer !== observer;
+      });
+    };
+    this.emit = function (data) {
+      forEach(observers, function (observer) {
+        observer(data);
+      });
+    };
+  }
+  function Prosumer() {
+    var data = [],
+        isConsuming = false;
+    this.produce = function (res) {
+      data.push(res);
+    };
+    this.consume = function (callback) {
+      if (isConsuming) {
+        return;
+      }
+      isConsuming = true;
+      var next = function next() {
+        var res = data.shift();
+        if (isUndefined(res)) {
+          isConsuming = false;
+          return;
+        }
+        callback(res, next);
+      };
+      next();
+    };
+  }
+  /* 
+   prosumer.consume(function(data, next){
+    //dosomething
+    next();
+   });
+  */
+  var Log = console;
   var utils = {
+    Prosumer: Prosumer,
+    Log: Log,
+    Observer: Observer,
     Timer: Timer,
     isUndefined: isUndefined,
     isBoolean: isBoolean,
@@ -237,7 +295,6 @@
     isContain: isContain,
     noop: noop,
     Cache: Cache,
-    Logger: Logger,
     request: request,
     map: map,
     filter: filter,
@@ -324,6 +381,14 @@
       code: 10001,
       name: 'IM_NOT_CONNECTED',
       msg: '请在 IM 连接成功后开始音频业务'
+    }, {
+      code: 10002,
+      name: 'RTC_NOT_JOIN_ROOM',
+      msg: '未加入房间，加入成功后方可调用业务方法'
+    }, {
+      code: 10003,
+      name: 'SOCKET_UNAVAILABLE',
+      msg: 'IM Server Socket 连接不可用'
     }, {
       code: 20001,
       name: 'STREAM_NOT_EXIST',
@@ -845,6 +910,8 @@
     OFFLINE: 2
   };
 
+  var PingCount = 3;
+
   var EventEmitter = function () {
     function EventEmitter() {
       classCallCheck(this, EventEmitter);
@@ -942,12 +1009,50 @@
 
   var CommonEvent = {
     JOINED: 'common_joined',
-    LEFT: 'common_left'
+    LEFT: 'common_left',
+    ERROR: 'common_error',
+    CONSUME: 'common_consume'
   };
 
-  var CommandEvent = {
-    EXCHANGE: 'command_exchange'
-  };
+  function Logger() {
+    var observer = new utils.Observer();
+    var write = function write(level, content) {
+      var tag = content.tag,
+          meta = content.meta;
+
+      var time = new Date().getTime();
+      var log = {
+        level: level,
+        tag: tag,
+        meta: meta,
+        time: time
+      };
+      observer.emit(log);
+    };
+    var warn = function warn(content) {
+      return write('W', content);
+    };
+    var error = function error(content) {
+      return write('E', content);
+    };
+    var info = function info(content) {
+      return write('I', content);
+    };
+    var log = function log(content) {
+      return write('V', content);
+    };
+    var watch = function watch(watcher) {
+      observer.add(watcher);
+    };
+    return {
+      warn: warn,
+      error: error,
+      info: info,
+      log: log,
+      watch: watch
+    };
+  }
+  var Logger$1 = Logger();
 
   var PeerConnection = function (_EventEmitter) {
     inherits(PeerConnection, _EventEmitter);
@@ -976,7 +1081,7 @@
           context.emit(PeerConnectionEvent.RECEIVED, event);
         },
         oniceconnectionstatechange: function oniceconnectionstatechange(event) {
-          utils.Logger.log(event);
+          Logger$1.log(event);
         }
       };
       utils.forEach(events, function (event, name) {
@@ -1114,7 +1219,9 @@
       key: 'renameCodec',
       value: function renameCodec(offer) {
         var sdp = offer.sdp;
-
+        sdp = sdp.replace(new RegExp('a=group:BUNDLE 0 1', 'g'), 'a=group:BUNDLE audio video')
+        sdp = sdp.replace(new RegExp('a=mid:0', 'g'), 'a=mid:audio')
+        sdp = sdp.replace(new RegExp('a=mid:1', 'g'), 'a=mid:video')
         var codecs = [{
           name: 'H264/90000',
           code: 98,
@@ -1225,7 +1332,8 @@
     UNPUBLISH: 'exchange?{roomId}',
     RESIZE: 'exchange?{roomId}',
     SUBSCRIBE: 'exchange?{roomId}',
-    UNSUBSCRIBE: 'exchange?{roomId}'
+    UNSUBSCRIBE: 'exchange?{roomId}',
+    EXIT: 'exit?{roomId}'
   };
 
   var Message = {
@@ -1255,8 +1363,10 @@
         timeout: Timeout.TIME
       });
       var context = _this;
+      var isJoinRoom = false;
       utils.extend(context, {
-        timer: timer
+        timer: timer,
+        isJoinRoom: isJoinRoom
       });
       var im = option.RongIMLib.RongIMClient,
           RongIMLib = option.RongIMLib;
@@ -1357,7 +1467,7 @@
               context.emit(DownEvent.ROOM_USER_LEFT, { id: id });
               break;
             default:
-              utils.Logger.log('UserState: unkown state ' + state);
+              Logger$1.warn('UserState: unkown state ' + state);
           }
         });
       };
@@ -1403,7 +1513,7 @@
             });
             break;
           default:
-            utils.Logger.log('MessageWatch: unkown message type ' + message.objectName);
+            Logger$1.warn('MessageWatch: unkown message type ' + message.objectName);
         }
       });
       return _this;
@@ -1450,20 +1560,17 @@
       key: 'joinRoom',
       value: function joinRoom(room) {
         var context = this;
-        var im = context.im,
-            timer = context.timer;
+        var im = context.im;
 
         utils.extend(context, {
-          room: room
+          room: room,
+          isJoinRoom: true
         });
         return utils.deferred(function (resolve, reject) {
           im.getInstance().joinRTCRoom(room, {
             onSuccess: function onSuccess() {
               context.emit(CommonEvent.JOINED, room);
-              im.getInstance().RTCPing(room);
-              timer.resume(function () {
-                im.getInstance().RTCPing(room);
-              });
+              context.rtcPing(room);
               resolve();
             },
             onError: function onError(code) {
@@ -1481,6 +1588,9 @@
             timer = context.timer;
 
         timer.pause();
+        utils.extend(context, {
+          isJoinRoom: false
+        });
         return utils.deferred(function (resolve, reject) {
           im.getInstance().quitRTCRoom(room, {
             onSuccess: function onSuccess() {
@@ -1599,7 +1709,7 @@
         var im = this.im,
             room = this.room;
 
-        return utils.deferred(function (resolve) {
+        return utils.deferred(function (resolve, reject) {
           var conversationType = 12,
               targetId = room.id;
           var create = function create() {
@@ -1614,7 +1724,8 @@
               resolve(room);
             },
             onError: function onError(code) {
-              utils.Logger.warn('SendMessage Error:', code);
+              Logger$1.error('SendMessage Error:', code);
+              reject(code);
             }
           });
         });
@@ -1626,6 +1737,53 @@
         var CONNECTED = context.RongIMLib.ConnectionStatus.CONNECTED;
 
         return context.connectState === CONNECTED;
+      }
+    }, {
+      key: 'isJoined',
+      value: function isJoined() {
+        var context = this;
+        return context.isJoinRoom;
+      }
+    }, {
+      key: 'rtcPing',
+      value: function rtcPing(room) {
+        var context = this;
+        var im = context.im,
+            timer = context.timer;
+
+        var count = 0,
+            isPing = false;
+        var error = ErrorType.SOCKET_UNAVAILABLE;
+
+        var Status = {
+          reset: function reset(isAdd) {
+            isPing = false;
+            if (isAdd) {
+              return count += 1;
+            }
+            count = 0;
+          },
+          update: function update() {
+            isPing = true;
+          }
+        };
+        timer.resume(function () {
+          if (isPing) {
+            count += 1;
+          }
+          if (count >= PingCount) {
+            return context.emit(CommonEvent.ERROR, error);
+          }
+          Status.update();
+          im.getInstance().RTCPing(room, {
+            onSuccess: function onSuccess() {
+              Status.reset();
+            },
+            onError: function onError() {
+              Status.reset(true);
+            }
+          });
+        }, true);
       }
     }]);
     return IM;
@@ -1653,8 +1811,31 @@
       缓存订阅关系，每次修改需同步全量数据
       userId: [{ streamId: '', uri: '', type: 1, tag: ''}]
     */
-    var SubscribeCache = utils.Cache();
-    var pc = new PeerConnection();
+    var subCache = utils.Cache();
+    var prosumer = new utils.Prosumer();
+    var SubscribeCache = {
+      get: function get$$1(userId) {
+        return subCache.get(userId);
+      },
+      set: function set$$1(userId, subs) {
+        return subCache.set(userId, subs);
+      },
+      getKeys: function getKeys() {
+        return subCache.getKeys();
+      },
+      remove: function remove(userId, tag, type) {
+        var subs = subCache.get(userId);
+        type = type || StreamType.AUDIO_AND_VIDEO;
+        subs = utils.filter(subs, function (_ref) {
+          var mediaTag = _ref.tag,
+              mediaType = _ref.mediaType;
+
+          return !utils.isEqual(mediaTag, tag) && utils.isEqual(mediaType, type);
+        });
+        subCache.set(userId, subs);
+      }
+    };
+    var pc = null;
     var eventEmitter = new EventEmitter();
     var getSubPromiseUId = function getSubPromiseUId(user) {
       var id = user.id,
@@ -1733,81 +1914,45 @@
       PubResourceCache.set(user.id, uris);
       return utils.Defer.resolve();
     };
-    eventEmitter.on(CommandEvent.EXCHANGE, function () {
-      var isNotifyReady = DataCache.get(DataCacheName.IS_NOTIFY_READY);
-      if (!isNotifyReady) {
-        pc.getOffer(function (offer) {
-          pc.setOffer(offer);
-          var subs = getSubs();
-          var token = im.getToken();
-          var roomId = im.getRoomId();
-          var url = utils.tplEngine(Path.SUBSCRIBE, {
-            roomId: roomId
-          });
-          request$1.post({
-            path: url,
-            body: {
-              token: token,
-              sdp: offer,
-              subscribeList: subs
-            }
-          }).then(function (result) {
-            var user = im.getUser();
-            exchangeHandler(result, user);
-          });
+    eventEmitter.on(CommonEvent.CONSUME, function () {
+      prosumer.consume(function (_ref2, next) {
+        var sdp = _ref2.sdp,
+            body = _ref2.body;
+
+        pc.setOffer(sdp);
+        request$1.post(body).then(function (result) {
+          var sdp = result.sdp;
+
+          pc.setAnwser(sdp);
+          next();
         });
-      }
+      });
     });
-    var getStreamUser = function getStreamUser(stream) {
-      var id = stream.id,
-          type = StreamType.NODE;
-      var _id$split = id.split('_'),
-          _id$split2 = slicedToArray(_id$split, 2),
-          userId = _id$split2[0],
-          tag = _id$split2[1];
-
-      var videoTracks = stream.getVideoTracks();
-      var audioTrakcks = stream.getAudioTracks();
-      var isEmtpyVideo = utils.isEmpty(videoTracks);
-      var isEmptyAudio = utils.isEmpty(audioTrakcks);
-      if (isEmtpyVideo) {
-        type = StreamType.AUDIO;
-      }
-      if (isEmptyAudio) {
-        type = StreamType.VIDEO;
-      }
-      if (!isEmptyAudio && !isEmtpyVideo) {
-        type = StreamType.AUDIO_AND_VIDEO;
-      }
-      return {
-        id: userId,
-        stream: {
-          tag: tag,
-          type: type,
-          mediaStream: stream
-        }
-      };
-    };
-    pc.on(PeerConnectionEvent.ADDED, function (error, stream) {
-      if (error) {
-        throw error;
-      }
-      var id = stream.id;
-
-      StreamCache.set(id, stream);
-      var user = getStreamUser(stream);
-      var uid = getSubPromiseUId(user);
-      var promise = SubPromiseCache.get(uid);
-      promise.resolve(user);
-    });
-    pc.on(PeerConnectionEvent.REMOVED, function (error, stream) {
-      if (error) {
-        throw error;
-      }
-      var id = stream.id;
-
-      StreamCache.remove(id);
-    });
+    // eventEmitter.on(CommandEvent.EXCHANGE, () => {
+    //   let isNotifyReady = DataCache.get(DataCacheName.IS_NOTIFY_READY);
+    //   if (!isNotifyReady) {
+    //     pc.getOffer(offer => {
+    //       pc.setOffer(offer);
+    //       let subs = getSubs();
+    //       let token = im.getToken();
+    //       let roomId = im.getRoomId();
+    //       let url = utils.tplEngine(Path.SUBSCRIBE, {
+    //         roomId
+    //       });
+    //       request.post({
+    //         path: url,
+    //         body: {
+    //           token,
+    //           sdp: offer,
+    //           subscribeList: subs
+    //         }
+    //       }).then(result => {
+    //         let user = im.getUser();
+    //         exchangeHandler(result, user);
+    //       });
+    //     });
+    //   }
+    // });
     var getUId = function getUId(user, tpl) {
       tpl = tpl || '{userId}_{tag}_{type}';
       var userId = user.id,
@@ -1864,6 +2009,57 @@
       if (error) {
         throw error;
       }
+      pc = new PeerConnection();
+      var getStreamUser = function getStreamUser(stream) {
+        var id = stream.id,
+            type = StreamType.NODE;
+        var _id$split = id.split('_'),
+            _id$split2 = slicedToArray(_id$split, 2),
+            userId = _id$split2[0],
+            tag = _id$split2[1];
+
+        var videoTracks = stream.getVideoTracks();
+        var audioTrakcks = stream.getAudioTracks();
+        var isEmtpyVideo = utils.isEmpty(videoTracks);
+        var isEmptyAudio = utils.isEmpty(audioTrakcks);
+        if (isEmtpyVideo) {
+          type = StreamType.AUDIO;
+        }
+        if (isEmptyAudio) {
+          type = StreamType.VIDEO;
+        }
+        if (!isEmptyAudio && !isEmtpyVideo) {
+          type = StreamType.AUDIO_AND_VIDEO;
+        }
+        return {
+          id: userId,
+          stream: {
+            tag: tag,
+            type: type,
+            mediaStream: stream
+          }
+        };
+      };
+      pc.on(PeerConnectionEvent.ADDED, function (error, stream) {
+        if (error) {
+          throw error;
+        }
+        var id = stream.id;
+
+        StreamCache.set(id, stream);
+        var user = getStreamUser(stream);
+        var uid = getSubPromiseUId(user);
+        var promise = SubPromiseCache.get(uid);
+        promise.resolve(user);
+      });
+      pc.on(PeerConnectionEvent.REMOVED, function (error, stream) {
+        if (error) {
+          throw error;
+        }
+        var id = stream.id;
+
+        StreamCache.remove(id);
+      });
       im.getUsers(room).then(function (users) {
         DataCache.set(DataCacheName.USERS, users);
         if (utils.isEmpty(users)) {
@@ -1908,19 +2104,24 @@
           utils.forEach(streams, function (stream) {
             var tag = stream.tag;
 
-            im.emit(DownEvent.STREAM_PUBLISHED, {
-              id: id,
-              stream: {
-                tag: tag,
-                uris: uris
-              }
+            setTimeout(function () {
+              im.emit(DownEvent.STREAM_PUBLISHED, {
+                id: id,
+                stream: {
+                  tag: tag,
+                  uris: uris
+                }
+              });
             });
           });
         });
-        // Stream Ready 派发完毕后，检查是否可进行 SDP 交换
-        eventEmitter.emit(CommandEvent.EXCHANGE);
         DataCache.set(DataCacheName.IS_NOTIFY_READY, true);
       });
+    });
+    im.on(CommonEvent.LEFT, function () {
+      if (pc) {
+        pc.close();
+      }
     });
     var getBody = function getBody() {
       return utils.deferred(function (resolve) {
@@ -1953,10 +2154,17 @@
       SET_USERINFO: 'uris'
     };
     var publish = function publish(user) {
-      var mediaStream = user.stream.mediaStream;
+      var streams = user.stream;
 
-      var streamId = pc.getStreamId(user);
-      StreamCache.set(streamId, mediaStream);
+      if (!utils.isArray(streams)) {
+        streams = [streams];
+      }
+      utils.forEach(streams, function (_ref3) {
+        var mediaStream = _ref3.mediaStream;
+
+        var streamId = pc.getStreamId(user);
+        StreamCache.set(streamId, mediaStream);
+      });
       return pc.addStream(user).then(function (desc) {
         pc.setOffer(desc);
         return getBody().then(function (body) {
@@ -2036,7 +2244,7 @@
           }
         });
         var msid = pc.getStreamId(user);
-        if (isAdd) {
+        if (isAdd && !utils.isUndefined(uri)) {
           subs.push({
             msid: msid,
             uri: uri,
@@ -2051,19 +2259,22 @@
         // 首次加入分发未完成，只添加缓存，最后，一次性处理
         if (isNotifyReady) {
           getBody().then(function (body) {
-            pc.setOffer(body.sdp);
+            var _body = body,
+                sdp = _body.sdp;
+
             var roomId = im.getRoomId();
             var url = utils.tplEngine(Path.SUBSCRIBE, {
               roomId: roomId
             });
-            request$1.post({
+            body = {
               path: url,
               body: body
-            }).then(function (result) {
-              var sdp = result.sdp;
-
-              pc.setAnwser(sdp);
+            };
+            prosumer.produce({
+              sdp: sdp,
+              body: body
             });
+            eventEmitter.emit(CommonEvent.CONSUME);
           });
         }
         var uid = getSubPromiseUId(user);
@@ -2074,8 +2285,12 @@
       });
     };
     var unsubscribe = function unsubscribe(user) {
-      var key = getUId(user);
-      SubscribeCache.remove(key);
+      var id = user.id,
+          _user$stream4 = user.stream,
+          type = _user$stream4.type,
+          tag = _user$stream4.tag;
+
+      SubscribeCache.remove(id, tag, type);
       return getBody().then(function (body) {
         var roomId = im.getRoomId();
         var url = utils.tplEngine(Path.UNSUBSCRIBE, {
@@ -2227,7 +2442,7 @@
         case UpEvent.VIDEO_ENABLE:
           return enable.apply(undefined, toConsumableArray(args));
         default:
-          utils.Logger.log('StreamHandler: unkown upevent ' + event);
+          Logger$1.warn('StreamHandler: unkown upevent ' + event);
       }
     };
     return {
@@ -2254,7 +2469,21 @@
       });
     };
     var leave = function leave() {
-      return im.leaveRoom();
+      return im.leaveRoom().then(function () {
+        var roomId = im.getRoomId();
+        var token = im.getToken();
+        if (utils.isString(token)) {
+          var url = utils.tplEngine(Path.EXIT, {
+            roomId: roomId
+          });
+          request$1.post({
+            path: url,
+            body: {
+              token: token
+            }
+          });
+        }
+      });
     };
     var get$$1 = function get$$1() {
       return im.getRoom();
@@ -2268,7 +2497,7 @@
         case UpEvent.ROOM_GET:
           return get$$1.apply(undefined, toConsumableArray(args));
         default:
-          utils.Logger.log('RoomHandler: unkown upevent ' + event);
+          Logger$1.warn('RoomHandler: unkown upevent ' + event);
       }
     };
     return {
@@ -7306,6 +7535,9 @@
       im.on(CommonEvent.LEFT, function () {
         context.emit(DownEvent.RTC_UNMOUNTED);
       });
+      im.on(CommonEvent.ERROR, function (error) {
+        context.emit(DownEvent.RTC_ERROR, error);
+      });
       var eventHandler = function eventHandler(name, result, error) {
         var id = result.id,
             tag = result.stream.tag;
@@ -7355,6 +7587,10 @@
         var type = params.type,
             args = params.args,
             event = params.event;
+
+        if (!utils.isEqual(UpEvent.ROOM_JOIN, event) && !im.isJoined()) {
+          return utils.Defer.reject(ErrorType.Inner.RTC_NOT_JOIN_ROOM);
+        }
         var RequestHandler = this.RequestHandler;
 
         return RequestHandler[type].dispatch(event, args);
@@ -7385,13 +7621,26 @@
       var context = this;
       var option = {
         url: 'https://ms-xq.rongcloud.net/',
-        // url: 'http://10.12.8.134:7788/',
+        debug: false,
+        // url: 'http://10.13.10.123:7788/',
         created: function created() {},
         mounted: function mounted() {},
         unmounted: function unmounted() {},
-        destroyed: function destroyed() {}
+        destroyed: function destroyed() {},
+        error: function error() {}
       };
       utils.extend(option, _option);
+      var logger = option.logger,
+          debug = option.debug;
+
+      if (utils.isFunction(logger)) {
+        Logger$1.watch(logger);
+      }
+      if (debug) {
+        Logger$1.watch(function (log) {
+          utils.Log.log(log);
+        });
+      }
       var client = new Client(option);
       utils.forEach([Room, Stream], function (module) {
         module.prototype.getClient = function () {
@@ -7408,7 +7657,8 @@
       });
       var created = option.created,
           mounted = option.mounted,
-          unmounted = option.unmounted;
+          unmounted = option.unmounted,
+          error = option.error;
 
       created();
       client.on(DownEvent.RTC_MOUNTED, function () {
@@ -7416,6 +7666,9 @@
       });
       client.on(DownEvent.RTC_UNMOUNTED, function () {
         unmounted();
+      });
+      client.on(DownEvent.RTC_ERROR, function (e) {
+        error(e);
       });
     }
 

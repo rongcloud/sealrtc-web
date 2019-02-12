@@ -455,6 +455,7 @@ ul, li {
 
 .rong-stream-wrap .rong-is-zoom video {
   object-fit: cover;
+  transform: rotateY(180deg);
 }
 
 .rong-stream-wrap .rong-is-zoom .rong-cover-content p {

@@ -348,7 +348,7 @@
   function removeUserBox(user) {
     var id = user.id;
     var streamBox = StreamBox.get(id);
-    streamList.remove(streamBox);
+    streamList.removeBox(streamBox);
   }
 
   function publishSelfMediaStream(videoEnable, audioEnable, resolution) {

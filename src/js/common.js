@@ -173,7 +173,7 @@
 
     function removeBox(streamBox) {
       var self = this;
-      if (self.has(streamBox)) {
+      if (self.hasBox(streamBox)) {
         self.dom.removeChild(streamBox.dom);
       }
     }
