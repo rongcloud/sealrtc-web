@@ -437,23 +437,11 @@ RongRTCEngine.prototype.audioVideoState = async function () {
     }
 }
 /**
- * 加入会议
- *
+ * 获取本地视频流
+ * 
  */
-RongRTCEngine.prototype.joinChannel = function (channelId, userId, token) {
-
-    this.channelId = RongRTCConstant.ConnectionType.MEDIASERVER + channelId;
-    this.selfUserId = userId;
-    this.token = token;
-    // 创建本地视频    pc.addStream(rongRTCEngine.localStreamMin);//加入小流
-    var rongRTCEngine = this;
-    if (rongRTCEngine.userType == 2) {
-        rongRTCEngine.createSignaling();
-        rongRTCEngine.logonAndJoin(RongRTCConstant.LogonAndJoinStatus.CONNECT);
-        this.localStream = new MediaStream();
-        return
-    }
-    navigator.getUserMedia(rongRTCEngine.mediaConfig, function (stream) {
+RongRTCEngine.prototype.getLocalDeviceStream = function (){
+    return navigator.mediaDevices.getUserMedia(rongRTCEngine.mediaConfig).then(function (stream) {
         RongRTCLogger.info("navigator.getUserMedia success");
         rongRTCEngine.localStream = stream;
         rongRTCengine.localStream.id = rongRTCengine.selfUserId;
@@ -461,13 +449,153 @@ RongRTCEngine.prototype.joinChannel = function (channelId, userId, token) {
             rongRTCEngine.closeLocalVideoWithUpdateTalkType(
                 !rongRTCEngine.localVideoEnable, false);
         }
-        // 创建websocket连接
-        rongRTCEngine.createSignaling();
-        rongRTCEngine.logonAndJoin(RongRTCConstant.LogonAndJoinStatus.CONNECT);
-    }, function (error) {
-        RongRTCLogger.error("navigator.getUserMedia error: ", error);
+        return stream;
+    }).catch(function(error){
+        RongRTCLogger.error(error)
+    })
+}
+/**
+ * 获取设备信息
+ * 
+ */
+RongRTCEngine.prototype.getDevicesInfos = function(){
+    return navigator.mediaDevices.enumerateDevices().then(function(deviceInfos){
+        return deviceInfos;
+    }).catch(function(error){
+        RongRTCLogger.error(error)
+    })
+}
+/**
+ * 检测 麦克风  摄像头
+ * 
+ */
+RongRTCEngine.prototype.checkDeviceState = function () {
+    var rongRTCEngine = this;
+    return rongRTCEngine.getDevicesInfos().then(function(deviceInfos){
+        var input = false;
+        var  output = false; 
+        var videoState = false;
+        deviceInfos.forEach(function(deviceInfo){
+            var kind = deviceInfo.kind;
+            if(kind.indexOf('video')>-1)
+                videoState = true;
+            if(kind.indexOf('audioinput')>-1)
+                input = true;
+            if(kind.indexOf('audiooutput')>-1)
+                output = true;
+        })
+        var audioState = {
+            input: input,
+            output: output
+        }
+        return {
+            audioState: audioState,
+            videoState: videoState
+        }
+    }).catch(function(error){
+        RongRTCLogger.error(error)
+    })
+}
+/**
+ *摄像头信息获取
+ */
+RongRTCEngine.prototype.getVideoInfos = function () {
+    var rongRTCEngine = this;
+    return rongRTCEngine.getDevicesInfos().then(function(deviceInfos){
+        var videoInfoList = rongRTCEngine.videoInfoList
+        deviceInfos.forEach(function (deviceInfo) {
+            var kind = deviceInfo.kind;
+            if (kind.indexOf('video') > -1) {
+                var deviceId = deviceInfo.deviceId;
+                var label = deviceInfo.label;
+                deviceInfo = {
+                    deviceId: deviceId,
+                    label: label
+                }
+                videoInfoList.push(deviceInfo)
+            }
+        })
+        return videoInfoList
+    }).catch(function(error){
+        RongRTCLogger.error(error)
+    })
+}
+/**
+ *摄像头切换
+ */
+RongRTCEngine.prototype.switchVideo = function (deviceId) {
+    var rongRTCEngine = this;
+    var oldStream = rongRTCEngine.localStream;
+    if(oldStream){
+        oldStream.getTracks().forEach(function(track){
+            track.stop();
+        })
+    }
+    if (deviceId) {
+        var config = rongRTCEngine.mediaConfig;
+        var video = config.video;
+         video.deviceId = {exact: deviceId }
+    }
+    this.getLocalDeviceStream().then(function(stream){
+        var pcClient = rongRTCEngine.peerConnections[rongRTCEngine.selfUserId];
+        if(pcClient != null){
+            var  pc =pcClient['pc'];
+            pc.removeStream(oldStream);
+            pc.addStream(stream);
+            rongRTCEngine.createOffer(pc, rongRTCEngine, rongRTCEngine.selfUserId, true)
+        }
+        rongRTCEngine.rongRTCEngineEventHandle.call("onSwithVideo", {
+            "isSuccess": true
+        })
+    }).catch(function(error){
+        RongRTCLogger.error("navigator.mediaDevices error", error)
+    })
+}
+/**
+ * 加入会议
+ *
+ */
+RongRTCEngine.prototype.joinChannel = function (channelId, userId, token) {
 
-    });
+    // 摄像头检查
+    this.checkDeviceState().then(function (status) {
+        var audioState = status.audioState;
+        var input = audioState.input;
+        var videoState = status.videoState;
+         if (!videoState) {
+            var key = 'NOCAMERA';
+            RongRTCLogger.error("navigator.mediaDevices.getUserMedia error",RongRTCReason.get(key))
+            return
+        }
+        if (!input) {
+            var key = 'NOAUDIOINPUT'
+            RongRTCLogger.error("navigator.mediaDevices.getUserMedia error", RongRTCReason.get(key));
+            return
+        }
+        rongRTCEngine.channelId = RongRTCConstant.ConnectionType.MEDIASERVER + channelId;
+        rongRTCEngine.selfUserId = userId;
+        rongRTCEngine.token = token;
+        // 创建本地视频    pc.addStream(rongRTCEngine.localStreamMin);//加入小流
+        if (rongRTCEngine.userType == 2) {
+            rongRTCEngine.createSignaling();
+            rongRTCEngine.logonAndJoin(RongRTCConstant.LogonAndJoinStatus.CONNECT);
+            rongRTCEngine.localStream = new MediaStream();
+            return
+        }
+        if (rongRTCEngine.videoId) {
+            var config = rongRTCEngine.mediaConfig;
+            var video = config.video;
+            video.deviceId = { exact: rongRTCEngine.videoId }
+        }
+        rongRTCEngine.getLocalDeviceStream(rongRTCEngine.mediaConfig).then(function(stream){
+            rongRTCEngine.createSignaling();
+            rongRTCEngine.logonAndJoin(RongRTCConstant.LogonAndJoinStatus.CONNECT);
+        }).catch(function (error) {
+            RongRTCLogger.error("navigator.mediaDevices.getUserMedia error: ", error);
+        })
+    }).catch(function(error){
+        RongRTCLogger.error("navigator.mediaDevices.enumerateDevices: ", error);
+    })
    /* //小流媒体
     navigator.getUserMedia(rongRTCEngine.mediaMinConfig, function (stream) {
         RongRTCLogger.info("navigator.geMinMedia success");
@@ -2155,8 +2283,12 @@ RongRTCEngine.prototype.preparePeerConnection = function (userId) {
     RongRTCLogger.info("preparePeerConnection userId=" + userId);
     var rongRTCEngine = this;
     if (rongRTCEngine.peerConnections[userId] == null) {
-        var pc = new RTCPeerConnection();
-        var pcMin = new RTCPeerConnection();
+        var pc = new RTCPeerConnection({
+            sdpSemantics: 'plan-b'
+          });
+        var pcMin = new RTCPeerConnection({
+            sdpSemantics: 'plan-b'
+          });
         pc.onaddstream = function (evt) {
             RongRTCLogger.debug("onaddstream", evt);
 
@@ -3283,3 +3415,22 @@ var RongRTCLogger = {
         }
     }
 }
+var RongRTCReason = (function () {
+    var result = {
+        NOCAMERA: {
+            code: 10001,
+            info: '摄像头资源不存在'
+        },
+        NOAUDIOINPUT: {
+            code: 10002,
+            info: '麦克风资源不存'
+        }
+    };
+    var get = function (key) {
+        return result[key];
+    };
+
+    return {
+        get: get
+    };
+})();
