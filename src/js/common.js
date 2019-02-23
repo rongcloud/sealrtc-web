@@ -218,7 +218,7 @@
     // 展示流
     function showStream(stream) {
       var videoDom = this.childDom.video;
-      if (videoDom) {
+      if (videoDom && stream) {
         videoDom.srcObject = stream;
       }
     }
