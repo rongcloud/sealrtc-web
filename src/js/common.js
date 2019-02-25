@@ -89,6 +89,36 @@
   }
 
   /**
+   * 获取 IM token
+   * @param {String} params.id  用户 id
+   */
+  function getIMToken(params, callback) {
+    callback = callback || utils.noop;
+    var url = RongSeal.Config.TOKEN_URL;
+    return new Promise(function (resolve, reject) {
+      utils.ajax({
+        url: url,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        method: 'POST',
+        body: JSON.stringify({
+          id: params.id
+        }),
+        success: function (result) {
+          result = JSON.parse(result);
+          callback(null, result.result);
+          resolve(result.result);
+        },
+        fail: function (error) {
+          callback(error);
+          reject(error);
+        }
+      });
+    });
+  }
+
+  /**
    * 格式化分辨率
    * @param {string} rate 分辨率
    * @return {object} 包含 width、height
@@ -353,6 +383,7 @@
     sealAlert: sealAlert,
     formatResolution: formatResolution,
     getRTCToken: getRTCToken,
+    getIMToken: getIMToken,
     UI: UI,
     setLocale: setLocale,
     lang: win.document.body.lang

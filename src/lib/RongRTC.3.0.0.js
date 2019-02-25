@@ -75,7 +75,9 @@
   var extend = function extend(destination, sources) {
     for (var key in sources) {
       var value = sources[key];
-      destination[key] = value;
+      if (!isUndefined(value)) {
+        destination[key] = value;
+      }
     }
     return destination;
   };
@@ -123,11 +125,15 @@
       }
       return keys;
     };
+    var clear = function clear() {
+      cache = {};
+    };
     return {
       set: set,
       get: get,
       remove: remove,
-      getKeys: getKeys
+      getKeys: getKeys,
+      clear: clear
     };
   };
   var request = function request(url, option) {
@@ -226,6 +232,9 @@
   var isInclude = function isInclude(str, match) {
     return str.indexOf(match) > -1;
   };
+  var clone = function clone(source) {
+    return JSON.parse(JSON.stringify(source));
+  };
   function Observer() {
     var observers = [];
     this.add = function (observer) {
@@ -288,6 +297,7 @@
     parse: parse,
     rename: rename,
     extend: extend,
+    clone: clone,
     deferred: deferred,
     Defer: Defer,
     forEach: forEach,
@@ -344,11 +354,6 @@
     DEVICE_GET_LIST: 'device_get_list'
   };
 
-  var NetworkEvent = {
-    ONLINE: 'online',
-    OFFLINE: 'offline'
-  };
-
   var RoomEvents = [{
     name: DownEvent.ROOM_USER_JOINED,
     type: 'joined'
@@ -393,7 +398,11 @@
     }, {
       code: 10003,
       name: 'SOCKET_UNAVAILABLE',
-      msg: 'IM Server Socket 连接不可用'
+      msg: 'IM Socket 连接不可用'
+    }, {
+      code: 10004,
+      name: 'NETWORK_UNAVAILABLE',
+      msg: '网络不可用'
     }, {
       code: 20001,
       name: 'STREAM_NOT_EXIST',
@@ -402,6 +411,26 @@
       code: 30001,
       name: 'PARAMTER_ILLEGAL',
       msg: '请检查参数，{name} 参数为必传入项'
+    }, {
+      code: 40001,
+      name: 'NOT_IN_ROOM',
+      msg: '当前用户不在房间内'
+    }, {
+      code: 40002,
+      name: 'INTERNAL_ERROR',
+      msg: 'IM Server 内部错误'
+    }, {
+      code: 40003,
+      name: 'HAS_NO_ROOM',
+      msg: 'IM Server 房间信息不存在'
+    }, {
+      code: 40004,
+      name: 'INVALID_USERID',
+      msg: 'userId 不合法'
+    }, {
+      code: 40005,
+      name: 'REPEAT_JOIN_ROOM',
+      msg: '重复加入房间'
     }];
 
     var errorMap = {
@@ -928,7 +957,7 @@
     }, {
       key: 'unsubscribe',
       value: function unsubscribe(user) {
-        var _check4 = check(user, ['id', 'stream.tag']),
+        var _check4 = check(user, ['id', 'stream.tag', 'stream.type']),
             isIllegal = _check4.isIllegal,
             name = _check4.name;
 
@@ -1124,10 +1153,10 @@
         },
         oniceconnectionstatechange: function oniceconnectionstatechange() {
           var state = pc.iceConnectionState;
-          context.emit(PeerConnectionEvent.CHANGED, state);
           utils.extend(context, {
             state: state
           });
+          context.emit(PeerConnectionEvent.CHANGED, state);
           Logger$1.log(LogTag.ICE, { state: state });
         }
       };
@@ -1381,12 +1410,12 @@
   }(EventEmitter);
 
   var Path = {
-    PUBLISH: 'exchange?{roomId}',
-    UNPUBLISH: 'exchange?{roomId}',
-    RESIZE: 'exchange?{roomId}',
-    SUBSCRIBE: 'exchange?{roomId}',
-    UNSUBSCRIBE: 'exchange?{roomId}',
-    EXIT: 'exit?{roomId}'
+    PUBLISH: '/exchange?{roomId}',
+    UNPUBLISH: '/exchange?{roomId}',
+    RESIZE: '/exchange?{roomId}',
+    SUBSCRIBE: '/exchange?{roomId}',
+    UNSUBSCRIBE: '/exchange?{roomId}',
+    EXIT: '/exit?{roomId}'
   };
 
   var Message = {
@@ -1424,25 +1453,40 @@
       var im = option.RongIMLib.RongIMClient,
           RongIMLib = option.RongIMLib;
 
-      var connectState = RongIMLib.Bridge._client.channel.connectionStatus;
+      var init = function init() {
+        if (context.isJoinRoom) {
+          context.rePing();
+        }
+        context.registerMessage();
+      };
+      var connectState = -1;
+      try {
+        connectState = im.getInstance().getCurrentConnectionStatus();
+      } catch (error) {
+        Logger$1.error(LogTag.IM, {
+          content: error,
+          pos: 'new RongRTC'
+        });
+      }
+      var CONNECTED = RongIMLib.ConnectionStatus.CONNECTED;
+      // 如果实例化 RongRTC 时，IM 已连接成功，主动触发内部 init
       utils.extend(context, {
         connectState: connectState,
         im: im,
         RongIMLib: RongIMLib
       });
-      var CONNECTED = RongIMLib.ConnectionStatus.CONNECTED;
-
-      im.statusWatch(function (state) {
-        var isConnected = state === CONNECTED;
-        if (isConnected) {
-          context.registerMessage();
-          utils.extend(context, {
-            connectState: state
-          });
+      if (utils.isEqual(connectState, CONNECTED)) {
+        init();
+      }
+      im.statusWatch(function (status) {
+        switch (status) {
+          case CONNECTED:
+            init();
+            break;
         }
-        if (!isConnected) {
-          timer.pause();
-        }
+        utils.extend(context, {
+          connectState: status
+        });
       });
       var dispatchStreamEvent = function dispatchStreamEvent(user, callback) {
         var id = user.id,
@@ -1809,42 +1853,63 @@
         return context.isJoinRoom;
       }
     }, {
+      key: 'rePing',
+      value: function rePing() {
+        var context = this;
+        var timer = context.timer;
+
+        var roomId = context.getRoomId();
+        if (!utils.isUndefined(roomId)) {
+          timer.pause();
+          context.rtcPing({
+            id: roomId
+          });
+        }
+      }
+    }, {
       key: 'rtcPing',
       value: function rtcPing(room) {
         var context = this;
         var im = context.im,
             timer = context.timer;
 
-        var count = 0,
-            isPing = false;
-        var error = ErrorType.SOCKET_UNAVAILABLE;
-
+        var count = 0;
+        var isPinging = false;
         var Status = {
-          reset: function reset(isAdd) {
-            isPing = false;
-            if (isAdd) {
-              return count += 1;
-            }
+          reset: function reset() {
             count = 0;
+            isPinging = false;
           },
-          update: function update() {
-            isPing = true;
+          sum: function sum() {
+            count += 1;
           }
         };
         timer.resume(function () {
-          if (isPing) {
-            count += 1;
+          if (count > PingCount) {
+            timer.pause();
+            var Inner = ErrorType.Inner;
+
+            utils.extend(context, {
+              isJoinRoom: false
+            });
+            context.emit(CommonEvent.LEFT);
+            return context.emit(CommonEvent.ERROR, Inner.SOCKET_UNAVAILABLE);
           }
-          if (count >= PingCount) {
-            return context.emit(CommonEvent.ERROR, error);
+          // 如果上次 Ping 没有结束，累计 Ping 次数
+          if (isPinging) {
+            Status.sum();
           }
-          Status.update();
+          isPinging = true;
           im.getInstance().RTCPing(room, {
             onSuccess: function onSuccess() {
               Status.reset();
             },
-            onError: function onError() {
-              Status.reset(true);
+            onError: function onError(code) {
+              var error = ErrorType[code];
+              if (error) {
+                context.emit(CommonEvent.ERROR, error);
+                timer.pause();
+              }
             }
           });
         }, true);
@@ -1853,31 +1918,69 @@
     return IM;
   }(EventEmitter);
 
-  var Network = function (_EventEmitter) {
-    inherits(Network, _EventEmitter);
-
-    function Network() {
+  var Network = function () {
+    function Network(_option) {
       classCallCheck(this, Network);
 
-      var _this = possibleConstructorReturn(this, (Network.__proto__ || Object.getPrototypeOf(Network)).call(this));
-
-      var context = _this;
-      window.addEventListener(NetworkEvent.ONLINE, function () {
-        context.emit(NetworkEvent.ONLINE);
+      _option = _option || {};
+      var option = {
+        url: 'https://cdn.ronghub.com/detecting',
+        timeout: 1500,
+        max: 30
+      };
+      utils.extend(option, _option);
+      utils.extend(this, {
+        option: option
       });
-      return _this;
     }
 
     createClass(Network, [{
-      key: 'isOnline',
-      value: function isOnline() {
-        return navigator.onLine;
+      key: 'detect',
+      value: function detect(callback) {
+        var context = this;
+        var detecting = context.detecting,
+            option = context.option;
+
+        if (detecting) {
+          return;
+        }
+        utils.extend(context, {
+          detecting: true
+        });
+        var url = option.url,
+            timeout = option.timeout,
+            max = option.max;
+
+        var count = 1;
+        var getCount = function getCount() {
+          count += 1;
+          return count;
+        };
+        var isOnline = false;
+        var ajax = function ajax() {
+          count = getCount();
+          utils.request(url).then(function () {
+            utils.extend(context, {
+              detecting: false
+            });
+            isOnline = true;
+            callback(isOnline);
+          }, function () {
+            if (utils.isEqual(max, count)) {
+              return callback(isOnline);
+            }
+            setTimeout(function () {
+              ajax();
+            }, timeout);
+          });
+        };
+        ajax();
       }
     }]);
     return Network;
-  }(EventEmitter);
+  }();
 
-  function StreamHandler(im) {
+  function StreamHandler(im, option) {
     var DataCache = utils.Cache();
     var DataCacheName = {
       USERS: 'room_users',
@@ -1917,7 +2020,17 @@
           return !utils.isEqual(mediaTag, tag) && utils.isEqual(mediaType, type);
         });
         subCache.set(userId, subs);
+      },
+      clear: function clear() {
+        subCache.clear();
       }
+    };
+    var clear = function clear() {
+      DataCache.clear();
+      SubPromiseCache.clear();
+      PubResourceCache.clear();
+      StreamCache.clear();
+      SubscribeCache.clear();
     };
     var pc = null;
     var eventEmitter = new EventEmitter();
@@ -2013,12 +2126,9 @@
         return stream;
       });
     };
-    var network = new Network();
-    network.on(NetworkEvent.ONLINE, function () {
-      if (pc.isNegotiate()) {
-        republish();
-      }
-    });
+    var detect = option.detect;
+
+    var network = new Network(detect);
     var exchangeHandler = function exchangeHandler(result, user, type) {
       var publishList = result.publishList,
           sdp = result.sdp;
@@ -2135,6 +2245,20 @@
         DataCache.set(key, uri);
       });
     });
+    im.on(CommonEvent.LEFT, function () {
+      var streamIds = StreamCache.getKeys();
+      utils.forEach(streamIds, function (streamId) {
+        var stream = StreamCache.get(streamId);
+        var tracks = stream.getTracks();
+        utils.forEach(tracks, function (track) {
+          track.stop();
+        });
+      });
+      clear();
+      if (pc) {
+        pc.close();
+      }
+    });
     /* 加入房间成功后，主动获取已发布资源的人员列表，通知应用层 */
     im.on(CommonEvent.JOINED, function (error, room) {
       if (error) {
@@ -2195,8 +2319,16 @@
         if (error) {
           throw error;
         }
-        if (pc.isNegotiate() && network.isOnline()) {
-          republish();
+        if (pc.isNegotiate()) {
+          network.detect(function (isOnline) {
+            if (isOnline) {
+              republish();
+            } else {
+              var Inner = ErrorType.Inner;
+
+              im.emit(CommonEvent.ERROR, Inner.NETWORK_UNAVAILABLE);
+            }
+          });
         }
       });
       im.getUsers(room).then(function (users) {
@@ -2257,11 +2389,6 @@
         DataCache.set(DataCacheName.IS_NOTIFY_READY, true);
       });
     });
-    im.on(CommonEvent.LEFT, function () {
-      if (pc) {
-        pc.close();
-      }
-    });
     var isCurrentUser = function isCurrentUser(user) {
       var _im$getUser2 = im.getUser(),
           id = _im$getUser2.id;
@@ -2285,10 +2412,16 @@
       if (!utils.isArray(streams)) {
         streams = [streams];
       }
-      utils.forEach(streams, function (_ref3) {
-        var mediaStream = _ref3.mediaStream;
+      var id = user.id;
 
-        var streamId = pc.getStreamId(user);
+      utils.forEach(streams, function (stream) {
+        var mediaStream = stream.mediaStream,
+            size = stream.size;
+
+        var streamId = pc.getStreamId({
+          id: id,
+          stream: stream
+        }, size);
         StreamCache.set(streamId, mediaStream);
       });
       var roomId = im.getRoomId();
@@ -2335,19 +2468,52 @@
       });
     };
     var unpublish = function unpublish(user) {
+      user = utils.clone(user);
       var streamId = pc.getStreamId(user);
       var mediaStream = StreamCache.get(streamId);
       if (!mediaStream) {
         return utils.Defer.reject(ErrorType.Inner.STREAM_NOT_EXIST);
       }
-      utils.extend(user.stream, {
+      var streams = [];
+      var _user = user,
+          stream = _user.stream;
+
+      var tinyStream = utils.clone(stream);
+      var _user2 = user,
+          id = _user2.id;
+
+      stream = utils.extend(stream, {
         mediaStream: mediaStream
+      });
+      streams.push(stream);
+
+      var tinyStreamId = pc.getStreamId({
+        id: id,
+        stream: tinyStream
+      }, StreamSize.MIN);
+      var tinyMeidaStream = StreamCache.get(tinyStreamId);
+      if (tinyMeidaStream) {
+        tinyStream = utils.extend(tinyStream, {
+          mediaStream: tinyMeidaStream
+        });
+        streams.push(tinyStream);
+      }
+      utils.extend(user, {
+        stream: streams
       });
       var roomId = im.getRoomId();
       Logger$1.log(LogTag.STREAM_HANDLER, {
         msg: 'unpublish:start',
         roomId: roomId,
         user: user
+      });
+      utils.forEach(streams, function (_ref3) {
+        var mediaStream = _ref3.mediaStream;
+
+        var tracks = mediaStream.getTracks();
+        utils.forEach(tracks, function (track) {
+          track.stop();
+        });
       });
       return pc.removeStream(user).then(function (desc) {
         pc.setOffer(desc);
@@ -2586,7 +2752,8 @@
       var streamId = pc.getStreamId(user);
       var stream = StreamCache.get(streamId);
       if (stream) {
-        type = utils.isEqual(type, StreamType.AUDIO) ? 'Audio' : 'Video';
+        var isAudio = utils.isEqual(type, StreamType.AUDIO);
+        type = isAudio ? 'Audio' : 'Video';
         var tpl = 'get{type}Tracks';
         type = utils.tplEngine(tpl, {
           type: type
@@ -7782,8 +7949,8 @@
       RTCAdapter.init();
       var im = new IM(option);
       var RequestHandler = {
-        room: RoomHandler(im),
-        stream: StreamHandler(im)
+        room: RoomHandler(im, option),
+        stream: StreamHandler(im, option)
       };
       var context = _this;
       var RongIMLib = option.RongIMLib;
@@ -7810,17 +7977,43 @@
       im.on(CommonEvent.LEFT, function () {
         context.emit(DownEvent.RTC_UNMOUNTED);
       });
-      im.on(CommonEvent.ERROR, function (error) {
-        context.emit(DownEvent.RTC_ERROR, error);
+      im.on(CommonEvent.ERROR, function (error, data) {
+        context.emit(DownEvent.RTC_ERROR, data, error);
       });
+      var getMSType = function getMSType(uris) {
+        var check = function check(msType) {
+          return utils.some(uris, function (_ref) {
+            var mediaType = _ref.mediaType;
+
+            return utils.isEqual(msType, mediaType);
+          });
+        };
+        var type = StreamType.NODE;
+        var hasAudio = check(StreamType.AUDIO);
+        var hasVideo = check(StreamType.VIDEO);
+        if (hasAudio) {
+          type = StreamType.AUDIO;
+        }
+        if (hasVideo) {
+          type = StreamType.VIDEO;
+        }
+        if (hasVideo && hasAudio) {
+          type = StreamType.AUDIO_AND_VIDEO;
+        }
+        return type;
+      };
       var eventHandler = function eventHandler(name, result, error) {
         var id = result.id,
-            tag = result.stream.tag;
+            _result$stream = result.stream,
+            tag = _result$stream.tag,
+            uris = _result$stream.uris;
 
+        var type = getMSType(uris);
         var user = {
           id: id,
           stream: {
-            tag: tag
+            tag: tag,
+            type: type
           }
         };
         context.emit(name, user, error);
@@ -7886,6 +8079,7 @@
             type: EventType.RESPONSE,
             error: error
           });
+          throw error;
         });
       }
     }, {
@@ -7913,7 +8107,7 @@
 
       var context = this;
       var option = {
-        url: 'https://ms-xq.rongcloud.net/',
+        url: 'https://msqa.rongcloud.net/',
         debug: false,
         created: function created() {},
         mounted: function mounted() {},
@@ -7968,8 +8162,11 @@
           state: 'unmounted'
         });
       });
-      client.on(DownEvent.RTC_ERROR, function (e) {
-        error(e);
+      client.on(DownEvent.RTC_ERROR, function (e, data) {
+        if (e) {
+          throw new Error(e);
+        }
+        error(data);
       });
     }
 

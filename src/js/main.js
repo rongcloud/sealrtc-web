@@ -166,7 +166,7 @@
       showUserStream(user);
       userStreams.add(user);
     } else {
-      user.stream.type = rongRTC.StreamType.AUDIO_AND_VIDEO;
+      // user.stream.type = rongRTC.StreamType.AUDIO_AND_VIDEO;
       rongRTCStream.subscribe(user).then(function (user) {
         showUserStream(user);
         userStreams.add(user);
@@ -362,10 +362,10 @@
   }
 
   function joinRoom(roomId) {
-    return RongSeal.im.getRTCToken(roomId).then(function (token) {
+    return RongSeal.im.getRTCToken(roomId).then(function () {
       var user = {
         id: loginUserId,
-        token: token
+        token: loginUserId
       };
       return rongRTCRoom.join(user);
     }, rtcTokenError);
@@ -467,5 +467,5 @@
   RongSeal: window.RongSeal,
   RongScreenShare: window.RongScreenShare,
   RongMedia: window.RongMedia,
-  globalConfig: window.global_config
+  globalConfig: window.RongSeal.Config
 });

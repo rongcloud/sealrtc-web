@@ -29,7 +29,6 @@
         switch (status) {
         case RongIMLib.ConnectionStatus['CONNECTED']:
         case 0:
-          callbacks.connected && callbacks.connected();
           break;
         case RongIMLib.ConnectionStatus['CONNECTING']:
         case 1:
@@ -73,6 +72,7 @@
     RongIMClient.connect(token, {
       onSuccess: function (userId) {
         console.log('连接成功', userId);
+        callbacks.connected && callbacks.connected();
       },
       onTokenIncorrect: function () {
         console.log('token 无效');
@@ -83,17 +83,18 @@
     }, params.userId);
   }
 
-  function getRTCToken(channelId) {
-    var instance = RongIMClient.getInstance();
-    return new Promise(function (resolve, reject) {
-      instance.getAgoraDynamicKey(3, channelId, {
-        onSuccess: function (content) {
-          resolve(content.dynamicKey);
-        },
-        onError: function (error) {
-          reject(error);
-        }
-      });
+  function getRTCToken() {
+    // var instance = RongIMClient.getInstance();
+    return new Promise(function (resolve) {
+      resolve();
+      // instance.getAgoraDynamicKey(3, channelId, {
+      //   onSuccess: function (content) {
+      //     resolve(content.dynamicKey);
+      //   },
+      //   onError: function (error) {
+      //     reject(error);
+      //   }
+      // });
     });
   }
 

@@ -105,6 +105,78 @@
     xhr.send(formData);
   };
 
+  var ajax = function (option) {
+    var getXHR = function () {
+      var xhr = null;
+      var hasXDomain = function () {
+        return (typeof XDomainRequest != 'undefined');
+      };
+      var hasXMLRequest = function () {
+        return (typeof XMLHttpRequest != 'undefined');
+      };
+      if (hasXDomain()) {
+        xhr = new win.XDomainRequest();
+      } else if (hasXMLRequest()) {
+        xhr = new win.XMLHttpRequest();
+      } else {
+        xhr = new win.ActiveXObject('Microsoft.XMLHTTP');
+      }
+      return xhr;
+    };
+
+    var xhr = getXHR();
+    var method = option.method || 'GET';
+    var url = option.url;
+    var queryStrings = option.queryStrings || {};
+    var tpl = '{key}={value}', strings = [];
+    utils.forEach(queryStrings, function (value, key) {
+      var str = utils.tplEngine(tpl, {
+        key: key,
+        value: value
+      });
+      strings.push(str);
+    });
+    var queryString = strings.join('&');
+    var urlTpl = '{url}?{queryString}';
+    url = utils.tplEngine(urlTpl, {
+      url: url,
+      queryString: queryString
+    });
+
+    xhr.open(method, url, true);
+
+    var headers = option.headers || {};
+    utils.forEach(headers, function (header, name) {
+      xhr.setRequestHeader(name, header);
+    });
+
+    var success = option.success || utils.noop;
+    var fail = option.fail || utils.noop;
+    var isSuccess = function (xhr) {
+      return /^(200|202|10000)$/.test(xhr.status);
+    };
+
+    var onLoad = function () {
+      var result = xhr.responseText;
+      if (isSuccess(xhr)) {
+        success(result);
+      } else {
+        fail(result);
+      }
+    };
+    if ('onload' in xhr) {
+      xhr.onload = onLoad;
+    }
+    else {
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4) {
+          onLoad();
+        }
+      };
+    }
+    xhr.send(option.body);
+  };
+
   var download = function (url) {
     win.open(url);
   };
@@ -267,6 +339,7 @@
     tplEngine: tplEngine,
     Cache: Cache,
     sendForm: sendForm,
+    ajax: ajax,
     isObject: isObject,
     download: download,
     Dom: Dom
