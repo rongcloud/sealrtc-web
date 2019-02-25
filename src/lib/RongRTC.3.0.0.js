@@ -1469,12 +1469,13 @@
         });
       }
       var CONNECTED = RongIMLib.ConnectionStatus.CONNECTED;
-      // 如果实例化 RongRTC 时，IM 已连接成功，主动触发内部 init
+
       utils.extend(context, {
         connectState: connectState,
         im: im,
         RongIMLib: RongIMLib
       });
+      // 如果实例化 RongRTC 时，IM 已连接成功，主动触发内部 init
       if (utils.isEqual(connectState, CONNECTED)) {
         init();
       }
@@ -2000,6 +2001,7 @@
     */
     var subCache = utils.Cache();
     var prosumer = new utils.Prosumer();
+    var pc = null;
     var SubscribeCache = {
       get: function get$$1(userId) {
         return subCache.get(userId);
@@ -2010,14 +2012,15 @@
       getKeys: function getKeys() {
         return subCache.getKeys();
       },
-      remove: function remove(userId, tag, type) {
-        var subs = subCache.get(userId);
-        type = type || StreamType.AUDIO_AND_VIDEO;
-        subs = utils.filter(subs, function (_ref) {
-          var mediaTag = _ref.tag,
-              mediaType = _ref.mediaType;
+      remove: function remove(user) {
+        var userId = user.id;
 
-          return !utils.isEqual(mediaTag, tag) && utils.isEqual(mediaType, type);
+        var subs = subCache.get(userId) || [];
+        var streamId = pc.getStreamId(user);
+        subs = utils.filter(subs, function (_ref) {
+          var msid = _ref.msid;
+
+          return !utils.isEqual(streamId, msid);
         });
         subCache.set(userId, subs);
       },
@@ -2032,7 +2035,6 @@
       StreamCache.clear();
       SubscribeCache.clear();
     };
-    var pc = null;
     var eventEmitter = new EventEmitter();
     var getSubPromiseUId = function getSubPromiseUId(user) {
       var id = user.id,
@@ -2135,33 +2137,44 @@
 
       pc.setAnwser(sdp);
       var uris = getUris(publishList);
+
+      var getTempUris = function getTempUris(type) {
+        var userId = user.id;
+
+        var cacheUris = PubResourceCache.get(userId) || [];
+        var isPublish = utils.isEqual(type, Message.PUBLISH);
+        if (isPublish) {
+          cacheUris = uris;
+        }
+        var streamId = pc.getStreamId(user);
+        var getCondition = function getCondition(stream) {
+          var msid = stream.msid;
+
+          return utils.isEqual(msid, streamId);
+        };
+        var tempUris = utils.filter(cacheUris, function (stream) {
+          return getCondition(stream);
+        });
+        // 第一次 publish 过滤后 tempUris 为空，使用默认值
+        return utils.isEmpty(tempUris) ? uris : tempUris;
+      };
+      var sendUris = getTempUris(type);
       switch (type) {
         case Message.PUBLISH:
           im.sendMessage({
             type: type,
             content: {
-              uris: uris
+              uris: sendUris
             }
           });
           break;
         case Message.UNPUBLISH:
-          {
-            var userId = user.id;
-
-            var publishUris = PubResourceCache.get(userId);
-            var streamId = pc.getStreamId(user);
-            var unpublishUris = utils.filter(publishUris, function (stream) {
-              var msid = stream.msid;
-
-              return utils.isEqual(msid, streamId);
-            });
-            im.sendMessage({
-              type: type,
-              content: {
-                uris: unpublishUris
-              }
-            });
-          }
+          im.sendMessage({
+            type: type,
+            content: {
+              uris: sendUris
+            }
+          });
           break;
       }
       PubResourceCache.set(user.id, uris);
@@ -2630,12 +2643,7 @@
       });
     };
     var unsubscribe = function unsubscribe(user) {
-      var id = user.id,
-          _user$stream4 = user.stream,
-          type = _user$stream4.type,
-          tag = _user$stream4.tag;
-
-      SubscribeCache.remove(id, tag, type);
+      SubscribeCache.remove(user);
       var roomId = im.getRoomId();
       Logger$1.log(LogTag.STREAM_HANDLER, {
         msg: 'unsubscribe:start',
