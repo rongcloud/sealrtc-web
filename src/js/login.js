@@ -41,6 +41,10 @@
       prompt = localeData.userIdEmpty;
       isValid = false;
     }
+    if (utils.isContainsChinese(userDom.value)) {
+      prompt = localeData.userIdIllegal;
+      isValid = false;
+    }
     return {
       isValid: isValid,
       prompt: prompt

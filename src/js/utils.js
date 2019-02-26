@@ -315,6 +315,11 @@
     return div.children[0];
   };
 
+  var isContainsChinese = function(val) {
+    var reg = new RegExp('[\\u4E00-\\u9FFF]+','g');
+    return reg.test(val)
+  };
+
   var Dom = {
     create: create,
     get: getDom,
@@ -342,7 +347,8 @@
     ajax: ajax,
     isObject: isObject,
     download: download,
-    Dom: Dom
+    Dom: Dom,
+    isContainsChinese: isContainsChinese
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.utils = utils;

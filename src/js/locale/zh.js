@@ -9,8 +9,9 @@
       room: '会议室 ID',
       user: '用户 ID',
       self: '自己',
-      roomIdEmpty: '房间号不能为空',
-      userIdEmpty: '用户名不能为空',
+      roomIdEmpty: '会议室 ID 不能为空',
+      userIdEmpty: '用户 ID 不能为空',
+      userIdIllegal: '用户 ID 不能包含中文',
 
       getTokenError: '获取 token 失败',
       rtcError: '初始化 RTC 失败',

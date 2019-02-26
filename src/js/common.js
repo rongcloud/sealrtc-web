@@ -255,7 +255,7 @@
       });
       if (videoDom && stream) {
         videoDom.srcObject = stream;
-        this.dom.setAttribute('user',customizeValue);
+        this.dom.setAttribute('stream',customizeValue);
       }
     }
 
@@ -318,7 +318,7 @@
         prefix: 'Rong',
         id: id
       });
-      videoDom.setAttribute('stream',customizeValue);
+      dom.setAttribute('user',customizeValue);
       dom.onclick = function (e) {
         self.zoom();
         self.resizeEvent(true, id);

@@ -10,7 +10,8 @@
       user: 'User ID',
       self: 'Self',
       roomIdEmpty: 'Room Id cannot be empty',
-      userIdEmpty: 'Username can not be empty',
+      userIdEmpty: 'User ID can not be empty',
+      userIdIllegal: 'User ID cannot contain Chinese',
 
       getTokenError: 'Get token failed',
       rtcError: 'Init RTC failed',
