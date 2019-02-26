@@ -247,9 +247,15 @@
 
     // 展示流
     function showStream(stream) {
+      var id = this.id;
       var videoDom = this.childDom.video;
+      var customizeValue = utils.tplEngine('{prefix}-{id}', {
+        prefix: 'Rong',
+        id: id
+      });
       if (videoDom && stream) {
         videoDom.srcObject = stream;
+        this.dom.setAttribute('user',customizeValue);
       }
     }
 
@@ -308,12 +314,18 @@
         videoDom = Dom.getChild(dom, 'rong-video'),
         videoBtnDom = dom.querySelector('.rong-opt-video'),
         audioBtnDom = dom.querySelector('.rong-opt-audio');
+      var customizeValue = utils.tplEngine('{prefix}-{id}', {
+        prefix: 'Rong',
+        id: id
+      });
+      videoDom.setAttribute('stream',customizeValue);
       dom.onclick = function (e) {
         self.zoom();
         self.resizeEvent(true, id);
         e.stopPropagation();
       };
 
+      self.id = id;
       self.resizeEvent = params.resizeEvent || utils.noop;
       self.dom = dom;
       self.childDom = {

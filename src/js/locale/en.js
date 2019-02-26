@@ -6,8 +6,8 @@
     data: {
       installPrompt: 'For the first time to use screenshare, please download and install the plugin',
       downloadTitle: 'Download',
-      room: 'Room',
-      user: 'User',
+      room: 'Room ID',
+      user: 'User ID',
       self: 'Self',
       roomIdEmpty: 'Room Id cannot be empty',
       userIdEmpty: 'Username can not be empty',

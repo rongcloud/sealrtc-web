@@ -6,8 +6,8 @@
     data: {
       installPrompt: '首次使用屏幕共享, 请下载并安装插件',
       downloadTitle: '下载插件',
-      room: '会议 ID',
-      user: '登录用户',
+      room: '会议室 ID',
+      user: '用户 ID',
       self: '自己',
       roomIdEmpty: '房间号不能为空',
       userIdEmpty: '用户名不能为空',
@@ -30,12 +30,12 @@
       switchStreamError: '切换流失败'
     },
     placeholder: {
-      roomId: '请在这里输入会议 ID',
-      userId: '请在这里输入用户名'
+      roomId: '请输入会议室 ID',
+      userId: '请输入用户 ID'
     },
     textContent: {
-      closeVideo: '加入时不开启摄像头',
-      closeAudio: '加入时不开启麦克风',
+      closeVideo: '加入时关闭摄像头',
+      closeAudio: '加入时关闭麦克风',
       setting: '通话设置',
       resolution: '分辨率',
       screenshareBusy: '正在分享屏幕',
