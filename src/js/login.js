@@ -49,19 +49,19 @@
 
   var getRTCOption = function () {
     var resolutionDom = getSelectedByName('resolution'),
-      closeVideoDom = getSelectedByName('isCloseVideo'),
-      closeAudioDom = getSelectedByName('isCloseAudio');
+      closeVideoDom = getSelectedByName('isCloseVideo');
+      // closeAudioDom = getSelectedByName('isCloseAudio');
     var roomId = roomDom.value,
       userId = userDom.value,
       resolution = common.formatResolution(resolutionDom.value), // 格式如: { width: 640, height: 320 }
-      videoEnable = !closeVideoDom,
-      audioEnable = !closeAudioDom;
+      videoEnable = !closeVideoDom;
+      // audioEnable = !closeAudioDom;
     return {
       userId: userId,
       roomId: roomId,
       resolution: resolution,
       videoEnable: videoEnable,
-      audioEnable: audioEnable
+      audioEnable: true
     };
   };
 

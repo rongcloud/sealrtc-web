@@ -61,18 +61,23 @@
 
   function getScreenShareError(error) {
     console.log('screenshare error', error);
-    sealAlert(localeData.installPrompt, {
-      isShowCancel: true,
-      confirmText: localeData.downloadTitle,
-      confirmCallback: function () {
-        var downloadUrl = win.location.href + 'plugin/screenshare-addon.zip';
-        utils.download(downloadUrl);
-      }
+    return new Promise(function (resolve, reject) {
+      !error.message && sealAlert(localeData.installPrompt, {
+        isShowCancel: true,
+        confirmText: localeData.downloadTitle,
+        confirmCallback: function () {
+          var downloadUrl = win.location.href + 'plugin/screenshare-addon.zip';
+          utils.download(downloadUrl);
+        }
+      });
+      reject();
     });
   }
 
   function publishStreamError(error) {
-    sealAlert(localeData.publishError + ' ' + JSON.stringify(error));
+    if (error) {
+      sealAlert(localeData.publishError + ' ' + JSON.stringify(error));
+    }
   }
 
   function rtcTokenError(error) {
@@ -205,7 +210,7 @@
       id: loginUserId,
       stream: {
         tag: CustomizeTag.SCREENSHARE,
-        type: rongRTC.StreamType.AUDIO_AND_VIDEO,
+        type: rongRTC.StreamType.VIDEO,
         mediaStream: null
       }
     };
