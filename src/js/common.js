@@ -255,7 +255,7 @@
       });
       if (videoDom && stream) {
         videoDom.srcObject = stream;
-        this.dom.setAttribute('stream',customizeValue);
+        videoDom.setAttribute('stream',customizeValue);
       }
     }
 
