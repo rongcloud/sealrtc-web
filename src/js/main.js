@@ -161,6 +161,10 @@
       // type = user.stream.type,
       mediaStream = user.stream.mediaStream;
     var streamBox = StreamBox.get(id);
+    var isSelf = id === loginUserId;
+    if(isSelf) {
+      streamBox.childDom.video.muted = true;
+    }
     streamBox.showStream(mediaStream);
   }
 
