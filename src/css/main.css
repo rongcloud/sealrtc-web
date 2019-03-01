@@ -335,7 +335,7 @@ ul, li {
   width: 120px;
   height: 100%;
   background-color: black;
-  margin: 0 15px;
+  margin: -46px 15px;
   position: relative;
   z-index: 15;
   border: 1px solid #b8bdc4;
@@ -582,4 +582,33 @@ ul, li {
   border: none;
   background-color: #4e6caa;
   color: white;
+}
+
+.rong-seal-toast {
+  position: absolute;
+  color: #fff;
+  z-index: 12;
+}
+
+.rong-loading {
+    background: #4953654a;
+    width: 403px;
+    height: 590px;
+    position: absolute;
+    left: 38%;
+    top: 15%;
+    z-index: 13;
+    text-align: center;
+    border-radius: 20px;
+}
+
+.rong-loading-img {
+  background-image: url("./img/loading-img.gif");
+  background-size: 30px 30px;
+  background-repeat: no-repeat;
+  display: inline-block;
+  width: 49px;
+  height: 49px;
+  vertical-align: center;
+  margin-top: 72%;
 }

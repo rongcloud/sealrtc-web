@@ -79,6 +79,11 @@
         console.log('user', user);
         RongSeal.startRTC(option);
         Cache.set(StorageKeys.RoomId, option.roomId);
+      },
+      backLoginPage: function(){
+        // 隐藏 rtc, 展示 login
+        Dom.hideByClass('rong-rtc');
+        Dom.showByClass('rong-login');
       }
     });
   };

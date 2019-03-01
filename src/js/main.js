@@ -158,11 +158,10 @@
 
   function showUserStream(user) {
     var id = user.id,
-      type = user.stream.type,
+      // type = user.stream.type,
       mediaStream = user.stream.mediaStream;
     var streamBox = StreamBox.get(id);
     streamBox.showStream(mediaStream);
-    setStreamBox(id, type);
   }
 
   function addUserStream(user) {
@@ -170,10 +169,13 @@
     if (isSelf) {
       showUserStream(user);
       userStreams.add(user);
+      setStreamBox(user.id, user.stream.mediaStream);
     } else {
       // user.stream.type = rongRTC.StreamType.AUDIO_AND_VIDEO;
+      console.log(user.stream)
       rongRTCStream.subscribe(user).then(function (user) {
         showUserStream(user);
+        setStreamBox(user.id, user.stream.mediaStream);
         userStreams.add(user);
       }, function (error) {
         sealAlert(localeData.subscriptError + JSON.stringify(error));
@@ -275,7 +277,7 @@
   function closeVideo(user) {
     var video = rongRTCStream.video;
     var streamList = userStreams.getList(user.id);
-    user = streamList[streamList.length - 1];
+    user = streamList ? streamList[streamList.length - 1] : user;
     video.disable(user).then(function () {
       showUserStream(user);
       var streamBox = StreamBox.get(user.id);
@@ -302,6 +304,8 @@
     var audio = rongRTCStream.audio;
     var streamList = userStreams.getList(user.id);
     user = streamList[streamList.length - 1];
+    // var streamList = userStreams.getList(user.id);
+    // user = streamList ? streamList[streamList.length - 1] : user;
     audio.mute(user).then(function () {
       showUserStream(user);
       var streamBox = StreamBox.get(user.id);
@@ -358,6 +362,15 @@
 
   function publishSelfMediaStream(videoEnable, audioEnable, resolution) {
     return new Promise(function (resolve, reject) {
+      if(!videoEnable){
+        videoEnable= true;
+        getSelfMediaStream(videoEnable, audioEnable, resolution).then(function (user) {
+          rongRTCStream.publish(user).then(function () {
+            closeVideo(user);
+            resolve(user);
+          }, reject);
+        }, getSelfMediaStreamError);
+      }
       getSelfMediaStream(videoEnable, audioEnable, resolution).then(function (user) {
         rongRTCStream.publish(user).then(function () {
           resolve(user);

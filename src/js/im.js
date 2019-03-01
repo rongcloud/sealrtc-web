@@ -42,6 +42,7 @@
         case RongIMLib.ConnectionStatus['NETWORK_UNAVAILABLE']:
         case 3:
           console.log('网络不可用');
+          callbacks.backLoginPage();
           break;
 
         case RongIMLib.ConnectionStatus['CONNECTION_CLOSED']:
