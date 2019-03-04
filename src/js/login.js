@@ -4,6 +4,7 @@
     common = RongSeal.common,
     sealAlert = common.sealAlert,
     Dom = utils.Dom,
+    getDomListByName = Dom.getDomListByName,
     getSelectedByName = Dom.getSelectedByName,
     getDomById = Dom.getById,
     Cache = utils.Cache,
@@ -18,7 +19,8 @@
     inputDomList = Dom.getList('.rong-login-input');
   
   var StorageKeys = {
-    RoomId: 'rong-sealv2-roomid'
+    RoomId: 'rong-sealv2-roomid',
+    Resolution: 'rong-sealv2-resolution'
   };
 
   var setDefaultRTCInfo = function () {
@@ -51,6 +53,16 @@
     };
   };
 
+  var setDefaultRTCResolution = function () {
+    var resolution = Cache.get(StorageKeys.Resolution);
+    var list = getDomListByName('resolution');
+    for (var i=0; i< list.length; i++){
+      if(list[i].value === resolution){
+        list[i].checked = true;
+      }
+    }
+  };
+
   var getRTCOption = function () {
     var resolutionDom = getSelectedByName('resolution'),
       closeVideoDom = getSelectedByName('isCloseVideo');
@@ -59,6 +71,7 @@
       userId = userDom.value,
       resolution = common.formatResolution(resolutionDom.value), // 格式如: { width: 640, height: 320 }
       videoEnable = !closeVideoDom;
+      // console.log(resolutionDom);
       // audioEnable = !closeAudioDom;
     return {
       userId: userId,
@@ -69,21 +82,63 @@
     };
   };
 
+  // var reconnectionMechanism = function () {
+  //   //30s前网络嗅探并重新连接
+  //   var total = 30,count = 0;
+  //   var url = RongSeal.Config.TOKEN_URL;
+  //   var invoke = function () {
+  //     utils.ajax({
+  //       url: url,
+  //       headers: {
+  //         'Content-Type': 'application/json'
+  //       },
+  //       method: 'POST',
+  //       body: JSON.stringify({
+  //         id: 34
+  //       }),
+  //       success: function () {
+  //         // callback();
+  //         console.log('reconnnect')
+  //       },
+  //       fail: function () {
+  //         if(count >= total) {
+  //           //30s后返回登录页
+  //           console.log('login')
+  //           //login
+  //           return ;
+  //         }
+  //         count++;
+  //         setTimeout(function() {
+  //           invoke();
+  //         },1000)
+  //       }
+  //     });
+  //   }
+  //   invoke();
+  // }
+
   var connect = function (user) {
     user.navi = Config.NAVI;
     user.appKey = Config.APP_ID;
     RongSeal.im.connect(user, {
       connected: function (/* userId */) {
         var option = getRTCOption();
+        console.log(option);
+        var resolution = option.resolution;
         option.userId = user.userId;
         console.log('user', user);
         RongSeal.startRTC(option);
         Cache.set(StorageKeys.RoomId, option.roomId);
+        Cache.set(StorageKeys.Resolution,common.reFormatResolution(resolution))
       },
       backLoginPage: function(){
+        // reconnectionMechanism();
         // 隐藏 rtc, 展示 login
-        Dom.hideByClass('rong-rtc');
-        Dom.showByClass('rong-login');
+        // Dom.hideByClass('rong-rtc');
+        // Dom.showByClass('rong-login');
+        // Dom.hideByClass('rong-btn-loading');
+        // Dom.showByClass('rong-btn-start');
+        window.location.reload();
       }
     });
   };
@@ -93,6 +148,8 @@
     if (!checkContent.isValid) {
       return sealAlert(checkContent.prompt);
     }
+    Dom.hideByClass('rong-btn-start');
+    Dom.showByClass('rong-btn-loading');
     common.getIMToken({
       id: userDom.value
     }).then(function (user) {
@@ -116,7 +173,7 @@
     });
     common.setLocale();
   })();
-  
+  common.setDefaultRTCResolution = setDefaultRTCResolution;
 })({
   win: window,
   RongSeal: window.RongSeal,

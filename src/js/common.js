@@ -134,6 +134,15 @@
   };
 
   /**
+   * 重置分辨率
+   * @param {object} rate 包含 width、height
+   * @return {string} 分辨率
+   */
+  var reFormatResolution = function (rate) {
+    return rate.width+'*'+rate.height;
+  };
+
+  /**
    * 根据模板创建 dom
    * @param {string} temp 模板
    */
@@ -459,6 +468,7 @@
     SealToast: SealToast,
     SealLoading: SealLoading,
     formatResolution: formatResolution,
+    reFormatResolution: reFormatResolution,
     getRTCToken: getRTCToken,
     getIMToken: getIMToken,
     UI: UI,

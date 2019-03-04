@@ -272,6 +272,10 @@
     return child;
   };
 
+  var getDomListByName = function (name) {
+    return win.document.getElementsByName(name);
+  };
+
   var getSelectedDomByName = function (name) {
     var list = win.document.getElementsByName(name);
     var selectedEl;
@@ -331,6 +335,7 @@
     hide: hideDom,
     hideByClass: hideDomByClass,
     getSelectedByName: getSelectedDomByName,
+    getDomListByName: getDomListByName,
     getBrother: getBrotherDom,
     getChild: getChildDom,
     addClass: addClass,

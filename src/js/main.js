@@ -6,6 +6,7 @@
     utils = RongSeal.utils,
     Dom = utils.Dom,
     sealAlert = common.sealAlert,
+    // setDefaultRTCResolution = common.setDefaultRTCResolution,
     locale = RongSeal.locale[common.lang],
     localeData = locale.data;
 
@@ -424,6 +425,12 @@
   function quit() {
     rongRTCRoom.leave().then(function () {
       win.location.reload();
+      // 设置默认分辨率
+      // setDefaultRTCResolution();
+      // Dom.hideByClass('rong-rtc');
+      // Dom.showByClass('rong-login');
+      // Dom.hideByClass('rong-btn-loading');
+      // Dom.showByClass('rong-btn-start');
     }, function () {
       // leave error
     });
