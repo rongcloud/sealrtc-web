@@ -99,6 +99,29 @@
     });
   }
 
+  // function reconnect() {
+  //   var callback = {
+  //     onSuccess: function(userId) {
+  //       console.log("Reconnect successfully." + userId);
+  //     },
+  //     onTokenIncorrect: function() {
+  //       console.log('token无效');
+  //     },
+  //     onError:function(errorCode){
+  //       console.log(errorcode);
+  //     }
+  //   };
+  //   var config = {
+  //     // 默认 false, true 启用自动重连，启用则为必选参数
+  //     auto: true,
+  //     // 网络嗅探地址 [http(s)://]cdn.ronghub.com/RongIMLib-2.2.6.min.js 可选
+  //     url: 'cdn.ronghub.com/RongIMLib-2.2.6.min.js',
+  //     // 重试频率 [100, 1000, 3000, 6000, 10000, 18000] 单位为毫秒，可选
+  //     rate: [100, 1000, 3000, 6000, 10000]
+  //   };
+  //   RongIMClient.reconnect(callback, config);
+  // }
+
   win.RongSeal.im = {
     connect: connect,
     getRTCToken: getRTCToken

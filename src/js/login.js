@@ -28,6 +28,15 @@
     if (roomId) {
       roomDom.value = roomId;
     }
+    var resolution = Cache.get(StorageKeys.Resolution);
+    if (resolution) {
+      var list = getDomListByName('resolution');
+      for (var i=0; i< list.length; i++){
+        if(list[i].value === resolution){
+          list[i].checked = true;
+        }
+      }
+    }
   };
 
   var checkRTCValue = function () {
@@ -53,16 +62,6 @@
     };
   };
 
-  var setDefaultRTCResolution = function () {
-    var resolution = Cache.get(StorageKeys.Resolution);
-    var list = getDomListByName('resolution');
-    for (var i=0; i< list.length; i++){
-      if(list[i].value === resolution){
-        list[i].checked = true;
-      }
-    }
-  };
-
   var getRTCOption = function () {
     var resolutionDom = getSelectedByName('resolution'),
       closeVideoDom = getSelectedByName('isCloseVideo');
@@ -82,40 +81,40 @@
     };
   };
 
-  // var reconnectionMechanism = function () {
-  //   //30s前网络嗅探并重新连接
-  //   var total = 30,count = 0;
-  //   var url = RongSeal.Config.TOKEN_URL;
-  //   var invoke = function () {
-  //     utils.ajax({
-  //       url: url,
-  //       headers: {
-  //         'Content-Type': 'application/json'
-  //       },
-  //       method: 'POST',
-  //       body: JSON.stringify({
-  //         id: 34
-  //       }),
-  //       success: function () {
-  //         // callback();
-  //         console.log('reconnnect')
-  //       },
-  //       fail: function () {
-  //         if(count >= total) {
-  //           //30s后返回登录页
-  //           console.log('login')
-  //           //login
-  //           return ;
-  //         }
-  //         count++;
-  //         setTimeout(function() {
-  //           invoke();
-  //         },1000)
-  //       }
-  //     });
-  //   }
-  //   invoke();
-  // }
+  var reconnectionMechanism = function () {
+    //30s前网络嗅探并重新连接
+    var total = 30,count = 0;
+    var url = RongSeal.Config.TOKEN_URL;
+    var reconnect = function () {
+      utils.ajax({
+        url: url,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        method: 'POST',
+        body: JSON.stringify({
+          id: 34
+        }),
+        success: function () {
+          // callback();
+          console.log('reconnnect')
+        },
+        fail: function () {
+          if(count >= total) {
+            //30s后返回登录页
+            console.log('login')
+            //login
+            return ;
+          }
+          count++;
+          setTimeout(function() {
+            reconnect();
+          },1000)
+        }
+      });
+    }
+    reconnect();
+  }
 
   var connect = function (user) {
     user.navi = Config.NAVI;
@@ -132,13 +131,12 @@
         Cache.set(StorageKeys.Resolution,common.reFormatResolution(resolution))
       },
       backLoginPage: function(){
-        // reconnectionMechanism();
+        reconnectionMechanism();
         // 隐藏 rtc, 展示 login
         // Dom.hideByClass('rong-rtc');
         // Dom.showByClass('rong-login');
         // Dom.hideByClass('rong-btn-loading');
         // Dom.showByClass('rong-btn-start');
-        window.location.reload();
       }
     });
   };
@@ -173,7 +171,6 @@
     });
     common.setLocale();
   })();
-  common.setDefaultRTCResolution = setDefaultRTCResolution;
 })({
   win: window,
   RongSeal: window.RongSeal,
