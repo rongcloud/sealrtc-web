@@ -11,7 +11,7 @@
     Config = RongSeal.Config;
 
   var randomUserId = new Date().getTime().toString();
-  console.log('randomUserId: ', typeof randomUserId);
+  // console.log('randomUserId: ', typeof randomUserId);
 
   var locale = RongSeal.locale[common.lang],
     localeData = locale.data;
@@ -149,9 +149,10 @@
     }, function (error) {
       console.log(error)
       sealAlert(localeData.networkError);
+      Dom.hideByClass('rong-btn-loading');
+      Dom.showByClass('rong-btn-start');
       RongSeal.rongRTCRoom.leave().then(function(){
-        Dom.hideByClass('rong-btn-loading');
-        Dom.showByClass('rong-btn-start');
+        RongSeal.im.instance().logout();
       }, function () {
         // leave error
       })

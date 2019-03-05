@@ -82,6 +82,7 @@
         console.log('connect error', errorCode);
       }
     }, params.userId);
+
   }
 
   function getRTCToken() {
@@ -122,13 +123,15 @@
     }, config);
   }
 
-  // var instance = RongIMClient.getInstance();
+  function getInstance() {
+    return RongIMClient.getInstance();
+  }
 
   win.RongSeal.im = {
     connect: connect,
     reconnect: reconnect,
     getRTCToken: getRTCToken,
-    // instance: instance
+    instance: getInstance
   };
 
 })({
