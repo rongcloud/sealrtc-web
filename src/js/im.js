@@ -122,10 +122,13 @@
     }, config);
   }
 
+  // var instance = RongIMClient.getInstance();
+
   win.RongSeal.im = {
     connect: connect,
     reconnect: reconnect,
-    getRTCToken: getRTCToken
+    getRTCToken: getRTCToken,
+    // instance: instance
   };
 
 })({

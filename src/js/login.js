@@ -10,7 +10,8 @@
     Cache = utils.Cache,
     Config = RongSeal.Config;
 
-  var randomUserId = new Date().getTime();
+  var randomUserId = new Date().getTime().toString();
+  console.log('randomUserId: ', typeof randomUserId);
 
   var locale = RongSeal.locale[common.lang],
     localeData = locale.data;
