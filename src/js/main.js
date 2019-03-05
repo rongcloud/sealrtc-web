@@ -459,7 +459,7 @@
 
     loginUserId = params.userId;
     rongRTC = new RongRTC({
-      // debug: true,
+      debug: true,
       RongIMLib: win.RongIMLib,
       mode: RongRTC.RTC,
       mounted: function () {},
