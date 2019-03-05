@@ -459,7 +459,10 @@
 
     loginUserId = params.userId;
     rongRTC = new RongRTC({
-      debug: true,
+      // debug: true,
+      logger: (log) => {
+        console.log(JSON.stringify(log));
+      },
       RongIMLib: win.RongIMLib,
       mode: RongRTC.RTC,
       mounted: function () {},
@@ -492,6 +495,7 @@
       publishSelfMediaStream(videoEnable, audioEnable, resolution).then(
         addUserStream, publishStreamError);
     }, joinRoomError);
+    RongSeal.rongRTCRoom = rongRTCRoom;
   };
 
   RongSeal.startRTC = startRTC;

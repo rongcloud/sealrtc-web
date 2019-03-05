@@ -148,8 +148,12 @@
     }, function (error) {
       console.log(error)
       sealAlert(localeData.networkError);
-      Dom.hideByClass('rong-btn-loading');
-      Dom.showByClass('rong-btn-start');
+      RongSeal.rongRTCRoom.leave().then(function(){
+        Dom.hideByClass('rong-btn-loading');
+        Dom.showByClass('rong-btn-start');
+      }, function () {
+        // leave error
+      })
     });
   };
   
