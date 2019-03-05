@@ -158,10 +158,11 @@
 
     var onLoad = function () {
       var result = xhr.responseText;
+      console.log('result: ', result);
       if (isSuccess(xhr)) {
         success(result);
       } else {
-        fail(result);
+        fail(result.target.status);
       }
     };
     if ('onload' in xhr) {
@@ -174,6 +175,9 @@
         }
       };
     }
+    xhr.onerror = function (error) {
+      fail(error.target.status);
+    };
     xhr.send(option.body);
   };
 

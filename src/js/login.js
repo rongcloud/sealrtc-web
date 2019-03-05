@@ -10,11 +10,13 @@
     Cache = utils.Cache,
     Config = RongSeal.Config;
 
+  var randomUserId = new Date().getTime();
+
   var locale = RongSeal.locale[common.lang],
     localeData = locale.data;
 
   var roomDom = getDomById('roomId'),
-    userDom = getDomById('userId'),
+    // userDom = getDomById('userId'),
     startBtnDom = getDomById('start'),
     inputDomList = Dom.getList('.rong-login-input');
   
@@ -39,21 +41,23 @@
     }
   };
 
+  var checkRoomIdValue = function() {
+    var roomId = roomDom.value;
+    if(roomId) {
+      startBtnDom.style.background = '#28d6f6';
+      startBtnDom.style.border = '#28d6f6';
+    }else {
+      startBtnDom.style.background = '#475163';
+      startBtnDom.style.border = '#475163';
+    }
+  }
+
   var checkRTCValue = function () {
     var isRoomIdEmpty = !roomDom.value;
-    var isUserIdEmpty = !userDom.value;
     var isValid = true;
     var prompt = '';
     if (isRoomIdEmpty) {
       prompt = localeData.roomIdEmpty;
-      isValid = false;
-    }
-    if (isUserIdEmpty) {
-      prompt = localeData.userIdEmpty;
-      isValid = false;
-    }
-    if (utils.isContainsChinese(userDom.value)) {
-      prompt = localeData.userIdIllegal;
       isValid = false;
     }
     return {
@@ -67,7 +71,8 @@
       closeVideoDom = getSelectedByName('isCloseVideo');
       // closeAudioDom = getSelectedByName('isCloseAudio');
     var roomId = roomDom.value,
-      userId = userDom.value,
+      // userId = userDom.value,
+      userId = randomUserId,
       resolution = common.formatResolution(resolutionDom.value), // 格式如: { width: 640, height: 320 }
       videoEnable = !closeVideoDom;
       // console.log(resolutionDom);
@@ -84,35 +89,23 @@
   var reconnectionMechanism = function () {
     //30s前网络嗅探并重新连接
     var total = 30,count = 0;
-    var url = RongSeal.Config.TOKEN_URL;
-    var reconnect = function () {
-      utils.ajax({
-        url: url,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        method: 'POST',
-        body: JSON.stringify({
-          id: 34
-        }),
-        success: function () {
-          // callback();
-          console.log('reconnnect')
-        },
-        fail: function () {
+    var reconnect = function() {
+      RongSeal.im.reconnect({
+        error: function () {
+          count ++;
+          console.log('count: ', count);
           if(count >= total) {
-            //30s后返回登录页
-            console.log('login')
-            //login
+            console.log('back login');
+            Dom.hideByClass('rong-rtc');
+            Dom.showByClass('rong-login');
+            Dom.hideByClass('rong-btn-loading');
+            Dom.showByClass('rong-btn-start');
             return ;
           }
-          count++;
-          setTimeout(function() {
-            reconnect();
-          },1000)
+          reconnect();
         }
-      });
-    }
+      })
+    };
     reconnect();
   }
 
@@ -149,11 +142,14 @@
     Dom.hideByClass('rong-btn-start');
     Dom.showByClass('rong-btn-loading');
     common.getIMToken({
-      id: userDom.value
+      id: randomUserId
     }).then(function (user) {
       connect(user);
     }, function (error) {
-      sealAlert(error);
+      console.log(error)
+      sealAlert(localeData.networkError);
+      Dom.hideByClass('rong-btn-loading');
+      Dom.showByClass('rong-btn-start');
     });
   };
   
@@ -165,6 +161,8 @@
 
   (function init() {
     setDefaultRTCInfo();
+    checkRoomIdValue();
+    roomDom.onkeyup = checkRoomIdValue;
     startBtnDom.onclick = startRTC;
     utils.forEach(inputDomList, function (dom) {
       dom.onkeydown = pressInput;

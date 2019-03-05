@@ -459,9 +459,17 @@
 
     loginUserId = params.userId;
     rongRTC = new RongRTC({
+      // debug: true,
       RongIMLib: win.RongIMLib,
       mode: RongRTC.RTC,
-      mounted: function () {}
+      mounted: function () {},
+      error: function () {
+        console.log('rtc err')
+        Dom.hideByClass('rong-rtc');
+        Dom.showByClass('rong-login');
+        Dom.hideByClass('rong-btn-loading');
+        Dom.showByClass('rong-btn-start');
+      }
     });
     rongRTCRoom = new rongRTC.Room({
       id: params.roomId,

@@ -12,6 +12,7 @@
       roomIdEmpty: 'Room Id cannot be empty',
       userIdEmpty: 'User ID can not be empty',
       userIdIllegal: 'User ID cannot contain Chinese',
+      networkError: 'Network is disconnected',
 
       getTokenError: 'Get token failed',
       rtcError: 'Init RTC failed',
