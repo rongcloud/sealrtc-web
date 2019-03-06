@@ -335,6 +335,7 @@
   }
 
   function addUserBox(user) {
+    console.log('join user',user)
     var id = user.id,
       isSelf = id === loginUserId;
     var name = isSelf ? localeData.self : id;
@@ -362,6 +363,9 @@
     var id = user.id;
     var streamBox = StreamBox.get(id);
     streamList.removeBox(streamBox);
+    StreamBox.clearQuitUser(id);
+    // var list = RongSeal.common.UI.StreamBoxList;
+    // delete list[id];
   }
 
   function publishSelfMediaStream(videoEnable, audioEnable, resolution) {

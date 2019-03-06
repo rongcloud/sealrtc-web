@@ -221,30 +221,7 @@
       return self.create(str,duration);
     }
   }
-  /** *
-   * loading 
-   * @param {string} str 提示信息
-   * @param {number} duration 展示时间
-  */
-  var SealLoading = function(){};
-  SealLoading.prototype = {
-    create: function(){
-      // var self = this;
-      var loading = '<div class="rong-loading"><div class="rong-loading-img"></div></div>';
-      if(Dom.get('.rong-loading')) return;
-      document.body.insertAdjacentHTML('beforeend', loading);
-    },
-    show: function(){
-      Dom.showByClass('rong-loading');
-    },
-    hide: function(){
-      Dom.hideByClass('rong-loading');
-    },
-    loading: function(){
-      var self = this;
-      return self.create();
-    }
-  }
+  
   /**
    * 音视频列表
    * @param {string} temp 模板(可选)
@@ -300,6 +277,7 @@
    * @param {string} temp 模板, 可选
    */
   var StreamBoxList = {}; // streamBox 集合
+  console.log('StreamBoxList: ', StreamBoxList);
   var StreamBox = (function () {
     var setClass = function (dom, className, isOpen) {
       isOpen ? addClass(dom, className) : removeClass(dom, className);
@@ -433,6 +411,10 @@
     return StreamBoxList[id];
   };
 
+  StreamBox.clearQuitUser = function (id) {
+    delete StreamBoxList[id];
+  }
+
   var WhiteBoard = (function () {
     return function (domId) {
       domId = domId || 'RongWB';
@@ -466,7 +448,6 @@
   var common = {
     sealAlert: sealAlert,
     SealToast: SealToast,
-    SealLoading: SealLoading,
     formatResolution: formatResolution,
     reFormatResolution: reFormatResolution,
     getRTCToken: getRTCToken,
