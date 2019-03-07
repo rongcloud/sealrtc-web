@@ -138,7 +138,8 @@
   var startRTC = function () {
     var checkContent = checkRTCValue();
     if (!checkContent.isValid) {
-      return sealAlert(checkContent.prompt);
+      // return sealAlert(checkContent.prompt);
+      return;
     }
     Dom.hideByClass('rong-btn-start');
     Dom.showByClass('rong-btn-loading');

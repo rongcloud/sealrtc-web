@@ -288,6 +288,7 @@
       for (var id in StreamBoxList) {
         var streamBox = StreamBoxList[id];
         streamBox.resizeEvent(false, id);
+        streamBox.isZoom = false;
         removeClass(streamBox.dom, OptClassName.IS_ZOOM);
       }
     }
@@ -307,7 +308,9 @@
     }
 
     function zoom() {
+      
       clearStreamBoxZoom();
+      self.isZoom = true;
       addClass(this.dom, OptClassName.IS_ZOOM)
     }
     function closeVideoBySelf() {
@@ -391,6 +394,7 @@
 
       self.showStream = showStream;
       self.zoom = zoom;
+      self.isZoom = false;
       self.openVideoBySelf = openVideoBySelf;
       self.closeVideoBySelf = closeVideoBySelf;
       self.openAudioBySelf = openAudioBySelf;
