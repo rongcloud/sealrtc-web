@@ -283,7 +283,7 @@
     var streamList = userStreams.getList(user.id);
     user = streamList ? streamList[streamList.length - 1] : user;
     video.disable(user).then(function () {
-      showUserStream(user);
+      // showUserStream(user);
       var streamBox = StreamBox.get(user.id);
       streamBox.closeVideoBySelf();
     }, function () {
@@ -362,10 +362,18 @@
   function removeUserBox(user) {
     var id = user.id;
     var streamBox = StreamBox.get(id);
+    var isRemoveBoxZoom = streamBox.isZoom;
     streamList.removeBox(streamBox);
     StreamBox.clearQuitUser(id);
-    // var list = RongSeal.common.UI.StreamBoxList;
-    // delete list[id];
+    var streamBoxList = common.StreamBoxList;
+    if (isRemoveBoxZoom) {
+      for(var key in streamBoxList){
+        streamBox = streamBoxList[key];
+        if (streamBox.id === loginUserId) {
+          streamBox.zoom();
+        }
+      }
+    }
   }
 
   function publishSelfMediaStream(videoEnable, audioEnable, resolution) {

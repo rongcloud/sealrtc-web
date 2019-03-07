@@ -308,6 +308,7 @@
     }
 
     function zoom() {
+      var self = this;
       
       clearStreamBoxZoom();
       self.isZoom = true;
@@ -451,6 +452,7 @@
 
   var common = {
     sealAlert: sealAlert,
+    StreamBoxList: StreamBoxList,
     SealToast: SealToast,
     formatResolution: formatResolution,
     reFormatResolution: reFormatResolution,
