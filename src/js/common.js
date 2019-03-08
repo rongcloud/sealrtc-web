@@ -221,7 +221,53 @@
       return self.create(str,duration);
     }
   }
-  
+  /** *
+   *  通话计时器
+  */
+  var SealTimer = (function() {
+    var hour = 0,
+      minute = 0,
+      second = 0;
+    var countDown ;
+    var timerDom = Dom.get('.rong-user-timer');
+    function stop() {
+      clearInterval(countDown);
+      hour=minute=second=0;
+      timerDom.innerHTML = '';
+    }
+
+    function format (count) {
+      if(count < 10){
+        return '0'+count;
+      }
+      return count ;
+    }
+
+    function timer() {
+      second += 1;
+      if(second >= 60){
+        second = 0;
+        minute += 1;
+      }
+      if(minute >= 60){
+        minute = 0;
+        hour += 1;
+      }
+      
+      timerDom.innerHTML = '通话时长：'+format(hour)+':'+format(minute)+':'+format(second);
+    }
+
+    function start() {
+      countDown = setInterval(timer,1000);
+    }
+
+    return function() {
+      var self = this;
+      self.stop = stop;
+      self.start = start;
+    }
+  })();
+
   /**
    * 音视频列表
    * @param {string} temp 模板(可选)
@@ -452,6 +498,7 @@
 
   var common = {
     sealAlert: sealAlert,
+    SealTimer: SealTimer,
     StreamBoxList: StreamBoxList,
     SealToast: SealToast,
     formatResolution: formatResolution,

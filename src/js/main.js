@@ -15,6 +15,8 @@
   var StreamBox = common.UI.StreamBox;
   var StreamList = common.UI.StreamList;
 
+  var videoTimer = new common.SealTimer();
+  var sealToast = new common.SealToast();
   var ClassName = {
     LOGIN_PAGE: 'rong-login',
     RTC_PAGE: 'rong-rtc',
@@ -58,6 +60,50 @@
     NORMAL: 'normal',
     SCREENSHARE: 'screenshare'
   };
+
+  function formatStreamBoxList() {
+    var streamBoxList = common.StreamBoxList;
+    var streamArr = [];
+    for(var key in streamBoxList) {
+      streamArr.push(streamBoxList[key])
+    }
+    return streamArr;
+  }
+
+  function createToast() {
+    var stramBoxList = formatStreamBoxList();
+    if(stramBoxList.length < 2) {
+      sealToast.toast('等待其他用户加入...')
+    }
+  }
+
+  function showToast() {
+    var stramBoxList = formatStreamBoxList();
+    if(stramBoxList.length < 2) {
+      sealToast.show();
+    }
+  }
+
+  function hideToast() {
+    var stramBoxList = formatStreamBoxList();
+    if(stramBoxList.length >= 2) {
+      sealToast.hide();
+    }
+  }
+
+  function openVideoTimer() {
+    var stramBoxList = formatStreamBoxList();
+    if(stramBoxList.length == 2) {
+      videoTimer.start();
+    }
+  }
+
+  function stopVideoTimer() {
+    var stramBoxList = formatStreamBoxList();
+    if(stramBoxList.length < 2) {
+      videoTimer.stop();
+    }
+  }
 
   function getScreenShareError(error) {
     console.log('screenshare error', error);
@@ -357,6 +403,9 @@
       streamBox.isAudioOpenedBySelf ? closeAudio(user) : openAudio(user);
       e.stopPropagation();
     };
+    openVideoTimer();
+    createToast();
+    hideToast();
   }
 
   function removeUserBox(user) {
@@ -374,6 +423,9 @@
         }
       }
     }
+    stopVideoTimer();
+    hideToast();
+    showToast();
   }
 
   function publishSelfMediaStream(videoEnable, audioEnable, resolution) {
@@ -395,16 +447,16 @@
     });
   }
 
-  function joinRoom(roomId) {
+  function joinRoom(roomId, token) {
     return RongSeal.im.getRTCToken(roomId).then(function () {
       var user = {
         id: loginUserId,
-        token: loginUserId
+        token: token
       };
       return rongRTCRoom.join(user);
     }, rtcTokenError);
   }
-
+  
   /**
    * 展示音视频交互主界面
    * @param {object} params
@@ -471,6 +523,7 @@
 
     loginUserId = params.userId;
     rongRTC = new RongRTC({
+      appkey: RongSeal.Config.APP_ID,
       // debug: true,
       logger: (log) => {
         console.log(JSON.stringify(log));
@@ -478,8 +531,8 @@
       RongIMLib: win.RongIMLib,
       mode: RongRTC.RTC,
       mounted: function () {},
-      error: function () {
-        console.log('rtc err')
+      error: function (err) {
+        console.log('rtc err:',err)
         Dom.hideByClass('rong-rtc');
         Dom.showByClass('rong-login');
         Dom.hideByClass('rong-btn-loading');
@@ -499,7 +552,7 @@
       muted: hideUserAudio,
       unmuted: showUserAudio
     });
-    joinRoom(params.roomId).then(function () {
+    joinRoom(params.roomId, params.token).then(function () {
       var videoEnable = params.videoEnable,
         audioEnable = params.audioEnable,
         resolution = params.resolution;

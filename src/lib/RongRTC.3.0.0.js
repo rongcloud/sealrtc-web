@@ -370,7 +370,10 @@
 
     RTC_ERROR: 'rtc_error',
     RTC_MOUNTED: 'rtc_mounted',
-    RTC_UNMOUNTED: 'rtc_unmounted'
+    RTC_UNMOUNTED: 'rtc_unmounted',
+
+    MESSAGE_RECEIVED: 'message_received'
+
   };
 
   var UpEvent = {
@@ -392,7 +395,13 @@
     VIDEO_ENABLE: 'video_enable',
 
     DEVICE_CHECK: 'device_check',
-    DEVICE_GET_LIST: 'device_get_list'
+    DEVICE_GET_LIST: 'device_get_list',
+
+    STORAGE_SET: 'strorage_set',
+    STORAGE_GET: 'strorage_get',
+    STORAGE_REMOVE: 'strorage_remove',
+
+    MESSAGE_SEND: 'message_send'
   };
 
   var RoomEvents = [{
@@ -423,6 +432,11 @@
     type: 'unmuted'
   }];
 
+  var MessageEvents = [{
+    name: DownEvent.MESSAGE_RECEIVED,
+    type: 'received'
+  }];
+
   var getErrors = function getErrors() {
     var errors = [{
       code: 10000,
@@ -444,6 +458,10 @@
       code: 10004,
       name: 'NETWORK_UNAVAILABLE',
       msg: '网络不可用'
+    }, {
+      code: 10005,
+      name: 'APPKEY_ILLEGAL',
+      msg: 'AppKey 不可为空'
     }, {
       code: 20001,
       name: 'STREAM_NOT_EXIST',
@@ -704,7 +722,9 @@
     STREAM: 'stream',
     STREAM_HANDLER: 'stream_handler',
     ROOM_HANDLER: 'room_handler',
-    IM: 'im'
+    STORAGE_HANDLER: 'storage_handler',
+    IM: 'im',
+    MESSAGE: 'message'
   };
 
   var LogLevel = {
@@ -718,6 +738,11 @@
   var EventType = {
     REQUEST: 1,
     RESPONSE: 2
+  };
+
+  var StorageType = {
+    ROOM: 1,
+    USER: 2
   };
 
   function Logger() {
@@ -1129,12 +1154,18 @@
           domain: domain,
           path: path
         });
+        var headers = {
+          'Content-Type': 'application/json'
+        };
+        var _headers = option.headers;
+
+        if (utils.isObject(_headers)) {
+          utils.extend(headers, _headers);
+        }
         return utils.request(url, {
           method: 'POST',
           body: JSON.stringify(body),
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          headers: headers
         });
       }
     }]);
@@ -1471,7 +1502,18 @@
     PUBLISH: 'RTCPublishResourceMessage',
     UNPUBLISH: 'RTCUnpublishResourceMessage',
     MODIFY: 'RTCModifyResourceMessage',
-    STATE: 'RTCUserChangeMessage'
+    STATE: 'RTCUserChangeMessage',
+    ROOM_NOTIFY: 'RTCRoomDataNotifyMessage',
+    USER_NOTIFY: 'RTCUserDataNotifyMessage'
+  };
+
+  var MessageName = {
+    PUBLISH: 'RCRTC:PublishResource',
+    UNPUBLISH: 'RCRTC:UnpublishResource',
+    MODIFY: 'RCRTC:ModifyResource',
+    STATE: 'RCRTC:state',
+    ROOM_NOTIFY: 'RCRTC:RoomNtf',
+    USER_NOTIFY: 'RCRTC:UserNtf'
   };
   var Timeout = {
     TIME: 10 * 1000
@@ -1481,6 +1523,22 @@
       code: code
     };
     reject(error);
+  };
+  var getMsgName = function getMsgName(type) {
+    switch (type) {
+      case Message.PUBLISH:
+        return MessageName.PUBLISH;
+      case Message.UNPUBLISH:
+        return MessageName.UNPUBLISH;
+      case Message.MODIFY:
+        return MessageName.MODIFY;
+      case Message.STATE:
+        return MessageName.STATE;
+      case Message.ROOM_NOTIFY:
+        return MessageName.ROOM_NOTIFY;
+      case Message.USER_NOTIFY:
+        return MessageName.USER_NOTIFY;
+    }
   };
   var IM = function (_EventEmitter) {
     inherits(IM, _EventEmitter);
@@ -1660,7 +1718,7 @@
             });
             break;
           default:
-            Logger$1.warn('MessageWatch: unkown message type ' + message.objectName);
+            context.emit(DownEvent.MESSAGE_RECEIVED, message);
         }
       });
       return _this;
@@ -1684,20 +1742,28 @@
         };
         var messages = [{
           type: Message.PUBLISH,
-          name: 'RCRTC:PublishResource',
+          name: getMsgName(Message.PUBLISH),
           props: ['uris']
         }, {
           type: Message.UNPUBLISH,
-          name: 'RCRTC:UnpublishResource',
+          name: getMsgName(Message.UNPUBLISH),
           props: ['uris']
         }, {
           type: Message.MODIFY,
-          name: 'RCRTC:ModifyResource',
+          name: getMsgName(Message.MODIFY),
           props: ['uris']
         }, {
           type: Message.STATE,
-          name: 'RCRTC:state',
+          name: getMsgName(Message.STATE),
           props: ['users']
+        }, {
+          type: Message.ROOM_NOTIFY,
+          name: getMsgName(Message.ROOM_NOTIFY),
+          props: ['content']
+        }, {
+          type: Message.USER_NOTIFY,
+          name: getMsgName(Message.USER_NOTIFY),
+          props: ['content']
         }];
         utils.forEach(messages, function (message) {
           register(message);
@@ -1715,7 +1781,10 @@
         });
         return utils.deferred(function (resolve, reject) {
           im.getInstance().joinRTCRoom(room, {
-            onSuccess: function onSuccess() {
+            onSuccess: function onSuccess(users) {
+              utils.extend(room, {
+                users: users
+              });
               context.emit(CommonEvent.JOINED, room);
               context.rtcPing(room);
               resolve();
@@ -1836,6 +1905,101 @@
         });
       }
     }, {
+      key: 'setUserData',
+      value: function setUserData(key, value, isInner, message) {
+        var id = this.room.id,
+            im = this.im;
+
+        value = utils.toJSON(value);
+        return utils.deferred(function (resolve, reject) {
+          im.getInstance().setRTCUserData(id, key, value, isInner, {
+            onSuccess: resolve,
+            onError: reject
+          }, message);
+        });
+      }
+    }, {
+      key: 'getUserData',
+      value: function getUserData(keys, isInner) {
+        var id = this.room.id,
+            im = this.im;
+
+        if (!utils.isArray(keys)) {
+          keys = [keys];
+        }
+        return utils.deferred(function (resolve, reject) {
+          im.getInstance().getRTCUserData(id, keys, isInner, {
+            onSuccess: resolve,
+            onError: function onError(error) {
+              reject(error);
+            }
+          });
+        });
+      }
+    }, {
+      key: 'removeUserData',
+      value: function removeUserData(keys, isInner, message) {
+        var id = this.room.id,
+            im = this.im;
+
+        if (!utils.isArray(keys)) {
+          keys = [keys];
+        }
+        return utils.deferred(function (resolve, reject) {
+          im.getInstance().removeRTCUserData(id, keys, isInner, {
+            onSuccess: resolve,
+            onError: reject
+          }, message);
+        });
+      }
+    }, {
+      key: 'setRoomData',
+      value: function setRoomData(key, value, isInner, message) {
+        var id = this.room.id,
+            im = this.im;
+
+        return utils.deferred(function (resolve, reject) {
+          im.getInstance().setRTCRoomData(id, key, value, isInner, {
+            onSuccess: resolve,
+            onError: reject
+          }, message);
+        });
+      }
+    }, {
+      key: 'getRoomData',
+      value: function getRoomData(keys, isInner) {
+        var id = this.room.id,
+            im = this.im;
+
+        if (!utils.isArray(keys)) {
+          keys = [keys];
+        }
+        return utils.deferred(function (resolve, reject) {
+          im.getInstance().getRTCRoomData(id, keys, isInner, {
+            onSuccess: function onSuccess(data) {
+              resolve(data);
+            },
+            onError: reject
+          });
+        });
+      }
+    }, {
+      key: 'removeRoomData',
+      value: function removeRoomData(keys, isInner, message) {
+        var id = this.room.id,
+            im = this.im;
+
+        if (!utils.isArray(keys)) {
+          keys = [keys];
+        }
+        return utils.deferred(function (resolve, reject) {
+          im.getInstance().removeRTCRoomData(id, keys, isInner, {
+            onSuccess: resolve,
+            onError: reject
+          }, message);
+        });
+      }
+    }, {
       key: 'getExistUsers',
       value: function getExistUsers() {
         var im = this.im,
@@ -1887,6 +2051,16 @@
             }
           });
         });
+      }
+    }, {
+      key: 'getMessage',
+      value: function getMessage(type, content) {
+        var name = getMsgName(type);
+        content = utils.toJSON(content);
+        return {
+          name: name,
+          content: content
+        };
       }
     }, {
       key: 'isReady',
@@ -2054,6 +2228,12 @@
     var subCache = utils.Cache();
     var prosumer = new utils.Prosumer();
     var pc = null;
+    var User = {
+      set: function set$$1(key, data, isInner, message) {
+        return im.setUserData(key, data, isInner, message);
+      },
+      SET_USERINFO: 'uris'
+    };
     var SubscribeCache = {
       get: function get$$1(userId) {
         return subCache.get(userId);
@@ -2112,6 +2292,13 @@
       });
       return subs;
     };
+    var appkey = option.appkey;
+
+    var getHeaders = function getHeaders() {
+      return {
+        'App-Key': appkey
+      };
+    };
     var getBody = function getBody(desc) {
       var token = im.getToken();
       var subs = getSubs();
@@ -2151,9 +2338,11 @@
           roomId: roomId,
           body: body
         });
+        var headers = getHeaders();
         return request$1.post({
           path: url,
-          body: body
+          body: body,
+          headers: headers
         }).then(function (response) {
           Logger$1.log(LogTag.STREAM_HANDLER, {
             msg: 'publish:reconnect:response',
@@ -2218,26 +2407,13 @@
         return utils.isEmpty(tempUris) ? uris : tempUris;
       };
       var sendUris = getTempUris(type);
-      switch (type) {
-        case Message.PUBLISH:
-          im.sendMessage({
-            type: type,
-            content: {
-              uris: sendUris
-            }
-          });
-          break;
-        case Message.UNPUBLISH:
-          im.sendMessage({
-            type: type,
-            content: {
-              uris: sendUris
-            }
-          });
-          break;
-      }
-      PubResourceCache.set(user.id, uris);
-      return utils.Defer.resolve();
+      var content = {
+        uris: sendUris
+      };
+      var message = im.getMessage(type, content);
+      var isInner = true;
+      User.set(User.SET_USERINFO, uris, isInner, message);
+      return PubResourceCache.set(user.id, uris);
     };
     eventEmitter.on(CommonEvent.CONSUME, function () {
       var user = im.getUser();
@@ -2398,7 +2574,9 @@
           });
         }
       });
-      im.getUsers(room).then(function (users) {
+      var users = room.users;
+
+      var usersHandler = function usersHandler() {
         DataCache.set(DataCacheName.USERS, users);
         if (utils.isEmpty(users)) {
           DataCache.set(DataCacheName.IS_NOTIFY_READY, true);
@@ -2454,24 +2632,14 @@
           });
         });
         DataCache.set(DataCacheName.IS_NOTIFY_READY, true);
-      });
+      };
+      usersHandler();
     });
     var isCurrentUser = function isCurrentUser(user) {
       var _im$getUser2 = im.getUser(),
           id = _im$getUser2.id;
 
       return utils.isEqual(user.id, id);
-    };
-    var User = {
-      set: function set$$1(key, data) {
-        var publishList = data.publishList;
-
-        var uris = getUris(publishList);
-        return im.setUserInfo(key, uris).then(function () {
-          return data;
-        });
-      },
-      SET_USERINFO: 'uris'
     };
     var publishTempStreams = [];
     var publishInvoke = function publishInvoke(users) {
@@ -2504,9 +2672,11 @@
             user: user,
             body: body
           });
+          var headers = getHeaders();
           return request$1.post({
             path: url,
-            body: body
+            body: body,
+            headers: headers
           }).then(function (response) {
             Logger$1.log(LogTag.STREAM_HANDLER, {
               msg: 'publish:response',
@@ -2514,7 +2684,8 @@
               user: user,
               response: response
             });
-            return User.set(User.SET_USERINFO, response);
+            publishTempStreams.length = 0;
+            exchangeHandler(response, user, Message.PUBLISH);
           }, function (error) {
             Logger$1.log(LogTag.STREAM_HANDLER, {
               msg: 'publish:response',
@@ -2523,9 +2694,6 @@
               error: error
             });
             return error;
-          }).then(function (result) {
-            publishTempStreams.length = 0;
-            return exchangeHandler(result, user, Message.PUBLISH);
           });
         });
       });
@@ -2620,9 +2788,11 @@
             user: user,
             body: body
           });
+          var headers = getHeaders();
           return request$1.post({
             path: url,
-            body: body
+            body: body,
+            headers: headers
           }).then(function (response) {
             Logger$1.log(LogTag.STREAM_HANDLER, {
               msg: 'unpublish:response',
@@ -2631,7 +2801,7 @@
               response: response
             });
             StreamCache.remove(streamId);
-            return User.set(User.SET_USERINFO, response);
+            exchangeHandler(response, user, Message.UNPUBLISH);
           }, function (error) {
             Logger$1.log(LogTag.STREAM_HANDLER, {
               msg: 'unpublish:response',
@@ -2639,8 +2809,6 @@
               user: user,
               error: error
             });
-          }).then(function (result) {
-            return exchangeHandler(result, user, Message.UNPUBLISH);
           });
         });
       });
@@ -2708,9 +2876,11 @@
               path: url,
               body: body
             };
+            var headers = getHeaders();
             prosumer.produce({
               sdp: sdp,
-              body: body
+              body: body,
+              headers: headers
             });
             eventEmitter.emit(CommonEvent.CONSUME);
           });
@@ -2740,9 +2910,11 @@
           user: user,
           body: body
         });
+        var headers = getHeaders();
         return request$1.post({
           path: url,
-          body: body
+          body: body,
+          headers: headers
         }).then(function (response) {
           Logger$1.log(LogTag.STREAM_HANDLER, {
             msg: 'unsubscribe:response',
@@ -2810,9 +2982,11 @@
           user: user,
           body: body
         });
+        var headers = getHeaders();
         return request$1.post({
           path: url,
-          body: body
+          body: body,
+          headers: headers
         }).then(function (response) {
           Logger$1.log(LogTag.STREAM_HANDLER, {
             msg: 'resize:response',
@@ -2875,27 +3049,26 @@
       });
       return uris;
     };
-    var sendModify = function sendModify(user, type, state) {
+    var saveModify = function saveModify(user, type, state) {
       var uris = getFitUris(user, type, state);
       // uris 为空表示没有发布资源，不需要修改
       if (!utils.isEmpty(uris)) {
         var id = user.id;
 
         var fullUris = PubResourceCache.get(id);
-        im.setUserInfo(User.SET_USERINFO, fullUris);
-        im.sendMessage({
-          type: Message.MODIFY,
-          content: {
-            uris: uris
-          }
-        });
+        var content = {
+          uris: uris
+        };
+        var message = im.getMessage(Message.MODIFY, content);
+        var isInner = true;
+        User.set(User.SET_USERINFO, fullUris, isInner, message);
       }
       return utils.Defer.resolve();
     };
     var modifyTrack = function modifyTrack(user, type, state, isEnabled) {
       trackHandler(user, type, isEnabled);
       if (isCurrentUser(user)) {
-        sendModify(user, type, state);
+        saveModify(user, type, state);
       }
       return utils.Defer.resolve();
     };
@@ -3092,6 +3265,71 @@
           return get$$1.apply(undefined, toConsumableArray(args));
         default:
           Logger$1.warn(LogTag.ROOM_HANDLER, {
+            event: event,
+            msg: 'unkown event'
+          });
+      }
+    };
+    return {
+      dispatch: dispatch
+    };
+  }
+
+  function StorageHandler(im) {
+    var isInner = false;
+    var getType = function getType(type) {
+      return utils.isEqual(type, StorageType.ROOM) ? 'Room' : 'User';
+    };
+    var getName = function getName(operate, type) {
+      var tpl = '{operate}{type}Data';
+      type = getType(type);
+      return utils.tplEngine(tpl, {
+        operate: operate,
+        type: type
+      });
+    };
+    var set$$1 = function set$$1(type, key, value, message) {
+      var name = getName('set', type);
+      return im[name](key, value, isInner, message);
+    };
+    var get$$1 = function get$$1(type, key) {
+      var name = getName('get', type);
+      return im[name](key, isInner);
+    };
+    var remove = function remove(type, key, message) {
+      var name = getName('remove', type);
+      return im[name](key, isInner, message);
+    };
+    var dispatch = function dispatch(event, args) {
+      switch (event) {
+        case UpEvent.STORAGE_SET:
+          return set$$1.apply(undefined, toConsumableArray(args));
+        case UpEvent.STORAGE_GET:
+          return get$$1.apply(undefined, toConsumableArray(args));
+        case UpEvent.STORAGE_REMOVE:
+          return remove.apply(undefined, toConsumableArray(args));
+        default:
+          Logger$1.warn(LogTag.STORAGE_HANDLER, {
+            event: event,
+            msg: 'unkown event'
+          });
+      }
+    };
+    return {
+      dispatch: dispatch
+    };
+  }
+
+  function MessageHandler(im) {
+    var send = function send(message) {
+      return im.sendMessage(message);
+    };
+    var dispatch = function dispatch(event, args) {
+      switch (event) {
+        case UpEvent.MESSAGE_SEND:
+          return send.apply(undefined, toConsumableArray(args));
+        default:
+          Logger$1.warn(LogTag.MESSAGE, {
             event: event,
             msg: 'unkown event'
           });
@@ -8091,7 +8329,9 @@
       var im = new IM(option);
       var RequestHandler = {
         room: RoomHandler(im, option),
-        stream: StreamHandler(im, option)
+        stream: StreamHandler(im, option),
+        storage: StorageHandler(im),
+        message: MessageHandler(im)
       };
       var context = _this;
       var RongIMLib = option.RongIMLib;
@@ -8120,6 +8360,9 @@
       });
       im.on(CommonEvent.ERROR, function (error, data) {
         context.emit(DownEvent.RTC_ERROR, data, error);
+      });
+      im.on(DownEvent.MESSAGE_RECEIVED, function (error, message) {
+        context.emit(DownEvent.MESSAGE_RECEIVED, message, error);
       });
       var getMSType = function getMSType(uris) {
         var check = function check(msType) {
@@ -8243,12 +8486,150 @@
     return Client;
   }(EventEmitter);
 
+  var Storage = function () {
+    function Storage(_option) {
+      classCallCheck(this, Storage);
+
+      var context = this;
+      var client = context.getClient();
+      var option = {
+        type: StorageType.USER
+      };
+      utils.extend(option, _option);
+      utils.extend(context, {
+        option: option,
+        client: client
+      });
+    }
+
+    createClass(Storage, [{
+      key: 'set',
+      value: function set$$1(key, value, message) {
+        var _check = check({ key: key, value: value }, ['key', 'value']),
+            isIllegal = _check.isIllegal,
+            name = _check.name;
+
+        if (isIllegal) {
+          var error = getError(name);
+          return utils.Defer.reject(error);
+        }
+        var context = this;
+        var client = context.client,
+            type = context.option.type;
+
+        return client.exec({
+          event: UpEvent.STORAGE_SET,
+          type: 'storage',
+          args: [type, key, value, message]
+        });
+      }
+    }, {
+      key: 'get',
+      value: function get$$1(key) {
+        var _check2 = check({ key: key }, ['key']),
+            isIllegal = _check2.isIllegal,
+            name = _check2.name;
+
+        if (isIllegal) {
+          var error = getError(name);
+          return utils.Defer.reject(error);
+        }
+        var context = this;
+        var client = context.client,
+            type = context.option.type;
+
+        return client.exec({
+          event: UpEvent.STORAGE_GET,
+          type: 'storage',
+          args: [type, key]
+        });
+      }
+    }, {
+      key: 'remove',
+      value: function remove(key, message) {
+        var _check3 = check({ key: key }, ['key']),
+            isIllegal = _check3.isIllegal,
+            name = _check3.name;
+
+        if (isIllegal) {
+          var error = getError(name);
+          return utils.Defer.reject(error);
+        }
+        var context = this;
+        var client = context.client,
+            type = context.option.type;
+
+        return client.exec({
+          event: UpEvent.STORAGE_REMOVE,
+          type: 'storage',
+          args: [type, key, message]
+        });
+      }
+    }]);
+    return Storage;
+  }();
+
+  var Message$1 = function () {
+    function Message(_option) {
+      classCallCheck(this, Message);
+
+      var context = this;
+      var client = context.getClient();
+      var option = {
+        received: function received() {}
+      };
+      utils.extend(option, _option);
+      utils.extend(context, {
+        client: client,
+        option: option
+      });
+      utils.forEach(MessageEvents, function (event) {
+        var _event = event,
+            name = _event.name,
+            type = _event.type;
+
+        client.on(name, function (error, message) {
+          event = option[type] || utils.noop;
+          event(message, error);
+          Logger$1.log(LogTag.MESSAGE, {
+            event: type,
+            message: message
+          });
+        });
+      });
+    }
+
+    createClass(Message, [{
+      key: 'send',
+      value: function send(message) {
+        var _check = check(message, ['name', 'content']),
+            isIllegal = _check.isIllegal,
+            name = _check.name;
+
+        if (isIllegal) {
+          var error = getError(name);
+          return utils.Defer.reject(error);
+        }
+        var context = this;
+        var client = context.client;
+
+        return client.exec({
+          event: UpEvent.MESSAGE_SEND,
+          type: 'message',
+          args: [message]
+        });
+      }
+    }]);
+    return Message;
+  }();
+
   var RongRTC = function () {
     function RongRTC(_option) {
       classCallCheck(this, RongRTC);
 
       var context = this;
       var option = {
+        appkey: '',
         url: 'https://msqa.rongcloud.net/',
         debug: false,
         created: function created() {},
@@ -8270,7 +8651,7 @@
         });
       }
       var client = new Client(option);
-      utils.forEach([Room, Stream], function (module) {
+      utils.forEach([Room, Stream, Storage, Message$1], function (module) {
         module.prototype.getClient = function () {
           return client;
         };
@@ -8278,16 +8659,25 @@
       utils.extend(context, {
         Room: Room,
         Stream: Stream,
+        Storage: Storage,
         StreamType: StreamType,
         StreamSize: StreamSize,
+        StorageType: StorageType,
+        Message: Message$1,
         option: option,
         client: client
       });
-      var created = option.created,
+      var appkey = option.appkey,
+          created = option.created,
           mounted = option.mounted,
           unmounted = option.unmounted,
           error = option.error;
 
+      if (utils.isEmpty(appkey)) {
+        var Inner = ErrorType.Inner;
+
+        return error(Inner.APPKEY_ILLEGAL);
+      }
       created();
       Logger$1.log(LogTag.LIFECYCLE, {
         state: 'created'

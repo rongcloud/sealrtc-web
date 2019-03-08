@@ -119,6 +119,7 @@
         console.log(option);
         var resolution = option.resolution;
         option.userId = user.userId;
+        option.token = user.token;
         console.log('user', user);
         RongSeal.startRTC(option);
         Cache.set(StorageKeys.RoomId, option.roomId);

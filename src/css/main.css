@@ -260,6 +260,11 @@ ul, li {
   float: left;
 }
 
+.rong-rtc .rong-rtc-opt .rong-user-timer {
+  position: absolute;
+  left: 255px;
+}
+
 .rong-rtc .rong-rtc-opt .rong-rtc-btn {
   float: right;
   position: relative;
@@ -588,6 +593,9 @@ ul, li {
   position: absolute;
   color: #fff;
   z-index: 12;
+  width: 100%;
+  top: 50%;
+  text-align: center;
 }
 
 .rong-loading {
