@@ -211,6 +211,27 @@
     }
   }
 
+  // video实际分辨率添加
+  function createResolutionDom(dom) {
+    var p = document.createElement('p');
+    p.className = 'rong-videoResolution';
+    var text = utils.tplEngine('{width}*{height}', {
+      width: dom.videoWidth,
+      height: dom.videoHeight
+    });
+    p.innerHTML = text;
+    dom.parentNode.appendChild(p);
+  }
+  function showResolution(id) {
+    var videoDom = utils.tplEngine('video[stream=Rong-{id}]', {
+      id: id
+    });
+    var videoNode = Dom.get(videoDom);
+    videoNode.onloadeddata = function() {
+      createResolutionDom(videoNode)
+    }
+  }
+
   function showUserStream(user) {
     var id = user.id,
       // type = user.stream.type,
@@ -221,10 +242,13 @@
       streamBox.childDom.video.muted = true;
     }
     streamBox.showStream(mediaStream);
+
+    showResolution(id); //video 添加分辨率
   }
 
   function addUserStream(user) {
     var isSelf = user.id === loginUserId;
+    console.log('addUserStream user:',user);
     if (isSelf) {
       showUserStream(user);
       userStreams.add(user);
@@ -240,6 +264,7 @@
         sealAlert(localeData.subscriptError + JSON.stringify(error));
       });
     }
+    // showResolution(user.id);
   }
 
   function removeUserStream(user) {

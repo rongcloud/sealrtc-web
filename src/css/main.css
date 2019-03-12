@@ -645,3 +645,14 @@ ul, li {
   left: 151px;
   top: 14px;
 }
+
+.rong-videoResolution {
+  position: absolute;
+  font-size: 12px;
+  z-index: 13;
+  bottom: 0;
+  right: 0;
+  color: #eae5e5;
+  background: #150101;
+  border-radius: 2px;
+}

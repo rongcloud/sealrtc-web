@@ -389,6 +389,12 @@
       }
     }
 
+    // 展示分辨率
+    // function addResolution(dom) {
+    //   var p = document.createElement('p')
+    //   p.innerHtml = dom.video.videoWidth +'*'+dom.video.videoHeight;
+    //   dom.appendChild(p);
+    // }
     // 展示流
     function showStream(stream) {
       var id = this.id;
