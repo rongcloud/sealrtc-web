@@ -287,6 +287,7 @@
         var streamBox = StreamBox.get(loginUserId);
         streamBox.closeScreenShare();
         removeUserStream(user);
+        rongRTCStream.unpublish(user);
       }
     });
   }
