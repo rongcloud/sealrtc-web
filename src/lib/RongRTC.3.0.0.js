@@ -1832,7 +1832,7 @@
               });
               context.emit(CommonEvent.JOINED, room);
               context.rtcPing(room);
-              resolve();
+              resolve(users);
             },
             onError: function onError(code) {
               return errorHandler(code, reject);
@@ -2438,13 +2438,93 @@
     var detect = option.detect;
 
     var network = new Network(detect);
+    var getTrackState = function getTrackState(streams) {
+      if (!utils.isArray(streams)) {
+        streams = [streams];
+      }
+      var result = {};
+      utils.forEach(streams, function (_ref2) {
+        var mediaStream = _ref2.mediaStream;
+        var streamId = mediaStream.streamId;
+
+        var videoTracks = mediaStream.getVideoTracks();
+        var audioTracks = mediaStream.getAudioTracks();
+        var func = function func(track) {
+          return utils.isEqual(track.enable, false);
+        };
+        var video = StreamState.ENABLE;
+        if (utils.some(videoTracks, func)) {
+          video = StreamState.DISBALE;
+        }
+        var audio = StreamState.ENABLE;
+        if (utils.some(audioTracks, func)) {
+          audio = StreamState.DISBALE;
+        }
+        result[streamId] = {
+          video: video,
+          audio: audio
+        };
+      });
+      return result;
+    };
+    var updateTrackState = function updateTrackState(user, sendUris, uris) {
+      var streams = user.stream;
+
+      var states = getTrackState(streams);
+      var update = function update(_uris) {
+        utils.forEach(states, function (_ref3, streamId) {
+          var audio = _ref3.audio,
+              video = _ref3.video;
+
+          utils.map(_uris, function (uri) {
+            var isSameStream = utils.isEqual(uri.msid, streamId);
+            if (isSameStream && utils.isEqual(uri.mediaType, StreamType.VIDEO)) {
+              utils.extend(uri, {
+                state: video
+              });
+            }
+            if (isSameStream && utils.isEqual(uri.mediaType, StreamType.AUDIO)) {
+              utils.extend(uri, {
+                state: audio
+              });
+            }
+            return uri;
+          });
+        });
+      };
+      update(sendUris);
+      update(uris);
+      return {
+        sendUris: sendUris,
+        uris: uris
+      };
+    };
+    var appendStreamId = function appendStreamId(user) {
+      var id = user.id;
+      var streams = user.stream;
+
+      if (!utils.isArray(streams)) {
+        streams = [streams];
+      }
+      utils.map(streams, function (stream) {
+        var streamId = pc.getStreamId({
+          id: id,
+          stream: stream
+        });
+        var mediaStream = stream.mediaStream;
+
+        utils.extend(mediaStream, {
+          streamId: streamId
+        });
+      });
+    };
     var exchangeHandler = function exchangeHandler(result, user, type) {
       var publishList = result.publishList,
           sdp = result.sdp;
 
       pc.setAnwser(sdp);
       var uris = getUris(publishList);
-
+      appendStreamId(user);
       var getTempUris = function getTempUris(type) {
         var userId = user.id;
 
@@ -2466,6 +2546,7 @@
         return utils.isEmpty(tempUris) ? uris : tempUris;
       };
       var sendUris = getTempUris(type);
+      updateTrackState(user, sendUris, uris);
       var content = {
         uris: sendUris
       };
@@ -2477,9 +2558,9 @@
     eventEmitter.on(CommonEvent.CONSUME, function () {
       var user = im.getUser();
       var roomId = im.getRoomId();
-      prosumer.consume(function (_ref2, next) {
-        var sdp = _ref2.sdp,
-            body = _ref2.body;
+      prosumer.consume(function (_ref4, next) {
+        var sdp = _ref4.sdp,
+            body = _ref4.body;
 
         Logger$1.log(LogTag.STREAM_HANDLER, {
           msg: 'subscribe:request',
@@ -2520,10 +2601,9 @@
       var id = user.id,
           uris = user.stream.uris;
 
-      utils.forEach(uris, function (item) {
-        var tag = item.tag,
-            type = item.mediaType,
-            uri = item.uri;
+      utils.forEach(uris, function (uri) {
+        var tag = uri.tag,
+            type = uri.mediaType;
 
         var key = getUId({ id: id, stream: { tag: tag, type: type } });
         callback(key, uri);
@@ -2579,14 +2659,35 @@
         var audioTrakcks = stream.getAudioTracks();
         var isEmtpyVideo = utils.isEmpty(videoTracks);
         var isEmptyAudio = utils.isEmpty(audioTrakcks);
+        var tpl = '{id}_{type}';
+        var videoTrackId = utils.tplEngine(tpl, {
+          id: id,
+          type: StreamType.VIDEO
+        });
+        var audioTrackId = utils.tplEngine(tpl, {
+          id: id,
+          type: StreamType.AUDIO
+        });
+
+        var videoTrack = DataCache.get(videoTrackId);
+        var audioTrack = DataCache.get(audioTrackId);
+
         if (isEmtpyVideo) {
           type = StreamType.AUDIO;
         }
         if (isEmptyAudio) {
           type = StreamType.VIDEO;
         }
+        var enableVideo = true;
+        var enableAudio = true;
+
         if (!isEmptyAudio && !isEmtpyVideo) {
           type = StreamType.AUDIO_AND_VIDEO;
+          if (utils.isEqual(videoTrack.state, StreamState.DISBALE)) {
+            enableVideo = false;
+          } else if (utils.isEqual(audioTrack.state, StreamState.DISBALE)) {
+            enableAudio = false;
+          }
         }
         Logger$1.log(LogTag.ROOM, {
           msg: 'join successfully',
@@ -2597,7 +2698,11 @@
           stream: {
             tag: tag,
             type: type,
-            mediaStream: stream
+            mediaStream: stream,
+            enable: {
+              video: enableVideo,
+              audio: enableAudio
+            }
           }
         };
       };
@@ -2667,10 +2772,9 @@
           var uris = data.uris;
 
           uris = JSON.parse(uris);
-          utils.forEach(uris, function (item) {
-            var type = item.mediaType,
-                tag = item.tag,
-                uri = item.uri;
+          utils.forEach(uris, function (uri) {
+            var type = uri.mediaType,
+                tag = uri.tag;
 
             var key = getUId({
               id: id,
@@ -2843,8 +2947,8 @@
         roomId: roomId,
         user: user
       });
-      utils.forEach(streams, function (_ref3) {
-        var mediaStream = _ref3.mediaStream;
+      utils.forEach(streams, function (_ref5) {
+        var mediaStream = _ref5.mediaStream;
 
         var tracks = mediaStream.getTracks();
         utils.forEach(tracks, function (track) {
@@ -2902,7 +3006,10 @@
           }
         };
         var key = getUId(tUser);
-        var uri = DataCache.get(key);
+
+        var _DataCache$get = DataCache.get(key),
+            uri = _DataCache$get.uri;
+
         if (utils.isUndefined(uri)) {
           isError = true;
         }
@@ -2934,7 +3041,10 @@
           }
         };
         var key = getUId(tUser);
-        var uri = DataCache.get(key);
+
+        var _DataCache$get2 = DataCache.get(key),
+            uri = _DataCache$get2.uri;
+
         var isAdd = true;
         utils.forEach(subs, function (sub) {
           var existType = sub.type,
@@ -3196,10 +3306,10 @@
       var subs = SubscribeCache.get(id);
       var streams = {},
           msTypes = {};
-      utils.forEach(subs, function (_ref4) {
-        var msid = _ref4.msid,
-            tag = _ref4.tag,
-            type = _ref4.type;
+      utils.forEach(subs, function (_ref6) {
+        var msid = _ref6.msid,
+            tag = _ref6.tag,
+            type = _ref6.type;
 
         streams[msid] = tag;
         var types = msTypes[msid] || [];
@@ -3279,37 +3389,19 @@
         msg: 'join:before',
         room: room
       });
-      return im.joinRoom(room).then(function () {
+      return im.joinRoom(room).then(function (users) {
         Logger$1.log(LogTag.ROOM_HANDLER, {
           msg: 'join:after',
           room: room
         });
-        Logger$1.log(LogTag.ROOM_HANDLER, {
-          msg: 'getUsers:before',
-          room: room
-        });
-        return im.getExistUsers().then(function (_ref) {
-          var users = _ref.users;
-
+        utils.forEach(users, function (user, id) {
           Logger$1.log(LogTag.ROOM_HANDLER, {
-            msg: 'getUsers:after',
-            room: room,
-            users: users
+            msg: 'join:after:existUsers',
+            user: user
           });
-          utils.forEach(users, function (user) {
-            var id = user.userId;
-
-            im.emit(DownEvent.ROOM_USER_JOINED, {
-              id: id
-            });
+          im.emit(DownEvent.ROOM_USER_JOINED, {
+            id: id
           });
-        }, function (error) {
-          Logger$1.log(LogTag.ROOM_HANDLER, {
-            msg: 'getUsers:after',
-            room: room,
-            error: error
-          });
-          return error;
         });
       }, function (error) {
         Logger$1.log(LogTag.ROOM_HANDLER, {
@@ -8470,10 +8562,11 @@
       var getMSType = function getMSType(uris) {
         var check = function check(msType) {
           return utils.some(uris, function (_ref) {
-            var mediaType = _ref.mediaType,
-                state = _ref.state;
+            var mediaType = _ref.mediaType;
 
-            return utils.isEqual(msType, mediaType) && utils.isEqual(state, StreamState.ENABLE);
+            // return utils.isEqual(msType, mediaType) && utils.isEqual(state, StreamState.ENABLE);
+            // 只区分 track 不区分
+            return utils.isEqual(msType, mediaType);
           });
         };
         var type = StreamType.NODE;
