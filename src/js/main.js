@@ -442,17 +442,21 @@
 
   function publishSelfMediaStream(videoEnable, audioEnable, resolution) {
     return new Promise(function (resolve, reject) {
-      if(!videoEnable){
-        videoEnable= true;
-        getSelfMediaStream(videoEnable, audioEnable, resolution).then(function (user) {
-          rongRTCStream.publish(user).then(function () {
-            closeVideo(user);
-            resolve(user);
-          }, reject);
-        }, getSelfMediaStreamError);
-      }
+      // if(!videoEnable){
+      //   videoEnable= true;
+      //   getSelfMediaStream(videoEnable, audioEnable, resolution).then(function (user) {
+      //     rongRTCStream.publish(user).then(function () {
+      //       closeVideo(user);
+      //       resolve(user);
+      //     }, reject);
+      //   }, getSelfMediaStreamError);
+      // }
+      
       getSelfMediaStream(videoEnable, audioEnable, resolution).then(function (user) {
         rongRTCStream.publish(user).then(function () {
+          if(!videoEnable){
+            closeVideo(user);
+          }
           resolve(user);
         }, reject);
       }, getSelfMediaStreamError);

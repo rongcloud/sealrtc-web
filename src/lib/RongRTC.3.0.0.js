@@ -467,6 +467,10 @@
       name: 'STREAM_NOT_EXIST',
       msg: 'stream 不存在，请检查传入参数, id、stream.type、stream.tag 是否正确'
     }, {
+      code: 20002,
+      name: 'STREAM_TRACK_NOT_EXIST',
+      msg: 'Track 不存在，请检查传入参数 stream.type 是否正确'
+    }, {
       code: 30001,
       name: 'PARAMTER_ILLEGAL',
       msg: '请检查参数，{name} 参数为必传入项'
@@ -1676,6 +1680,47 @@
           }
         });
       };
+      /**
+       * 收到 UnkownMessage 自动转为 ObjectName + "Message" 做为 MessageType
+       * 免去注册自定义消息逻辑
+       */
+      var renameMessage = function renameMessage(message) {
+        var messageType = message.messageType;
+
+        if (!utils.isEqual(im.MessageType.UnknownMessage, messageType)) {
+          return message;
+        }
+        var objectName = message.objectName;
+
+        var clear = function clear(msg, content) {
+          var objName = content.objectName;
+
+          if (utils.isEqual(objName, objectName)) {
+            delete content.objectName;
+          }
+          delete msg.conversationType;
+          delete msg.messageId;
+          delete msg.offLineMessage;
+          delete msg.receivedStatus;
+          delete msg.messageType;
+          delete msg.targetId;
+        };
+        var msg = utils.parse(utils.toJSON(message));
+        var _msg = msg,
+            content = _msg.content.message.content;
+
+        clear(msg, content);
+        utils.extend(msg, {
+          content: content
+        });
+        msg = utils.rename(msg, {
+          objectName: 'name',
+          messageUId: 'uId',
+          senderUserId: 'senderId',
+          messageDirection: 'direction'
+        });
+        return msg;
+      };
       im.messageWatch(function (message) {
         var type = message.messageType,
             id = message.senderUserId,
@@ -1718,7 +1763,7 @@
             });
             break;
           default:
-            context.emit(DownEvent.MESSAGE_RECEIVED, message);
+            context.emit(DownEvent.MESSAGE_RECEIVED, renameMessage(message));
         }
       });
       return _this;
@@ -1911,9 +1956,23 @@
             im = this.im;
 
         value = utils.toJSON(value);
+        Logger$1.log(LogTag.STREAM_HANDLER, {
+          msg: 'setUserData:before',
+          roomId: id,
+          value: value,
+          message: message
+        });
         return utils.deferred(function (resolve, reject) {
           im.getInstance().setRTCUserData(id, key, value, isInner, {
-            onSuccess: resolve,
+            onSuccess: function onSuccess() {
+              Logger$1.log(LogTag.STREAM_HANDLER, {
+                msg: 'setUserData:after',
+                roomId: id,
+                value: value,
+                message: message
+              });
+              resolve();
+            },
             onError: reject
           }, message);
         });
@@ -2529,6 +2588,10 @@
         if (!isEmptyAudio && !isEmtpyVideo) {
           type = StreamType.AUDIO_AND_VIDEO;
         }
+        Logger$1.log(LogTag.ROOM, {
+          msg: 'join successfully',
+          room: room
+        });
         return {
           id: userId,
           stream: {
@@ -2548,6 +2611,18 @@
         var user = getStreamUser(stream);
         var uid = getSubPromiseUId(user);
         var promise = SubPromiseCache.get(uid);
+        if (utils.isUndefined(promise)) {
+          return Logger$1.log(LogTag.STREAM, {
+            msg: 'stream added-part',
+            user: user,
+            tracks: stream.getTracks()
+          });
+        }
+        Logger$1.log(LogTag.STREAM, {
+          msg: 'stream added',
+          user: user,
+          tracks: stream.getTracks()
+        });
         promise.resolve(user);
       });
       pc.on(PeerConnectionEvent.REMOVED, function (error, stream) {
@@ -2813,6 +2888,27 @@
         });
       });
     };
+    var isTrackExist = function isTrackExist(user, types) {
+      var userId = user.id,
+          tag = user.stream.tag;
+
+      var isError = false;
+      utils.forEach(types, function (type) {
+        var tUser = {
+          id: userId,
+          stream: {
+            tag: tag,
+            type: type
+          }
+        };
+        var key = getUId(tUser);
+        var uri = DataCache.get(key);
+        if (utils.isUndefined(uri)) {
+          isError = true;
+        }
+      });
+      return isError;
+    };
     var subscribe = function subscribe(user) {
       var userId = user.id,
           _user$stream3 = user.stream,
@@ -2823,6 +2919,11 @@
       var types = [StreamType.VIDEO, StreamType.AUDIO];
       if (!utils.isEqual(type, StreamType.AUDIO_AND_VIDEO)) {
         types = [type];
+      }
+      if (isTrackExist(user, types)) {
+        var Inner = ErrorType.Inner;
+
+        return utils.Defer.reject(Inner.STREAM_TRACK_NOT_EXIST);
       }
       utils.forEach(types, function (type) {
         var tUser = {
@@ -2888,7 +2989,8 @@
         var uid = getSubPromiseUId(user);
         SubPromiseCache.set(uid, {
           resolve: resolve,
-          reject: reject
+          reject: reject,
+          type: type
         });
       });
     };
@@ -5557,9 +5659,10 @@
                     if (!_this3._remoteStreams) {
                       _this3._remoteStreams = [];
                     }
-                    if (_this3._remoteStreams.includes(stream)) {
-                      return;
-                    }
+
+                    // if (isExist(_this3._remoteStreams, stream)) {
+                    //   return;
+                    // }
                     _this3._remoteStreams.push(stream);
                     var event = new Event('addstream');
                     event.stream = stream;

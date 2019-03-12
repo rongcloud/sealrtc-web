@@ -10,7 +10,7 @@
     return Object.prototype.toString.call(obj) === '[object Object]';
   };
 
-  var noop = function () {};
+  var noop = function () { };
 
   var DeviceKinds = {
     audio: {
@@ -37,7 +37,7 @@
       if (isObject(deviceInfo)) {
         for (var type in deviceInfo) {
           var kind = deviceInfo[type];
-          keys[kind] = [deviceName, type ];
+          keys[kind] = [deviceName, type];
         }
       }
     }
@@ -63,7 +63,24 @@
   }
 
   var get = function (option) {
-    return mediaDevices.getUserMedia(option);
+    var video = option.video, opts;
+    if (video === false) {
+      opts = {
+        audio: true,
+        video: true
+      };
+    } else {
+      opts = option;
+    }
+    return mediaDevices.getUserMedia(opts).then(function (stream) {
+      if (video === false) {
+        stream.getVideoTracks().map(function (track) {
+          track.enable = false;
+          return track;
+        });
+      }
+      return stream;
+    });
   };
 
   var getDeviceList = function (callback) {
