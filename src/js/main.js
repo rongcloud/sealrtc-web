@@ -497,7 +497,6 @@
     var rtcBoxDom = Dom.getByClass(ClassName.STREAM_BOX);
     streamList = new StreamList();
     rtcBoxDom.appendChild(streamList.dom);
-    console.log(streamList)
   }
 
   function switchScreenShare() {
