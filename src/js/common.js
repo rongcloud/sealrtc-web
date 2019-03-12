@@ -6,6 +6,7 @@
     addClass = Dom.addClass,
     removeClass = Dom.removeClass;
 
+  var RongRTCPageTemp = Dom.getById('RongRTC').innerText; //RTC主页面
   var StreamListTemp = Dom.getById('RongStreamList').innerText; // 音视频列表展示模板
   var StreamBoxTemp = Dom.getById('RongStreamBox').innerText; // 单个音视频流展示模板
   var AlertTemp = Dom.getById('RongAlert').innerText; // 提示弹框展示模板
@@ -216,6 +217,13 @@
         Dom.hideByClass('rong-seal-toast');
       }
     },
+    destroy: function() {
+      var parentDom = Dom.get('body');
+      var childDom = Dom.getByClass('rong-seal-toast');
+      if(childDom) {
+        parentDom.removeChild(childDom);
+      }
+    },
     toast: function(str,duration){
       var self = this;
       return self.create(str,duration);
@@ -228,8 +236,8 @@
     var hour = 0,
       minute = 0,
       second = 0;
-    var countDown ;
-    var timerDom = Dom.get('.rong-user-timer');
+    var countDown,timerDom;
+    
     function stop() {
       clearInterval(countDown);
       hour=minute=second=0;
@@ -253,7 +261,7 @@
         minute = 0;
         hour += 1;
       }
-      
+      timerDom = Dom.get('.rong-user-timer');
       timerDom.innerHTML = '通话时长：'+format(hour)+':'+format(minute)+':'+format(second);
     }
 
@@ -265,6 +273,31 @@
       var self = this;
       self.stop = stop;
       self.start = start;
+    }
+  })();
+
+  /**
+   * 音视频页面
+   * @param {string} temp 模板(可选)
+   */
+  var RongRTCPage = (function () {
+
+    function createPage(bodyDom,callback) {
+      bodyDom.appendChild(this.dom);
+      callback();
+    }
+    
+    function destroyPage(bodyDom) {
+      bodyDom.removeChild(this.dom)
+    }
+
+    return function (temp) {
+      temp = temp || RongRTCPageTemp;
+      var self = this;
+      self.dom = createLocaleDom(temp);
+
+      self.createPage = createPage;
+      self.destroyPage = destroyPage;
     }
   })();
 
@@ -289,6 +322,7 @@
     function addBox(streamBox) {
       var self = this;
       if (!self.hasBox(streamBox)) {
+        self.streamBoxList.push(streamBox);
         self.dom.appendChild(streamBox.dom);
       }
     }
@@ -296,19 +330,34 @@
     function removeBox(streamBox) {
       var self = this;
       if (self.hasBox(streamBox)) {
+        var index = self.streamBoxList.indexOf(streamBox);
+        self.streamBoxList.splice(index, 1);
         self.dom.removeChild(streamBox.dom);
       }
     }
 
+    function clear() {
+      var self = this;
+      var streamList = self.streamBoxList;
+      // streamList.forEach(function (streamBox) {
+      //   console.log('streamBox:',streamBox)
+      //   self.removeBox(streamBox);
+      // })
+      for(var i=0;i<streamList.length;i++){
+        self.removeBox(streamList[i]);
+      }
+    }
+    
     return function (temp) {
       temp = temp || StreamListTemp;
       var self = this;
-      self.streamList = [];
+      self.streamBoxList = [];
       self.dom = createLocaleDom(temp);
       
       self.addBox = addBox;
       self.removeBox = removeBox;
       self.hasBox = hasBox;
+      self.clearBox = clear;
       
       return self;
     };
@@ -324,6 +373,7 @@
    */
   var StreamBoxList = {}; // streamBox 集合
   console.log('StreamBoxList: ', StreamBoxList);
+  
   var StreamBox = (function () {
     var setClass = function (dom, className, isOpen) {
       isOpen ? addClass(dom, className) : removeClass(dom, className);
@@ -466,6 +516,14 @@
     delete StreamBoxList[id];
   }
 
+  //返回登录页
+  function backLoginPage() {
+    Dom.hideByClass('rong-rtc');
+    Dom.showByClass('rong-login');
+    Dom.hideByClass('rong-btn-loading');
+    Dom.showByClass('rong-btn-start');
+  }
+
   var WhiteBoard = (function () {
     return function (domId) {
       domId = domId || 'RongWB';
@@ -491,11 +549,13 @@
   })();
 
   var UI = {
+    RongRTCPage: RongRTCPage,
     StreamList: StreamList,
     StreamBox: StreamBox,
-    WhiteBoard: WhiteBoard
+    WhiteBoard: WhiteBoard,
+    backLoginPage: backLoginPage
   };
-
+  
   var common = {
     sealAlert: sealAlert,
     SealTimer: SealTimer,

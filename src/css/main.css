@@ -478,6 +478,7 @@ ul, li {
 .rong-stream-wrap .rong-is-zoom .rong-stream-opt {
   text-align: center;
   margin-bottom: 10px;
+  user-select: none;
 }
 
 .rong-stream-wrap .rong-is-zoom .rong-opt-btn {

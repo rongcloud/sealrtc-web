@@ -50,12 +50,12 @@
               <span>320 * 240</span>
             </li>
             <li>
-              <input id="Rl-640-480" value="640*480" type="radio" name="resolution">
+              <input id="Rl-640-480" value="640*480" type="radio" name="resolution" checked>
               <label for="Rl-640-480"></label>
               <span>640 * 480</span>
             </li>
             <li>
-              <input id="Rl-1280-720" value="1280*720" type="radio" name="resolution" checked>
+              <input id="Rl-1280-720" value="1280*720" type="radio" name="resolution" >
               <label for="Rl-1280-720"></label>
               <span>1280 * 720</span>
             </li>
@@ -71,21 +71,23 @@
   </div>
 
   <!-- RTC -->
-  <div id="RongRTC" class="rong-wrap rong-rtc">
-    <div class="rong-rtc-opt">
-      <span class="rong-rtc-title rong-user-title"></span>
-      <span class="rong-rtc-title rong-user-timer"></span>
-      <span class="rong-rtc-title rong-room-title"></span>
-      <a class="rong-rtc-btn rong-opt-hangup" lang-title="hangup"></a>
-      <!-- <a class="rong-rtc-btn rong-opt-wb" lang-title="whiteboard"></a> -->
-      <a class="rong-rtc-btn rong-opt-share" lang-title="screenshare"></a>
+  <script id="RongRTC" type="text/x-template">
+    <div id="RongRTC" class="rong-wrap rong-rtc">
+      <div class="rong-rtc-opt">
+        <span class="rong-rtc-title rong-user-title"></span>
+        <span class="rong-rtc-title rong-user-timer"></span>
+        <span class="rong-rtc-title rong-room-title"></span>
+        <a class="rong-rtc-btn rong-opt-hangup" lang-title="hangup"></a>
+        <!-- <a class="rong-rtc-btn rong-opt-wb" lang-title="whiteboard"></a> -->
+        <a class="rong-rtc-btn rong-opt-share" lang-title="screenshare"></a>
+      </div>
+      <div id="RongWB" class="rong-wb-box">
+        <a class="rong-wb-close"></a>
+        <iframe id="rongWhiteboard" class="rong-whiteboard" src="" frameborder="0"></iframe>
+      </div>
+      <div class="rong-stream-wrap"></div>  
     </div>
-    <div id="RongWB" class="rong-wb-box">
-      <a class="rong-wb-close"></a>
-      <iframe id="rongWhiteboard" class="rong-whiteboard" src="" frameborder="0"></iframe>
-    </div>
-    <div class="rong-stream-wrap"></div>
-  </div>
+  </script>
 
   <script id="RongStreamList" type="text/x-template">
     <div class="rong-stream-list"></div>

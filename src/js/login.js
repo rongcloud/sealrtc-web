@@ -92,15 +92,21 @@
     var total = 30,count = 0;
     var reconnect = function() {
       RongSeal.im.reconnect({
+        success: function () {
+          var isRTCShow = getDomById('RongRTC').style.display === 'block'? true : false;
+          if(!isRTCShow) {
+            getDomById('RongRTC').style.display = 'block';
+          }
+        },
         error: function () {
           count ++;
           console.log('count: ', count);
           if(count >= total) {
             console.log('back login');
-            Dom.hideByClass('rong-rtc');
-            Dom.showByClass('rong-login');
-            Dom.hideByClass('rong-btn-loading');
-            Dom.showByClass('rong-btn-start');
+            common.UI.backLoginPage();
+            RongSeal.destroyRongRTCPage();
+            RongSeal.videoTimer.stop();
+            RongSeal.userStreams.clearUsers();
             return ;
           }
           reconnect();
@@ -128,10 +134,6 @@
       backLoginPage: function(){
         reconnectionMechanism();
         // 隐藏 rtc, 展示 login
-        // Dom.hideByClass('rong-rtc');
-        // Dom.showByClass('rong-login');
-        // Dom.hideByClass('rong-btn-loading');
-        // Dom.showByClass('rong-btn-start');
       }
     });
   };

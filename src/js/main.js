@@ -14,8 +14,9 @@
   
   var StreamBox = common.UI.StreamBox;
   var StreamList = common.UI.StreamList;
+  var RongRTCPage = common.UI.RongRTCPage;
 
-  var videoTimer = new common.SealTimer();
+  var videoTimer = new common.SealTimer(); 
   var sealToast = new common.SealToast();
   var ClassName = {
     LOGIN_PAGE: 'rong-login',
@@ -29,7 +30,7 @@
   };
 
   var loginUserId, rongRTC, rongRTCRoom, rongRTCStream;
-  var streamList;
+  var rongRTCPage,streamList;
   var userStreams = {
     users: {},
     getList: function (id) {
@@ -53,6 +54,10 @@
       var streams = userStreams.users[id];
       var index = streams.indexOf(user);
       streams.splice(index, 1);
+    },
+    clearUsers: function () {
+      var self = this;
+      self.users = {};
     }
   };
 
@@ -61,45 +66,49 @@
     SCREENSHARE: 'screenshare'
   };
 
-  function formatStreamBoxList() {
-    var streamBoxList = common.StreamBoxList;
-    var streamArr = [];
-    for(var key in streamBoxList) {
-      streamArr.push(streamBoxList[key])
+  function destroyRongRTCPage() {
+    if(rongRTCPage) {
+      var bodyDom = Dom.get('body');
+      rongRTCPage.destroyPage(bodyDom);
     }
-    return streamArr;
+  }
+
+  function clearBox () {
+    if (streamList) {
+      streamList.clearBox();
+    }
   }
 
   function createToast() {
-    var stramBoxList = formatStreamBoxList();
+    var stramBoxList = streamList.streamBoxList;
     if(stramBoxList.length < 2) {
       sealToast.toast('等待其他用户加入...')
     }
   }
 
   function showToast() {
-    var stramBoxList = formatStreamBoxList();
+    var stramBoxList = streamList.streamBoxList;
     if(stramBoxList.length < 2) {
       sealToast.show();
     }
   }
 
   function hideToast() {
-    var stramBoxList = formatStreamBoxList();
+    var stramBoxList = streamList.streamBoxList;
     if(stramBoxList.length >= 2) {
       sealToast.hide();
     }
   }
 
   function openVideoTimer() {
-    var stramBoxList = formatStreamBoxList();
+    var stramBoxList = streamList.streamBoxList;
     if(stramBoxList.length == 2) {
       videoTimer.start();
     }
   }
 
   function stopVideoTimer() {
-    var stramBoxList = formatStreamBoxList();
+    var stramBoxList = streamList.streamBoxList;
     if(stramBoxList.length < 2) {
       videoTimer.stop();
     }
@@ -375,7 +384,9 @@
     user.stream.size = size;
     rongRTCStream.resize(user).then(function () {
       console.log('resize success')
-    }, function () {
+    }, function (err) {
+      console.log('resize err user:',user)
+      console.log('resize err:',err)
       sealAlert(localeData.switchStreamError);
     });
   }
@@ -406,6 +417,7 @@
     openVideoTimer();
     createToast();
     hideToast();
+    console.log('streamList:',streamList)
   }
 
   function removeUserBox(user) {
@@ -464,6 +476,13 @@
    * @param {string} params.userId 用户id
    */
   function showRTCPage(params) {
+    
+    // 创建音视频主页面
+    rongRTCPage = new RongRTCPage();
+    var bodyDom = Dom.get('body');
+    rongRTCPage.createPage(bodyDom,function() {
+      videoTimer = new common.SealTimer();
+    });
     // 隐藏 login, 展示 rtc
     Dom.hideByClass(ClassName.LOGIN_PAGE);
     Dom.showByClass(ClassName.RTC_PAGE);
@@ -478,6 +497,7 @@
     var rtcBoxDom = Dom.getByClass(ClassName.STREAM_BOX);
     streamList = new StreamList();
     rtcBoxDom.appendChild(streamList.dom);
+    console.log(streamList)
   }
 
   function switchScreenShare() {
@@ -488,11 +508,6 @@
   function quit() {
     rongRTCRoom.leave().then(function () {
       win.location.reload();
-      // 设置默认分辨率
-      // Dom.hideByClass('rong-rtc');
-      // Dom.showByClass('rong-login');
-      // Dom.hideByClass('rong-btn-loading');
-      // Dom.showByClass('rong-btn-start');
     }, function () {
       // leave error
     });
@@ -533,10 +548,8 @@
       mounted: function () {},
       error: function (err) {
         console.log('rtc err:',err)
-        Dom.hideByClass('rong-rtc');
-        Dom.showByClass('rong-login');
-        Dom.hideByClass('rong-btn-loading');
-        Dom.showByClass('rong-btn-start');
+        // backLoginPage();
+        sealToast.destroy();
       }
     });
     rongRTCRoom = new rongRTC.Room({
@@ -564,6 +577,10 @@
   };
 
   RongSeal.startRTC = startRTC;
+  RongSeal.clearBox = clearBox;
+  RongSeal.destroyRongRTCPage = destroyRongRTCPage;
+  RongSeal.videoTimer = videoTimer;
+  RongSeal.userStreams = userStreams;
 
 })({
   win: window,

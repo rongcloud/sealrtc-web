@@ -112,6 +112,7 @@
     RongIMClient.reconnect({
       onSuccess: function(userId) {
         console.log('Reconnect successfully.'+ userId);
+        callback.success()
       },
       onTokenIncorrect: function() {
         console.log('token无效');
