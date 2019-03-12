@@ -75,7 +75,7 @@
     return mediaDevices.getUserMedia(opts).then(function (stream) {
       if (video === false) {
         stream.getVideoTracks().map(function (track) {
-          track.enable = false;
+          track.enabled = false;
           return track;
         });
       }
