@@ -260,6 +260,10 @@
         showUserStream(user);
         setStreamBox(user.id, user.stream.mediaStream);
         userStreams.add(user);
+        if(user.stream.enable.video == false){
+          var streamBox = StreamBox.get(user.id);
+          streamBox.closeVideoBySelf();
+        }
       }, function (error) {
         sealAlert(localeData.subscriptError + JSON.stringify(error));
       });
