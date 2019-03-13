@@ -471,6 +471,10 @@
       name: 'STREAM_TRACK_NOT_EXIST',
       msg: 'Track 不存在，请检查传入参数 stream.type 是否正确'
     }, {
+      code: 20003,
+      name: 'ROOM_ID_IS_ILLEGAL',
+      msg: '房间号不合法，只能包含大小写字母、阿拉伯数字、+、=、-、_ 且长度不能超过 64 个字符'
+    }, {
       code: 30001,
       name: 'PARAMTER_ILLEGAL',
       msg: '请检查参数，{name} 参数为必传入项'
@@ -749,6 +753,10 @@
     USER: 2
   };
 
+  var REGEXP_ROOM_ID = /[A-Za-z0-9+=-_]+$/;
+
+  var LENGTH_ROOM_ID = 64;
+
   function Logger() {
     var observer = new utils.Observer();
     var write = function write(level, tag, meta) {
@@ -792,7 +800,17 @@
       classCallCheck(this, Room);
 
       var context = this;
+
+      var _ref = option || '',
+          id = _ref.id;
+
+      var roomIdLen = id.length;
       var client = context.getClient();
+      if (!REGEXP_ROOM_ID.test(id) || roomIdLen > LENGTH_ROOM_ID) {
+        var Inner = ErrorType.Inner;
+
+        return client.emit(DownEvent.RTC_ERROR, Inner.ROOM_ID_IS_ILLEGAL);
+      }
       utils.forEach(RoomEvents, function (event) {
         var _event = event,
             name = _event.name,
@@ -807,8 +825,6 @@
           });
         });
       });
-      var id = option.id;
-
       utils.extend(context, {
         option: option,
         client: client,
@@ -1673,6 +1689,10 @@
               break;
             case UserState.LEFT:
             case UserState.OFFLINE:
+              Logger$1.log(LogTag.ROOM, {
+                msg: 'room:member:left',
+                user: user
+              });
               context.emit(DownEvent.ROOM_USER_LEFT, { id: id });
               break;
             default:
