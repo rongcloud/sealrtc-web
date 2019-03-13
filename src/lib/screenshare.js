@@ -101,8 +101,10 @@
           var sourceId = data.sourceId;
           getScreenMedia(sourceId).then(function (stream) {
             resolve(stream);
+            removeListenr(getCallback);
             callback && callback(null, stream);
           }, function (err) {
+            removeListenr(getCallback);
             reject(err);
             callback && callback(err);
           });

@@ -2450,7 +2450,7 @@
         var videoTracks = mediaStream.getVideoTracks();
         var audioTracks = mediaStream.getAudioTracks();
         var func = function func(track) {
-          return utils.isEqual(track.enable, false);
+          return utils.isEqual(track.enabled, false);
         };
         var video = StreamState.ENABLE;
         if (utils.some(videoTracks, func)) {
