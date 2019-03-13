@@ -323,8 +323,8 @@
     return div.children[0];
   };
 
-  var isContainsChinese = function(val) {
-    var reg = new RegExp('[\\u4E00-\\u9FFF]+','g');
+  var isNumberAndLetter = function(val) {
+    var reg = /^[a-zA-Z0-9_]+$/;     
     return reg.test(val)
   };
 
@@ -357,7 +357,7 @@
     isObject: isObject,
     download: download,
     Dom: Dom,
-    isContainsChinese: isContainsChinese
+    isNumberAndLetter: isNumberAndLetter
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.utils = utils;

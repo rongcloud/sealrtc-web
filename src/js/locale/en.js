@@ -11,7 +11,7 @@
       self: 'Self',
       roomIdEmpty: 'Room Id cannot be empty',
       userIdEmpty: 'User ID can not be empty',
-      userIdIllegal: 'User ID cannot contain Chinese',
+      roomIdIllegal: 'Room ID can only enter letters and numbers',
       networkError: 'Network is disconnected',
 
       getTokenError: 'Get token failed',

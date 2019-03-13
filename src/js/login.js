@@ -42,23 +42,16 @@
     }
   };
 
-  var checkRoomIdValue = function() {
-    var roomId = roomDom.value;
-    if(roomId) {
-      startBtnDom.style.background = '#28d6f6';
-      startBtnDom.style.border = '#28d6f6';
-    }else {
-      startBtnDom.style.background = '#475163';
-      startBtnDom.style.border = '#475163';
-    }
-  }
-
   var checkRTCValue = function () {
     var isRoomIdEmpty = !roomDom.value;
     var isValid = true;
     var prompt = '';
     if (isRoomIdEmpty) {
       prompt = localeData.roomIdEmpty;
+      isValid = false;
+    }
+    if (!utils.isNumberAndLetter(roomDom.value)) {
+      prompt = localeData.roomIdIllegal;
       isValid = false;
     }
     return {
@@ -141,8 +134,7 @@
   var startRTC = function () {
     var checkContent = checkRTCValue();
     if (!checkContent.isValid) {
-      // return sealAlert(checkContent.prompt);
-      return;
+      return sealAlert(checkContent.prompt);
     }
     Dom.hideByClass('rong-btn-start');
     Dom.showByClass('rong-btn-loading');
@@ -163,6 +155,20 @@
     });
   };
   
+  var checkRoomIdValue = function() {
+    var roomId = roomDom.value;
+    if(roomId) {
+      startBtnDom.style.background = '#28d6f6';
+      startBtnDom.style.border = '#28d6f6';
+      startBtnDom.onclick = startRTC;
+    }else {
+      startBtnDom.style.background = '#475163';
+      startBtnDom.style.border = '#475163';
+      startBtnDom.onclick = function(){};
+      return;
+    }
+  }
+
   var pressInput = function (e) {
     if ((e.keyCode || e.which) == 13) {
       startRTC();

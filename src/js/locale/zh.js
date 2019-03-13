@@ -11,7 +11,7 @@
       self: '自己',
       roomIdEmpty: '会议室 ID 不能为空',
       userIdEmpty: '用户 ID 不能为空',
-      userIdIllegal: '用户 ID 不能包含中文',
+      roomIdIllegal: '会议室 ID 只能输入字母和数字',
       networkError: '网络已断开',
 
       getTokenError: '获取 token 失败',
