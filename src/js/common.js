@@ -17,7 +17,8 @@
     CLOSE_VIDEO_BY_SELF: 'rong-video-self-close',
     CLOSE_AUDIO_BY_SELF: 'rong-audio-self-close',
     CLOSE_VIDEO_BY_OTHER: 'rong-video-other-close',
-    OPEN_SCREENSHARE: 'rong-screenshare-open'
+    OPEN_SCREENSHARE: 'rong-screenshare-open',
+    FLIP_SCREENSHARE: '.rong-is-screenshare',
   };
 
   /**
@@ -452,9 +453,12 @@
       this.isScreenShareOpened = false;
       setClass(this.dom, OptClassName.OPEN_SCREENSHARE, false);
     }
-    // function transformScreenShare() {
-    //   setClass(this.dom, );
-    // }
+    function openFlibScreenShare() {
+      this.dom.childNodes[1].style.transform = 'none';
+    }
+    function closeFlibScreenShare() {
+      this.dom.childNodes[1].style.transform = 'rotateY(180deg)';
+    }
     return function (id, params, temp) {
       params = params || {};
       temp = temp || StreamBoxTemp;
@@ -505,6 +509,8 @@
       self.closeAudioByOther = closeAudioByOther;
       self.openScreenShare = openScreenShare;
       self.closeScreenShare = closeScreenShare;
+      self.openFlibScreenShare = openFlibScreenShare;
+      self.closeFlibScreenShare = closeFlibScreenShare;
 
       StreamBoxList[id] = self;
 

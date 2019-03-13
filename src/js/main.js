@@ -260,13 +260,13 @@
         showUserStream(user);
         setStreamBox(user.id, user.stream.mediaStream);
         userStreams.add(user);
+        var streamBox = StreamBox.get(user.id);
         if(user.stream.enable.video == false){
-          var streamBox = StreamBox.get(user.id);
           streamBox.closeVideoByOther();
         }
-        // if(user.stream.tag == 'screenshare') {
-
-        // }
+        if(user.stream.tag == 'screenshare') {
+          streamBox.openFlibScreenShare();
+        }
       }, function (error) {
         sealAlert(localeData.subscriptError + JSON.stringify(error));
       });
@@ -276,6 +276,10 @@
 
   function removeUserStream(user) {
     console.log('remove user stream', user);
+    var streamBox = StreamBox.get(user.id);
+    if(user.stream.tag == 'screenshare') {
+      streamBox.closeFlibScreenShare();
+    }
     userStreams.remove(user);
     rongRTCStream.unsubscribe(user);
     var list = userStreams.getList(user.id);
