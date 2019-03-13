@@ -264,6 +264,9 @@
           var streamBox = StreamBox.get(user.id);
           streamBox.closeVideoByOther();
         }
+        // if(user.stream.tag == 'screenshare') {
+
+        // }
       }, function (error) {
         sealAlert(localeData.subscriptError + JSON.stringify(error));
       });

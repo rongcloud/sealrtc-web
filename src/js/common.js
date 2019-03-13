@@ -452,7 +452,9 @@
       this.isScreenShareOpened = false;
       setClass(this.dom, OptClassName.OPEN_SCREENSHARE, false);
     }
-
+    // function transformScreenShare() {
+    //   setClass(this.dom, );
+    // }
     return function (id, params, temp) {
       params = params || {};
       temp = temp || StreamBoxTemp;
