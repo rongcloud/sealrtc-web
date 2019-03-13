@@ -388,7 +388,7 @@
     var streamList = userStreams.getList(user.id);
     user = streamList[streamList.length - 1];
     audio.unmute(user).then(function () {
-      showUserStream(user);
+      // showUserStream(user);
       var streamBox = StreamBox.get(user.id);
       streamBox.openAudioBySelf();
     }, function () {
@@ -403,7 +403,7 @@
     // var streamList = userStreams.getList(user.id);
     // user = streamList ? streamList[streamList.length - 1] : user;
     audio.mute(user).then(function () {
-      showUserStream(user);
+      // showUserStream(user);
       var streamBox = StreamBox.get(user.id);
       streamBox.closeAudioBySelf();
     }, function () {
@@ -463,7 +463,8 @@
     var isRemoveBoxZoom = streamBox.isZoom;
     streamList.removeBox(streamBox);
     StreamBox.clearQuitUser(id);
-    var streamBoxList = common.StreamBoxList;
+    // var streamBoxList = common.StreamBoxList;
+    var streamBoxList = streamList.streamBoxList;
     if (isRemoveBoxZoom) {
       for(var key in streamBoxList){
         streamBox = streamBoxList[key];
