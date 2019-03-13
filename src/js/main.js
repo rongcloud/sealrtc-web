@@ -11,12 +11,12 @@
 
   var RongMedia = dependencies.RongMedia;
   var RongScreenShare = dependencies.RongScreenShare;
-  
+
   var StreamBox = common.UI.StreamBox;
   var StreamList = common.UI.StreamList;
   var RongRTCPage = common.UI.RongRTCPage;
 
-  var videoTimer = new common.SealTimer(); 
+  var videoTimer = new common.SealTimer();
   var sealToast = new common.SealToast();
   var ClassName = {
     LOGIN_PAGE: 'rong-login',
@@ -30,7 +30,7 @@
   };
 
   var loginUserId, rongRTC, rongRTCRoom, rongRTCStream;
-  var rongRTCPage,streamList;
+  var rongRTCPage, streamList;
   var userStreams = {
     users: {},
     getList: function (id) {
@@ -67,13 +67,13 @@
   };
 
   function destroyRongRTCPage() {
-    if(rongRTCPage) {
+    if (rongRTCPage) {
       var bodyDom = Dom.get('body');
       rongRTCPage.destroyPage(bodyDom);
     }
   }
 
-  function clearBox () {
+  function clearBox() {
     if (streamList) {
       streamList.clearBox();
     }
@@ -81,35 +81,35 @@
 
   function createToast() {
     var stramBoxList = streamList.streamBoxList;
-    if(stramBoxList.length < 2) {
+    if (stramBoxList.length < 2) {
       sealToast.toast('等待其他用户加入...')
     }
   }
 
   function showToast() {
     var stramBoxList = streamList.streamBoxList;
-    if(stramBoxList.length < 2) {
+    if (stramBoxList.length < 2) {
       sealToast.show();
     }
   }
 
   function hideToast() {
     var stramBoxList = streamList.streamBoxList;
-    if(stramBoxList.length >= 2) {
+    if (stramBoxList.length >= 2) {
       sealToast.hide();
     }
   }
 
   function openVideoTimer() {
     var stramBoxList = streamList.streamBoxList;
-    if(stramBoxList.length == 2) {
+    if (stramBoxList.length == 2) {
       videoTimer.start();
     }
   }
 
   function stopVideoTimer() {
     var stramBoxList = streamList.streamBoxList;
-    if(stramBoxList.length < 2) {
+    if (stramBoxList.length < 2) {
       videoTimer.stop();
     }
   }
@@ -189,25 +189,25 @@
     var openVideo = isSelf ? streamBox.openVideoBySelf : streamBox.openVideoByOther;
     var closeAudio = isSelf ? streamBox.closeAudioBySelf : streamBox.closeAudioByOther;
     var openAudio = isSelf ? streamBox.openAudioBySelf : streamBox.openAudioByOther;
-    switch(type) {
-    case StreamType.AUDIO:
-      closeVideo.apply(streamBox);
-      openAudio.apply(streamBox);
-      break;
-    case StreamType.VIDEO:
-      openVideo.apply(streamBox);
-      closeAudio.apply(streamBox);
-      break;
-    case StreamType.AUDIO_AND_VIDEO:
-      openVideo.apply(streamBox);
-      openAudio.apply(streamBox);
-      break;
-    case StreamType.NONE:
-      closeVideo.apply(streamBox);
-      closeAudio.apply(streamBox);
-      break;
-    default:
-      break;
+    switch (type) {
+      case StreamType.AUDIO:
+        closeVideo.apply(streamBox);
+        openAudio.apply(streamBox);
+        break;
+      case StreamType.VIDEO:
+        openVideo.apply(streamBox);
+        closeAudio.apply(streamBox);
+        break;
+      case StreamType.AUDIO_AND_VIDEO:
+        openVideo.apply(streamBox);
+        openAudio.apply(streamBox);
+        break;
+      case StreamType.NONE:
+        closeVideo.apply(streamBox);
+        closeAudio.apply(streamBox);
+        break;
+      default:
+        break;
     }
   }
 
@@ -227,7 +227,7 @@
       id: id
     });
     var videoNode = Dom.get(videoDom);
-    videoNode.onloadeddata = function() {
+    videoNode.onloadeddata = function () {
       createResolutionDom(videoNode)
     }
   }
@@ -238,7 +238,7 @@
       mediaStream = user.stream.mediaStream;
     var streamBox = StreamBox.get(id);
     var isSelf = id === loginUserId;
-    if(isSelf) {
+    if (isSelf) {
       streamBox.childDom.video.muted = true;
     }
     streamBox.showStream(mediaStream);
@@ -248,7 +248,7 @@
 
   function addUserStream(user) {
     var isSelf = user.id === loginUserId;
-    console.log('addUserStream user:',user);
+    console.log('addUserStream user:', user);
     if (isSelf) {
       showUserStream(user);
       userStreams.add(user);
@@ -261,10 +261,10 @@
         setStreamBox(user.id, user.stream.mediaStream);
         userStreams.add(user);
         var streamBox = StreamBox.get(user.id);
-        if(user.stream.enable.video == false){
+        if (user.stream.enable.video == false) {
           streamBox.closeVideoByOther();
         }
-        if(user.stream.tag == 'screenshare') {
+        if (user.stream.tag == 'screenshare') {
           streamBox.openFlibScreenShare();
         }
       }, function (error) {
@@ -277,7 +277,7 @@
   function removeUserStream(user) {
     console.log('remove user stream', user);
     var streamBox = StreamBox.get(user.id);
-    if(user.stream.tag == 'screenshare') {
+    if (user.stream.tag == 'screenshare') {
       streamBox.closeFlibScreenShare();
     }
     userStreams.remove(user);
@@ -422,14 +422,14 @@
     rongRTCStream.resize(user).then(function () {
       console.log('resize success')
     }, function (err) {
-      console.log('resize err user:',user)
-      console.log('resize err:',err)
+      console.log('resize err user:', user)
+      console.log('resize err:', err)
       sealAlert(localeData.switchStreamError);
     });
   }
 
   function addUserBox(user) {
-    console.log('join user',user)
+    console.log('join user', user)
     var id = user.id,
       isSelf = id === loginUserId;
     var name = isSelf ? localeData.self : id;
@@ -454,7 +454,7 @@
     openVideoTimer();
     createToast();
     hideToast();
-    console.log('streamList:',streamList)
+    console.log('streamList:', streamList)
   }
 
   function removeUserBox(user) {
@@ -466,7 +466,7 @@
     // var streamBoxList = common.StreamBoxList;
     var streamBoxList = streamList.streamBoxList;
     if (isRemoveBoxZoom) {
-      for(var key in streamBoxList){
+      for (var key in streamBoxList) {
         streamBox = streamBoxList[key];
         if (streamBox.id === loginUserId) {
           streamBox.zoom();
@@ -489,10 +489,10 @@
       //     }, reject);
       //   }, getSelfMediaStreamError);
       // }
-      
+
       getSelfMediaStream(videoEnable, audioEnable, resolution).then(function (user) {
         rongRTCStream.publish(user).then(function () {
-          if(!videoEnable){
+          if (!videoEnable) {
             closeVideo(user);
           }
           resolve(user);
@@ -510,7 +510,7 @@
       return rongRTCRoom.join(user);
     }, rtcTokenError);
   }
-  
+
   /**
    * 展示音视频交互主界面
    * @param {object} params
@@ -518,23 +518,23 @@
    * @param {string} params.userId 用户id
    */
   function showRTCPage(params) {
-    
+
     // 创建音视频主页面
     rongRTCPage = new RongRTCPage();
     var bodyDom = Dom.get('body');
-    rongRTCPage.createPage(bodyDom,function() {
+    rongRTCPage.createPage(bodyDom, function () {
       videoTimer = new common.SealTimer();
     });
     // 隐藏 login, 展示 rtc
     Dom.hideByClass(ClassName.LOGIN_PAGE);
     Dom.showByClass(ClassName.RTC_PAGE);
-    
+
     // 设置 UI 上的房间号和个人信息
     var roomTitleDom = Dom.getByClass(ClassName.ROOM_TITLE);
     roomTitleDom.textContent = localeData.room + ': ' + params.roomId;
     var userTitleDom = Dom.getByClass(ClassName.USER_TITLE);
     userTitleDom.textContent = localeData.user + ': ' + params.userId;
-    
+
     // 创建流列表 UI
     var rtcBoxDom = Dom.getByClass(ClassName.STREAM_BOX);
     streamList = new StreamList();
@@ -586,9 +586,9 @@
       },
       RongIMLib: win.RongIMLib,
       mode: RongRTC.RTC,
-      mounted: function () {},
+      mounted: function () { },
       error: function (err) {
-        console.log('rtc err:',err)
+        console.log('rtc err:', err)
         // backLoginPage();
         sealToast.destroy();
       }
