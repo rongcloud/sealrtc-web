@@ -262,7 +262,7 @@
         userStreams.add(user);
         if(user.stream.enable.video == false){
           var streamBox = StreamBox.get(user.id);
-          streamBox.closeVideoBySelf();
+          streamBox.closeVideoByOther();
         }
       }, function (error) {
         sealAlert(localeData.subscriptError + JSON.stringify(error));
