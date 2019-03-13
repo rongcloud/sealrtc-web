@@ -371,6 +371,7 @@
    * @param {boolean} params.resizeEvent 是否放大
    * @param {string} temp 模板, 可选
    */
+  /* TODO 去掉该变量的使用, 应使用 streamList 实例进行 box 操作 */
   var StreamBoxList = {}; // streamBox 集合
   console.log('StreamBoxList: ', StreamBoxList);
   
