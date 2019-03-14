@@ -18,6 +18,10 @@
 
   var videoTimer = new common.SealTimer();
   var sealToast = new common.SealToast();
+
+  // var casePreBtn = Dom.get('.rong-case-pre');
+  // var caseNextBtn = Dom.get('.rong-case-next');
+
   var ClassName = {
     LOGIN_PAGE: 'rong-login',
     RTC_PAGE: 'rong-rtc',
@@ -26,7 +30,9 @@
     HANGUP_BUTTON: 'rong-opt-hangup',
     WHITEBOARD_BUTTON: 'rong-opt-wb',
     SCREENSHARE_BUTTON: 'rong-opt-share',
-    STREAM_BOX: 'rong-stream-wrap'
+    STREAM_BOX: 'rong-stream-wrap',
+    CASE_PRE_BTN: 'rong-case-pre',
+    CASE_NEXT_BTN: 'rong-case-next'
   };
 
   var loginUserId, rongRTC, rongRTCRoom, rongRTCStream;
@@ -66,6 +72,16 @@
     SCREENSHARE: 'screenshare'
   };
 
+  function streamBoxSroll (event) {
+    var direction = event.target.className;
+    var streamListBox = Dom.get('.rong-stream-list');
+    if(direction == 'rong-case-pre'){
+      streamListBox.scrollLeft -= 152;
+    }else {
+      streamListBox.scrollLeft += 152;
+    }
+  }
+  
   function destroyRongRTCPage() {
     if (rongRTCPage) {
       var bodyDom = Dom.get('body');
@@ -191,24 +207,24 @@
     var closeAudio = isSelf ? streamBox.closeAudioBySelf : streamBox.closeAudioByOther;
     var openAudio = isSelf ? streamBox.openAudioBySelf : streamBox.openAudioByOther;
     switch (type) {
-      case StreamType.AUDIO:
-        closeVideo.apply(streamBox);
-        openAudio.apply(streamBox);
-        break;
-      case StreamType.VIDEO:
-        openVideo.apply(streamBox);
-        closeAudio.apply(streamBox);
-        break;
-      case StreamType.AUDIO_AND_VIDEO:
-        openVideo.apply(streamBox);
-        openAudio.apply(streamBox);
-        break;
-      case StreamType.NONE:
-        closeVideo.apply(streamBox);
-        closeAudio.apply(streamBox);
-        break;
-      default:
-        break;
+    case StreamType.AUDIO:
+      closeVideo.apply(streamBox);
+      openAudio.apply(streamBox);
+      break;
+    case StreamType.VIDEO:
+      openVideo.apply(streamBox);
+      closeAudio.apply(streamBox);
+      break;
+    case StreamType.AUDIO_AND_VIDEO:
+      openVideo.apply(streamBox);
+      openAudio.apply(streamBox);
+      break;
+    case StreamType.NONE:
+      closeVideo.apply(streamBox);
+      closeAudio.apply(streamBox);
+      break;
+    default:
+      break;
     }
   }
 
@@ -389,7 +405,7 @@
     var streamList = userStreams.getList(user.id);
     user = streamList[streamList.length - 1];
     audio.unmute(user).then(function () {
-      showUserStream(user);
+      // showUserStream(user);
       var streamBox = StreamBox.get(user.id);
       streamBox.openAudioBySelf();
     }, function () {
@@ -404,7 +420,7 @@
     // var streamList = userStreams.getList(user.id);
     // user = streamList ? streamList[streamList.length - 1] : user;
     audio.mute(user).then(function () {
-      showUserStream(user);
+      // showUserStream(user);
       var streamBox = StreamBox.get(user.id);
       streamBox.closeAudioBySelf();
     }, function () {
@@ -452,6 +468,13 @@
       streamBox.isAudioOpenedBySelf ? closeAudio(user) : openAudio(user);
       e.stopPropagation();
     };
+    //添加左右滑动视频窗按钮
+    if(streamList.streamBoxList.length > 10) {
+      Dom.showByClass(ClassName.CASE_PRE_BTN);
+      Dom.showByClass(ClassName.CASE_NEXT_BTN);
+      Dom.get('.'+ClassName.CASE_PRE_BTN).onclick = streamBoxSroll;
+      Dom.get('.'+ClassName.CASE_NEXT_BTN).onclick = streamBoxSroll;
+    }
     openVideoTimer();
     createToast();
     hideToast();
@@ -464,7 +487,8 @@
     var isRemoveBoxZoom = streamBox.isZoom;
     streamList.removeBox(streamBox);
     StreamBox.clearQuitUser(id);
-    var streamBoxList = common.StreamBoxList;
+    // var streamBoxList = common.StreamBoxList;
+    var streamBoxList = streamList.streamBoxList;
     if (isRemoveBoxZoom) {
       for (var key in streamBoxList) {
         streamBox = streamBoxList[key];
@@ -472,6 +496,11 @@
           streamBox.zoom();
         }
       }
+    }
+    //隐藏左右滑动视频窗按钮
+    if(streamList.streamBoxList.length <= 10) {
+      Dom.hideByClass(ClassName.CASE_PRE_BTN);
+      Dom.hideByClass(ClassName.CASE_NEXT_BTN);
     }
     stopVideoTimer();
     hideToast();
