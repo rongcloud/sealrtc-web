@@ -328,17 +328,40 @@ ul, li {
 }
 
 .rong-stream-wrap .rong-stream-list {
-  max-width: 100%;
+  max-width: 1368px;
   height: 165px;
   background-color: transparent;
   z-index: 3;
-  margin-top: calc(100vh - 165px - 115px);
+  margin: calc(100vh - 165px - 121px) auto 0;
   /* margin-top: 205px; */
   white-space: nowrap;
   overflow-x: auto;
   padding-top: 46px;
 }
 
+.rong-stream-list .rong-case-pre {
+  display: none;
+  background-image: url(./img/case-pre.png);
+  width: 60px;
+  background-size: 60px 60px;
+  height: 60px;
+  z-index: 13;
+  position: absolute;
+  left: 86px;
+  cursor: pointer;
+}
+
+.rong-stream-list .rong-case-next {
+  display: none;
+  background-image: url("./img/case-next.png");
+  width: 60px;
+  background-size: 60px 60px;
+  height: 60px;
+  z-index: 13;
+  position: absolute;
+  right: 86px;
+  cursor: pointer;
+}
 /* .rong-stream-wrap .rong-stream-list::-webkit-scrollbar {
   width: 16px;
 	height: 16px;
