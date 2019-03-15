@@ -180,7 +180,8 @@
     var videoConfig = videoEnable ? resolution : videoEnable;
     var constraints = {
       video: videoConfig,
-      audio: audioEnable
+      audio: audioEnable,
+      frameRate: 15
     };
     return new Promise(function (resolve, reject) {
       RongMedia.get(constraints).then(function (stream) {

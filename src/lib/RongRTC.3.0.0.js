@@ -28,6 +28,12 @@
   var isUndefined = function isUndefined(str) {
     return Object.prototype.toString.call(str) === '[object Undefined]';
   };
+  var isNull = function isNull(str) {
+    return Object.prototype.toString.call(str) === '[object Null]';
+  };
+  var isNumber = function isNumber(str) {
+    return Object.prototype.toString.call(str) === '[object Number]';
+  };
   var stringify = function stringify(obj) {
     return JSON.stringify(obj);
   };
@@ -354,7 +360,9 @@
     isEqual: isEqual,
     isEmpty: isEmpty,
     toJSON: toJSON,
-    isInclude: isInclude
+    isInclude: isInclude,
+    isNull: isNull,
+    isNumber: isNumber
   };
 
   var DownEvent = {
@@ -1217,7 +1225,7 @@
   var PeerConnection = function (_EventEmitter) {
     inherits(PeerConnection, _EventEmitter);
 
-    function PeerConnection() {
+    function PeerConnection(option) {
       classCallCheck(this, PeerConnection);
 
       var _this = possibleConstructorReturn(this, (PeerConnection.__proto__ || Object.getPrototypeOf(PeerConnection)).call(this));
@@ -1227,6 +1235,9 @@
         sdpSemantics: 'plan-b',
         // Chrome 49 Test
         iceServers: []
+      });
+      utils.extend(context, {
+        option: option
       });
       var events = {
         onaddstream: function onaddstream(event) {
@@ -1306,11 +1317,62 @@
       }
     }, {
       key: 'setAnwser',
-      value: function setAnwser(sdp) {
+      value: function setAnwser(answer) {
         var context = this;
         var pc = context.pc;
 
-        return pc.setRemoteDescription(new RTCSessionDescription(sdp));
+        answer = context.setBitrate(answer);
+        return pc.setRemoteDescription(new RTCSessionDescription(answer));
+      }
+    }, {
+      key: 'setBitrate',
+      value: function setBitrate(answer) {
+        var context = this;
+        var bitrate = context.option.bitrate;
+        var sdp = answer.sdp;
+
+        var lineFeed = '\n';
+        sdp = sdp.replace(/a=mid:video\n/g, ['a=mid:video', 'b=AS:' + bitrate.max + lineFeed].join(lineFeed));
+        utils.extend(answer, {
+          sdp: sdp
+        });
+        var sdpDetails = sdp.split(lineFeed);
+        var findIndex = function findIndex(keyword) {
+          var index = null;
+          for (var i = 0; i < sdpDetails.length; i++) {
+            var item = sdpDetails[i];
+            if (utils.isInclude(item, keyword)) {
+              index = i;
+              break;
+            }
+          }
+          return index;
+        };
+        var mVideo = 'm=video';
+        var mVideoIndex = findIndex(mVideo);
+        if (utils.isNull(mVideoIndex)) {
+          return answer;
+        }
+        var separator = ' ';
+        var videoDesc = sdpDetails[mVideoIndex];
+        // m=video 10 UDP/TLS/RTP/SAVPF
+        var videoDescDetails = videoDesc.split(separator);
+        var firstVideoCodec = videoDescDetails[3];
+        var codecDesc = 'a=rtpmap:' + firstVideoCodec;
+        var codecDescIndex = findIndex(codecDesc);
+        if (utils.isNull(codecDescIndex)) {
+          return answer;
+        }
+        var desc = 'a=fmtp:' + firstVideoCodec + ' x-google-min-bitrate=' + bitrate.min + '; x-google-max-bitrate=' + bitrate.max;
+        if (utils.isNumber(bitrate.start)) {
+          desc += '; x-google-start-bitrate=' + bitrate.start;
+        }
+        sdpDetails[codecDescIndex] = [sdpDetails[codecDescIndex], desc].join(lineFeed);
+        sdp = sdpDetails.join(lineFeed);
+        utils.extend(answer, {
+          sdp: sdp
+        });
+        return answer;
       }
     }, {
       key: 'close',
@@ -2666,7 +2728,7 @@
       if (error) {
         throw error;
       }
-      pc = new PeerConnection();
+      pc = new PeerConnection(option);
       var getStreamUser = function getStreamUser(stream) {
         var id = stream.id,
             type = StreamType.NODE;
@@ -3436,14 +3498,17 @@
     };
     var leave = function leave() {
       var roomId = im.getRoomId();
+      var user = im.getUser();
       Logger$1.log(LogTag.ROOM_HANDLER, {
         msg: 'leave:before',
-        roomId: roomId
+        roomId: roomId,
+        user: user
       });
       return im.leaveRoom().then(function () {
         Logger$1.log(LogTag.ROOM_HANDLER, {
           msg: 'leave:after',
-          roomId: roomId
+          roomId: roomId,
+          user: user
         });
         var token = im.getToken();
         if (utils.isString(token)) {
@@ -3461,7 +3526,8 @@
         Logger$1.log(LogTag.ROOM_HANDLER, {
           msg: 'leave:after',
           roomId: roomId,
-          error: error
+          error: error,
+          user: user
         });
         return error;
       });
@@ -8848,6 +8914,11 @@
         appkey: '',
         url: 'https://msqa.rongcloud.net/',
         debug: false,
+        bitrate: {
+          max: 1000,
+          min: 100,
+          start: 300
+        },
         created: function created() {},
         mounted: function mounted() {},
         unmounted: function unmounted() {},
