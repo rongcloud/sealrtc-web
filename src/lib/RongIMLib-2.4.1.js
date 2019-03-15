@@ -4083,6 +4083,9 @@ var RongIMLib;
             RongIMLib.CheckParam.getInstance().check(["string", "array", "boolean", "object", "global|object|null|undefined"], "removeRTCRoomData", false, arguments);
             RongIMClient._dataAccessProvider.removeRTCRoomData(roomId, keys, isInner, callback, message);
         };
+        RongIMClient.prototype.getNavi = function () {
+            return RongIMClient._dataAccessProvider.getNavi();
+        };
         RongIMClient.RTCListener = function () { };
         RongIMClient.LogFactory = {};
         RongIMClient.MessageType = {};
@@ -5313,6 +5316,8 @@ var RongIMLib;
     var Navigation = (function () {
         function Navigation() {
             window.getServerEndpoint = function (result) {
+                var storage = RongIMLib.RongIMClient._storageProvider;
+                storage.setItem('fullnavi', JSON.stringify(result));
                 var server = result.server;
                 if (server) {
                     server += ',';
@@ -5323,7 +5328,6 @@ var RongIMLib;
                     server: server,
                     backupServer: backupServer
                 });
-                var storage = RongIMLib.RongIMClient._storageProvider;
                 servers = servers.split(',');
                 storage.setItem('servers', JSON.stringify(servers));
                 var token = RongIMLib.RongIMClient._memoryStore.token;
@@ -9957,6 +9961,10 @@ var RongIMLib;
         ServerDataProvider.prototype.removeRTCRoomData = function (roomId, keys, isInner, callback, message) {
             this.removeRTCData(roomId, keys, isInner, RongIMLib.RTCAPIType.ROOM, callback, message);
         };
+        ServerDataProvider.prototype.getNavi = function () {
+            var navi = RongIMLib.RongIMClient._storageProvider.getItem("fullnavi") || "{}";
+            return JSON.parse(navi);
+        };
         return ServerDataProvider;
     })();
     RongIMLib.ServerDataProvider = ServerDataProvider;
@@ -10950,6 +10958,8 @@ var RongIMLib;
         VCDataProvider.prototype.getRTCRoomData = function (roomId, key, isInner, callback, message) {
         };
         VCDataProvider.prototype.removeRTCRoomData = function (roomId, key, isInner, callback, message) {
+        };
+        VCDataProvider.prototype.getNavi = function () {
         };
         return VCDataProvider;
     })();
