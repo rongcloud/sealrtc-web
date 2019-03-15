@@ -10,7 +10,7 @@
     Cache = utils.Cache,
     Config = RongSeal.Config;
 
-  var randomUserId = new Date().getTime().toString();
+  var randomUserId;
   // console.log('randomUserId: ', typeof randomUserId);
 
   var locale = RongSeal.locale[common.lang],
@@ -139,6 +139,7 @@
     }
     Dom.hideByClass('rong-btn-start');
     Dom.showByClass('rong-btn-loading');
+    randomUserId = new Date().getTime().toString();
     common.getIMToken({
       id: randomUserId
     }).then(function (user) {
