@@ -575,11 +575,19 @@
   }
 
   function quit() {
+    // win.location.reload();
+    common.UI.backLoginPage();
+    RongSeal.videoTimer.stop();
+    RongSeal.userStreams.clearUsers();
+    sealToast.destroy();
+    RongSeal.destroyRongRTCPage();
     rongRTCRoom.leave().then(function () {
-      win.location.reload();
+      // win.location.reload();
+      console.log('quit---')
     }, function () {
       // leave error
     });
+    RongSeal.im.disconnect();
   }
 
   function bindRTCBtnEvent() {

@@ -100,6 +100,7 @@
             RongSeal.destroyRongRTCPage();
             RongSeal.videoTimer.stop();
             RongSeal.userStreams.clearUsers();
+            
             return ;
           }
           reconnect();

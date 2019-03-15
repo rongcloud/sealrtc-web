@@ -127,12 +127,16 @@
   function getInstance() {
     return RongIMClient.getInstance();
   }
+  function disconnect() {
+    RongIMClient.getInstance().disconnect()
+  }
 
   win.RongSeal.im = {
     connect: connect,
     reconnect: reconnect,
     getRTCToken: getRTCToken,
-    instance: getInstance
+    instance: getInstance,
+    disconnect: disconnect
   };
 
 })({
