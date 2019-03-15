@@ -20,7 +20,7 @@
     // userDom = getDomById('userId'),
     startBtnDom = getDomById('start'),
     inputDomList = Dom.getList('.rong-login-input');
-  
+
   var StorageKeys = {
     RoomId: 'rong-sealv2-roomid',
     Resolution: 'rong-sealv2-resolution'
@@ -34,8 +34,8 @@
     var resolution = Cache.get(StorageKeys.Resolution);
     if (resolution) {
       var list = getDomListByName('resolution');
-      for (var i=0; i< list.length; i++){
-        if(list[i].value === resolution){
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].value === resolution) {
           list[i].checked = true;
         }
       }
@@ -63,14 +63,14 @@
   var getRTCOption = function () {
     var resolutionDom = getSelectedByName('resolution'),
       closeVideoDom = getSelectedByName('isCloseVideo');
-      // closeAudioDom = getSelectedByName('isCloseAudio');
+    // closeAudioDom = getSelectedByName('isCloseAudio');
     var roomId = roomDom.value,
       // userId = userDom.value,
       userId = randomUserId,
       resolution = common.formatResolution(resolutionDom.value), // 格式如: { width: 640, height: 320 }
       videoEnable = !closeVideoDom;
-      // console.log(resolutionDom);
-      // audioEnable = !closeAudioDom;
+    // console.log(resolutionDom);
+    // audioEnable = !closeAudioDom;
     return {
       userId: userId,
       roomId: roomId,
@@ -81,27 +81,34 @@
   };
 
   var reconnectionMechanism = function () {
+    var clear = function () {
+      common.UI.backLoginPage();
+      RongSeal.destroyRongRTCPage();
+      RongSeal.videoTimer.stop();
+      RongSeal.userStreams.clearUsers();
+    };
     //30s前网络嗅探并重新连接
-    var total = 30,count = 0;
-    var reconnect = function() {
+    var total = 30, count = 0, isRTCError = false;
+    var EventName = RongSeal.EventName;
+    RongSeal.eventEmitter.on(EventName.NETWORK_ERROR, function () {
+      isRTCError = true;
+      clear();
+    });
+    var reconnect = function () {
       RongSeal.im.reconnect({
         success: function () {
-          var isRTCShow = getDomById('RongRTC').style.display === 'block'? true : false;
-          if(!isRTCShow) {
+          var isRTCShow = getDomById('RongRTC').style.display === 'block' ? true : false;
+          if (!isRTCShow) {
             getDomById('RongRTC').style.display = 'block';
           }
         },
         error: function () {
-          count ++;
+          count++;
           console.log('count: ', count);
-          if(count >= total) {
+          if (count >= total || isRTCError) {
             console.log('back login');
-            common.UI.backLoginPage();
-            RongSeal.destroyRongRTCPage();
-            RongSeal.videoTimer.stop();
-            RongSeal.userStreams.clearUsers();
-            
-            return ;
+            clear();
+            return;
           }
           reconnect();
         }
@@ -123,9 +130,9 @@
         console.log('user', user);
         RongSeal.startRTC(option);
         Cache.set(StorageKeys.RoomId, option.roomId);
-        Cache.set(StorageKeys.Resolution,common.reFormatResolution(resolution))
+        Cache.set(StorageKeys.Resolution, common.reFormatResolution(resolution))
       },
-      backLoginPage: function(){
+      backLoginPage: function () {
         reconnectionMechanism();
         // 隐藏 rtc, 展示 login
       }
@@ -149,24 +156,24 @@
       sealAlert(localeData.networkError);
       Dom.hideByClass('rong-btn-loading');
       Dom.showByClass('rong-btn-start');
-      RongSeal.rongRTCRoom.leave().then(function(){
+      RongSeal.rongRTCRoom.leave().then(function () {
         RongSeal.im.instance().logout();
       }, function () {
         // leave error
       })
     });
   };
-  
-  var checkRoomIdValue = function() {
+
+  var checkRoomIdValue = function () {
     var roomId = roomDom.value;
-    if(roomId) {
+    if (roomId) {
       startBtnDom.style.background = '#28d6f6';
       startBtnDom.style.border = '#28d6f6';
       startBtnDom.onclick = startRTC;
-    }else {
+    } else {
       startBtnDom.style.background = '#475163';
       startBtnDom.style.border = '#475163';
-      startBtnDom.onclick = function(){};
+      startBtnDom.onclick = function () { };
       return;
     }
   }
