@@ -242,6 +242,7 @@
     function stop() {
       clearInterval(countDown);
       hour=minute=second=0;
+      timerDom = Dom.get('.rong-user-timer');
       timerDom.innerHTML = '';
     }
 
