@@ -275,6 +275,7 @@
     } else {
       // user.stream.type = rongRTC.StreamType.AUDIO_AND_VIDEO;
       console.log(user.stream)
+      user.stream.size = rongRTC.StreamSize.MIN;
       rongRTCStream.subscribe(user).then(function (user) {
         showUserStream(user);
         setStreamBox(user.id, user.stream.mediaStream);
@@ -462,7 +463,7 @@
     });
     streamList.addBox(streamBox);
     if (isSelf) {
-      streamBox.zoom();
+      streamBox.zoom(user);
     }
     var childDom = streamBox.childDom;
     childDom.videoBtn.onclick = function (e) {

@@ -61,7 +61,7 @@
         var localeKey = langDom.getAttribute(attribute);
         langDom[langKey] = locale[langKey][localeKey];
       }
-    } 
+    }
     return dom;
   }
 
@@ -145,7 +145,7 @@
    * @return {string} 分辨率
    */
   var reFormatResolution = function (rate) {
-    return rate.width+'*'+rate.height;
+    return rate.width + '*' + rate.height;
   };
 
   /**
@@ -195,87 +195,87 @@
    * @param {string} str 提示信息
    * @param {number} duration 展示时间
   */
-  var SealToast = function(){ };
+  var SealToast = function () { };
   SealToast.prototype = {
-    create: function(str,duration) {
+    create: function (str, duration) {
       var self = this;
       var toastHtml = '';
-      var toastText = '<span class="rong-seal-toast-text">'+str+'</span>';
-      toastHtml = '<div class="rong-seal-toast">'+toastText+'</div>';
-      if(Dom.get('.rong-sel-toast')) return; //未hide禁止重复点击
+      var toastText = '<span class="rong-seal-toast-text">' + str + '</span>';
+      toastHtml = '<div class="rong-seal-toast">' + toastText + '</div>';
+      if (Dom.get('.rong-sel-toast')) return; //未hide禁止重复点击
       document.body.insertAdjacentHTML('beforeend', toastHtml);
-      if(duration){
-        setTimeout(function(){
+      if (duration) {
+        setTimeout(function () {
           self.hide();
         }, duration)
       }
     },
-    show: function() {
+    show: function () {
       // var self = this;
       Dom.showByClass('rong-seal-toast');
-      Dom.get('.rong-seal-toast').style.marginTop = '-'+Math.round(Dom.get('.rong-seal-toast').offsetHeight/2)+'px';
-      if(Dom.get('.rong-seal-toast')) return;
+      Dom.get('.rong-seal-toast').style.marginTop = '-' + Math.round(Dom.get('.rong-seal-toast').offsetHeight / 2) + 'px';
+      if (Dom.get('.rong-seal-toast')) return;
     },
-    hide: function() {
+    hide: function () {
       // var self = this;
-      if(Dom.get('.rong-seal-toast')){
+      if (Dom.get('.rong-seal-toast')) {
         Dom.hideByClass('rong-seal-toast');
       }
     },
-    destroy: function() {
+    destroy: function () {
       var parentDom = Dom.get('body');
       var childDom = Dom.getByClass('rong-seal-toast');
-      if(childDom) {
+      if (childDom) {
         parentDom.removeChild(childDom);
       }
     },
-    toast: function(str,duration){
+    toast: function (str, duration) {
       var self = this;
-      return self.create(str,duration);
+      return self.create(str, duration);
     }
   }
   /** *
    *  通话计时器
   */
-  var SealTimer = (function() {
+  var SealTimer = (function () {
     var hour = 0,
       minute = 0,
       second = 0;
-    var countDown,timerDom;
-    
+    var countDown, timerDom;
+
     function stop() {
       clearInterval(countDown);
-      hour=minute=second=0;
+      hour = minute = second = 0;
       timerDom = Dom.get('.rong-user-timer');
       timerDom.innerHTML = '';
     }
 
-    function format (count) {
-      if(count < 10){
-        return '0'+count;
+    function format(count) {
+      if (count < 10) {
+        return '0' + count;
       }
-      return count ;
+      return count;
     }
 
     function timer() {
       second += 1;
-      if(second >= 60){
+      if (second >= 60) {
         second = 0;
         minute += 1;
       }
-      if(minute >= 60){
+      if (minute >= 60) {
         minute = 0;
         hour += 1;
       }
       timerDom = Dom.get('.rong-user-timer');
-      timerDom.innerHTML = '通话时长：'+format(hour)+':'+format(minute)+':'+format(second);
+      timerDom.innerHTML = '通话时长：' + format(hour) + ':' + format(minute) + ':' + format(second);
     }
 
     function start() {
-      countDown = setInterval(timer,1000);
+      countDown = setInterval(timer, 1000);
     }
 
-    return function() {
+    return function () {
       var self = this;
       self.stop = stop;
       self.start = start;
@@ -288,11 +288,11 @@
    */
   var RongRTCPage = (function () {
 
-    function createPage(bodyDom,callback) {
+    function createPage(bodyDom, callback) {
       bodyDom.appendChild(this.dom);
       callback();
     }
-    
+
     function destroyPage(bodyDom) {
       bodyDom.removeChild(this.dom)
     }
@@ -349,22 +349,22 @@
       //   console.log('streamBox:',streamBox)
       //   self.removeBox(streamBox);
       // })
-      for(var i=0;i<streamList.length;i++){
+      for (var i = 0; i < streamList.length; i++) {
         self.removeBox(streamList[i]);
       }
     }
-    
+
     return function (temp) {
       temp = temp || StreamListTemp;
       var self = this;
       self.streamBoxList = [];
       self.dom = createLocaleDom(temp);
-      
+
       self.addBox = addBox;
       self.removeBox = removeBox;
       self.hasBox = hasBox;
       self.clearBox = clear;
-      
+
       return self;
     };
   })();
@@ -380,19 +380,25 @@
   /* TODO 去掉该变量的使用, 应使用 streamList 实例进行 box 操作 */
   var StreamBoxList = {}; // streamBox 集合
   console.log('StreamBoxList: ', StreamBoxList);
-  
+
   var StreamBox = (function () {
     var setClass = function (dom, className, isOpen) {
       isOpen ? addClass(dom, className) : removeClass(dom, className);
     };
-    
+
     // 清空所有 zoom class
-    function clearStreamBoxZoom() {
-      for (var id in StreamBoxList) {
+    function clearStreamBoxZoom(userId) {
+      var reset = function (id) {
         var streamBox = StreamBoxList[id];
         streamBox.resizeEvent(false, id);
         streamBox.isZoom = false;
         removeClass(streamBox.dom, OptClassName.IS_ZOOM);
+      };
+      if (userId) {
+        return reset(userId);
+      }
+      for (var id in StreamBoxList) {
+        reset(id);
       }
     }
 
@@ -406,14 +412,14 @@
       });
       if (videoDom && stream) {
         videoDom.srcObject = stream;
-        videoDom.setAttribute('stream',customizeValue);
+        videoDom.setAttribute('stream', customizeValue);
       }
     }
 
-    function zoom() {
+    function zoom(user) {
       var self = this;
-      
-      clearStreamBoxZoom();
+      user = user || {};
+      clearStreamBoxZoom(user.id);
       self.isZoom = true;
       addClass(this.dom, OptClassName.IS_ZOOM)
     }
@@ -480,7 +486,7 @@
         prefix: 'Rong',
         id: id
       });
-      dom.setAttribute('user',customizeValue);
+      dom.setAttribute('user', customizeValue);
       dom.onclick = function (e) {
         self.zoom();
         self.resizeEvent(true, id);
@@ -569,7 +575,7 @@
     WhiteBoard: WhiteBoard,
     backLoginPage: backLoginPage
   };
-  
+
   var common = {
     sealAlert: sealAlert,
     SealTimer: SealTimer,
