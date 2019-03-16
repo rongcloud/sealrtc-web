@@ -454,6 +454,7 @@
   }
 
   function resizeStream(isZoom, id) {
+    console.log('resize stream----')
     var StreamSize = rongRTC.StreamSize;
     var size = isZoom ? StreamSize.MAX : StreamSize.MIN;
     var user = userStreams.getStream(id);
@@ -461,6 +462,7 @@
       return;
     }
     user.stream.size = size;
+    // if(isZoom == true) {
     rongRTCStream.resize(user).then(function () {
       console.log('resize success')
     }, function (err) {
@@ -468,6 +470,7 @@
       console.log('resize err:', err)
       sealAlert(localeData.switchStreamError);
     });
+    // }
   }
 
   function addUserBox(user) {

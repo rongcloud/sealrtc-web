@@ -488,9 +488,10 @@
       });
       dom.setAttribute('user', customizeValue);
       dom.onclick = function (e) {
+        e.stopPropagation();
+        // e.stopImmediatePropagation()
         self.zoom();
         self.resizeEvent(true, id);
-        e.stopPropagation();
       };
 
       self.id = id;
