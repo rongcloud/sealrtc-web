@@ -8,7 +8,8 @@
     CHECK: 'rong-check-share-installed',
     CHECK_RESPONSE: 'rong-share-installed',
     GET: 'rong-share-get',
-    GET_RESPONSE: 'rong-share-get-response'
+    GET_RESPONSE: 'rong-share-get-response',
+    CLEAR_BOX: 'rong-share-clear-box'
   };
 
   var Reason = {
@@ -119,8 +120,13 @@
     });
   };
 
+  var clearChooseBox = function () {
+    sendToPlugin(Keys.CLEAR_BOX);
+  };
+
   return {
     check,
-    get
+    get,
+    clearChooseBox
   };
 });
