@@ -130,12 +130,16 @@
     }
   }
 
-  function getScreenShareError(error) {
-    console.log('screenshare error', error);
+  function screenShareBtnOpen() {
     Dom.showByClass('rong-share-openicon');
     Dom.hideByClass('rong-share-closeicon');
     Dom.get('.rong-opt-hangup').disabled = false;
     Dom.get('.rong-opt-hangup').style.cursor = 'pointer';
+  }
+
+  function getScreenShareError(error) {
+    console.log('screenshare error', error);
+    screenShareBtnOpen();
     return new Promise(function (resolve, reject) {
       !error.message && sealAlert(localeData.installPrompt, {
         isShowCancel: true,
@@ -326,7 +330,6 @@
         streamBox.closeScreenShare();
         removeUserStream(user);
         rongRTCStream.unpublish(user).then(function(){
-
         }).catch(function(err){
           console.log(err)
         });
@@ -349,11 +352,7 @@
       }
     };
     RongScreenShare.get().then(function (stream) {
-      Dom.showByClass('rong-opt-hangup');
-      Dom.hideByClass('rong-share-openicon');
-      Dom.showByClass('rong-share-closeicon');
-      Dom.get('.rong-opt-hangup').disabled = false;
-      Dom.get('.rong-opt-hangup').style.cursor = 'pointer';
+      screenShareBtnOpen();
       user.stream.mediaStream = stream;
       stream.oninactive = function () {
         closeScreenShare(user.id);
@@ -629,8 +628,11 @@
     win.onbeforeunload = quit;
   }
 
+  //切换浏览器 tab 关闭屏幕分享选项弹窗
   document.addEventListener('visibilitychange', function() {
     console.log( document.visibilityState );
+    RongScreenShare.clearChooseBox();
+    screenShareBtnOpen();
   });
 
   /**
