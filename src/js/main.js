@@ -300,7 +300,9 @@
       streamBox.closeFlibScreenShare();
     }
     userStreams.remove(user);
-    rongRTCStream.unsubscribe(user);
+    if(user.id !== loginUserId){
+      rongRTCStream.unsubscribe(user);
+    }
     var list = userStreams.getList(user.id);
     if (list.length) {
       user = list[list.length - 1];
