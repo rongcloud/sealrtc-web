@@ -769,6 +769,12 @@
 
   var LENGTH_ROOM_ID = 64;
 
+  var DEFAULT_MS_PROFILE = {
+    height: 1280,
+    width: 720,
+    frameRate: 15
+  };
+
   function Logger() {
     var observer = new utils.Observer();
     var write = function write(level, tag, meta) {
@@ -1092,21 +1098,13 @@
       }
     }, {
       key: 'get',
-      value: function get$$1(user) {
+      value: function get$$1(constraints) {
         var client = this.client;
 
-        var _check6 = check(user, ['id', 'stream.tag']),
-            isIllegal = _check6.isIllegal,
-            name = _check6.name;
-
-        if (isIllegal) {
-          var error = getError(name);
-          return utils.Defer.reject(error);
-        }
         return client.exec({
           event: UpEvent.STREAM_GET,
           type: 'stream',
-          args: [user]
+          args: [constraints]
         });
       }
     }]);
@@ -2004,7 +2002,12 @@
         var im = this.im;
 
         var navi = im.getInstance().getNavi();
-        return navi.authHost || 'http://navqa.cn.ronghub.com';
+        var rtcInfo = navi.voipCallInfo;
+
+        rtcInfo = rtcInfo || '{"callEngine": [{}]}';
+        rtcInfo = utils.parse(rtcInfo);
+        var engine = rtcInfo.callEngine[0];
+        return engine.rtcAuAddr;
       }
     }, {
       key: 'getUser',
@@ -3321,11 +3324,52 @@
         });
       });
     };
-    var get$$1 = function get$$1(user) {
-      return utils.deferred(function (resolve) {
-        var streamId = pc.getStreamId(user);
-        resolve(StreamCache.get(streamId));
+    var getUserMedia = function getUserMedia(constraints) {
+      return navigator.mediaDevices.getUserMedia(constraints);
+    };
+    var getScreen = function getScreen(constraints) {
+      var _constraints = constraints,
+          desktopStreamId = _constraints.desktopStreamId;
+
+      constraints = {
+        video: {
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: desktopStreamId
+          }
+        }
+      };
+      return getUserMedia(constraints).then(function (mediaStream) {
+        return { mediaStream: mediaStream };
       });
+    };
+    var getMS = function getMS(constraints) {
+      if (utils.isEmpty(constraints)) {
+        constraints = {
+          video: true,
+          audio: true
+        };
+      }
+      var _constraints2 = constraints,
+          video = _constraints2.video;
+
+      if (utils.isObject(video)) {
+        video = utils.extend(DEFAULT_MS_PROFILE, video);
+      }
+      if (utils.isBoolean(video) && video) {
+        video = DEFAULT_MS_PROFILE;
+      }
+      utils.extend(constraints, {
+        video: video
+      });
+      return getUserMedia(constraints);
+    };
+    var get$$1 = function get$$1(constraints) {
+      constraints = constraints || {};
+      var _constraints3 = constraints,
+          screen = _constraints3.screen;
+
+      return screen ? getScreen(constraints) : getMS(constraints);
     };
     var trackHandler = function trackHandler(user, type, isEnable) {
       var streamId = pc.getStreamId(user);
