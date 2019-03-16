@@ -2669,7 +2669,7 @@
         Logger$1.log(LogTag.STREAM_HANDLER, {
           msg: 'subscribe:request',
           roomId: roomId,
-          body: body
+          options: body
         });
         pc.setOffer(sdp);
         request$1.post(body).then(function (response) {
@@ -3187,11 +3187,12 @@
             var url = utils.tplEngine(Path.SUBSCRIBE, {
               roomId: roomId
             });
+            var headers = getHeaders();
             body = {
               path: url,
-              body: body
+              body: body,
+              headers: headers
             };
-            var headers = getHeaders();
             prosumer.produce({
               sdp: sdp,
               body: body,
