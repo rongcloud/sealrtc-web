@@ -83,9 +83,9 @@
   var reconnectionMechanism = function () {
     var clear = function () {
       common.UI.backLoginPage();
-      RongSeal.destroyRongRTCPage();
       RongSeal.videoTimer.stop();
       RongSeal.userStreams.clearUsers();
+      RongSeal.destroyRongRTCPage();
     };
     //30s前网络嗅探并重新连接
     var total = 30, count = 0, isRTCError = false;

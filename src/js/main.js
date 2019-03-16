@@ -132,9 +132,10 @@
 
   function getScreenShareError(error) {
     console.log('screenshare error', error);
-    Dom.showByClass('rong-opt-hangup');
     Dom.showByClass('rong-share-openicon');
     Dom.hideByClass('rong-share-closeicon');
+    Dom.get('.rong-opt-hangup').disabled = false;
+    Dom.get('.rong-opt-hangup').style.cursor = 'pointer';
     return new Promise(function (resolve, reject) {
       !error.message && sealAlert(localeData.installPrompt, {
         isShowCancel: true,
@@ -337,7 +338,8 @@
   function openScreenshare() {
     Dom.hideByClass('rong-share-openicon');
     Dom.showByClass('rong-share-closeicon');
-    // Dom.hideByClass('rong-opt-hangup');
+    Dom.get('.rong-opt-hangup').disabled = true;
+    Dom.get('.rong-opt-hangup').style.cursor = 'not-allowed';
     var user = {
       id: loginUserId,
       stream: {
@@ -350,6 +352,8 @@
       Dom.showByClass('rong-opt-hangup');
       Dom.hideByClass('rong-share-openicon');
       Dom.showByClass('rong-share-closeicon');
+      Dom.get('.rong-opt-hangup').disabled = false;
+      Dom.get('.rong-opt-hangup').style.cursor = 'pointer';
       user.stream.mediaStream = stream;
       stream.oninactive = function () {
         closeScreenShare(user.id);
@@ -621,6 +625,10 @@
     screenShareBtn.onclick = switchScreenShare;
     win.onbeforeunload = quit;
   }
+
+  document.addEventListener('visibilitychange', function() {
+    console.log( document.visibilityState );
+  });
 
   /**
   * 开始实时音视频

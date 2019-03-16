@@ -271,6 +271,7 @@ ul, li {
   top: 50%;
   transform: translateY(-50%);
   margin: 0 13px;
+  border: none;
 }
 
 .rong-rtc .rong-rtc-opt .rong-opt-hangup {
