@@ -1187,7 +1187,7 @@
           path: path
         });
         var headers = {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json;charset=UTF-8'
         };
         var _headers = option.headers;
 
@@ -1576,12 +1576,12 @@
   }(EventEmitter);
 
   var Path = {
-    PUBLISH: '/exchange?{roomId}',
-    UNPUBLISH: '/exchange?{roomId}',
-    RESIZE: '/exchange?{roomId}',
-    SUBSCRIBE: '/exchange?{roomId}',
-    UNSUBSCRIBE: '/exchange?{roomId}',
-    EXIT: '/exit?{roomId}'
+    PUBLISH: '/exchange',
+    UNPUBLISH: '/exchange',
+    RESIZE: '/exchange',
+    SUBSCRIBE: '/exchange',
+    UNSUBSCRIBE: '/exchange',
+    EXIT: '/exit'
   };
 
   var Message = {
@@ -2004,7 +2004,7 @@
         var im = this.im;
 
         var navi = im.getInstance().getNavi();
-        return navi.authHost;
+        return navi.authHost || 'http://navqa.cn.ronghub.com';
       }
     }, {
       key: 'getUser',
@@ -8943,7 +8943,7 @@
       var context = this;
       var option = {
         appkey: '',
-        url: 'https://msqa.rongcloud.net/',
+        url: 'https://msqa.rongcloud.net',
         debug: false,
         bitrate: {
           max: 1000,
