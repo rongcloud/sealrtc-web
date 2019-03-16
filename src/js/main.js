@@ -132,6 +132,9 @@
 
   function getScreenShareError(error) {
     console.log('screenshare error', error);
+    Dom.showByClass('rong-opt-hangup');
+    Dom.showByClass('rong-share-openicon');
+    Dom.hideByClass('rong-share-closeicon');
     return new Promise(function (resolve, reject) {
       !error.message && sealAlert(localeData.installPrompt, {
         isShowCancel: true,
@@ -309,6 +312,8 @@
 
   function closeScreenShare() {
     var list = userStreams.getList(loginUserId);
+    Dom.showByClass('rong-share-openicon');
+    Dom.hideByClass('rong-share-closeicon');
     list.forEach(function (user) {
       var stream = user.stream;
       var tag = stream.tag;
@@ -324,8 +329,12 @@
       }
     });
   }
-
+  // Dom.hideByClass('rong-btn-loading');
+  // Dom.showByClass('rong-btn-start');
   function openScreenshare() {
+    Dom.hideByClass('rong-share-openicon');
+    Dom.showByClass('rong-share-closeicon');
+    // Dom.hideByClass('rong-opt-hangup');
     var user = {
       id: loginUserId,
       stream: {
@@ -335,12 +344,16 @@
       }
     };
     RongScreenShare.get().then(function (stream) {
+      Dom.showByClass('rong-opt-hangup');
+      Dom.hideByClass('rong-share-openicon');
+      Dom.showByClass('rong-share-closeicon');
       user.stream.mediaStream = stream;
       stream.oninactive = function () {
         closeScreenShare(user.id);
       };
       return rongRTCStream.publish(user);
     }, getScreenShareError).then(function () {
+      
       addUserStream(user);
       var streamBox = StreamBox.get(loginUserId);
       streamBox.openScreenShare();

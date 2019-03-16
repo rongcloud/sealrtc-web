@@ -282,9 +282,20 @@ ul, li {
   background-image: url("./img/share.png");
 }
 
+.rong-rtc .rong-rtc-opt .rong-opt-share-close {
+  background-image: url("./img/share-close.png");
+  background-color: #fff;
+  background-size: 38px;
+  cursor: not-allowed;
+}
+
 .rong-rtc .rong-rtc-opt .rong-opt-wb {
   background-image: url("./img/wb.png");
 }
+.rong-rtc .rong-rtc-opt .rong-share-closeicon {
+  display: none;
+}
+
 
 .rong-rtc .rong-wb-box {
   display: none;
