@@ -2002,7 +2002,12 @@
         var im = this.im;
 
         var navi = im.getInstance().getNavi();
-        return navi.rtcAuAddr;
+        var rtcInfo = navi.voipCallInfo;
+
+        rtcInfo = rtcInfo || '{"callEngine": [{}]}';
+        rtcInfo = utils.parse(rtcInfo);
+        var engine = rtcInfo.callEngine[0];
+        return engine.rtcAuAddr;
       }
     }, {
       key: 'getUser',
@@ -3334,7 +3339,9 @@
           }
         }
       };
-      return getUserMedia(constraints);
+      return getUserMedia(constraints).then(function (mediaStream) {
+        return { mediaStream: mediaStream };
+      });
     };
     var getMS = function getMS(constraints) {
       if (utils.isEmpty(constraints)) {
