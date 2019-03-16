@@ -196,9 +196,9 @@
     create: function(str,duration) {
       var self = this;
       var toastHtml = '';
-      var toastText = '<div class="rong-seal-toast-text">'+str+'</div>';
+      var toastText = '<span class="rong-seal-toast-text">'+str+'</span>';
       toastHtml = '<div class="rong-seal-toast">'+toastText+'</div>';
-      if(Dom.get('.rong-seal-toast')) return; //未hide禁止重复点击
+      if(Dom.get('.rong-sel-toast')) return; //未hide禁止重复点击
       document.body.insertAdjacentHTML('beforeend', toastHtml);
       if(duration){
         setTimeout(function(){

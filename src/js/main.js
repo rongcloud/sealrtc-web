@@ -227,7 +227,7 @@
       break;
     }
   }
-
+  
   // video实际分辨率添加
   function createResolutionDom(dom) {
     var p = document.createElement('p');
@@ -266,10 +266,12 @@
   function addUserStream(user) {
     var isSelf = user.id === loginUserId;
     console.log('addUserStream user:', user);
+    var streamBox = StreamBox.get(user.id);
     if (isSelf) {
       showUserStream(user);
       userStreams.add(user);
       setStreamBox(user.id, user.stream.mediaStream);
+      streamBox.closeFlibScreenShare();
     } else {
       // user.stream.type = rongRTC.StreamType.AUDIO_AND_VIDEO;
       console.log(user.stream)
@@ -277,7 +279,6 @@
         showUserStream(user);
         setStreamBox(user.id, user.stream.mediaStream);
         userStreams.add(user);
-        var streamBox = StreamBox.get(user.id);
         if (user.stream.enable.video == false) {
           streamBox.closeVideoByOther();
         }
@@ -315,7 +316,11 @@
         var streamBox = StreamBox.get(loginUserId);
         streamBox.closeScreenShare();
         removeUserStream(user);
-        rongRTCStream.unpublish(user);
+        rongRTCStream.unpublish(user).then(function(){
+
+        }).catch(function(err){
+          console.log(err)
+        });
       }
     });
   }

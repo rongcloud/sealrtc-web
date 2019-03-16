@@ -149,11 +149,7 @@
       sealAlert(localeData.networkError);
       Dom.hideByClass('rong-btn-loading');
       Dom.showByClass('rong-btn-start');
-      RongSeal.rongRTCRoom.leave().then(function(){
-        RongSeal.im.instance().logout();
-      }, function () {
-        // leave error
-      })
+      RongSeal.im.instance().logout();
     });
   };
   
