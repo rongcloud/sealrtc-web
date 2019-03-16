@@ -323,8 +323,8 @@
     return div.children[0];
   };
 
-  var isNumberAndLetter = function(val) {
-    var reg = /^[A-Za-z0-9+=-_]+$/;     
+  var isNumberAndLetter = function (val) {
+    var reg = /^[A-Za-z0-9+=-_]+$/;
     return reg.test(val)
   };
 
@@ -346,6 +346,17 @@
     removeClass: removeClass,
     hasClass: hasClass
   };
+  //暂时支持 on 单次
+  function EventEmitter() {
+    var events = {};
+    this.emit = function (name) {
+      var event = events[name] || function () { };
+      event();
+    };
+    this.on = function (name, event) {
+      events[name] = event;
+    };
+  }
 
   utils = {
     noop: noop,
@@ -357,7 +368,8 @@
     isObject: isObject,
     download: download,
     Dom: Dom,
-    isNumberAndLetter: isNumberAndLetter
+    isNumberAndLetter: isNumberAndLetter,
+    EventEmitter
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.utils = utils;

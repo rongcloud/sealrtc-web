@@ -483,6 +483,10 @@
       name: 'ROOM_ID_IS_ILLEGAL',
       msg: '房间号不合法，只能包含大小写字母、阿拉伯数字、+、=、-、_ 且长度不能超过 64 个字符'
     }, {
+      code: 20004,
+      name: 'ROOM_REPEAT_JOIN',
+      msg: '不可重复加入房间'
+    }, {
       code: 30001,
       name: 'PARAMTER_ILLEGAL',
       msg: '请检查参数，{name} 参数为必传入项'
@@ -1847,6 +1851,10 @@
           default:
             context.emit(DownEvent.MESSAGE_RECEIVED, renameMessage(message));
         }
+        Logger$1.log(LogTag.IM, {
+          msg: 'receive:message',
+          message: message
+        });
       });
       return _this;
     }
@@ -1934,10 +1942,10 @@
         utils.extend(context, {
           isJoinRoom: false
         });
+        context.emit(CommonEvent.LEFT, room);
         return utils.deferred(function (resolve, reject) {
           im.getInstance().quitRTCRoom(room, {
             onSuccess: function onSuccess() {
-              context.emit(CommonEvent.LEFT, room);
               resolve();
             },
             onError: function onError(code) {
@@ -1989,6 +1997,14 @@
         var id = this.room.id;
 
         return id;
+      }
+    }, {
+      key: 'getAuthPath',
+      value: function getAuthPath() {
+        var im = this.im;
+
+        var navi = im.getInstance().getNavi();
+        return navi.authHost;
       }
     }, {
       key: 'getUser',
@@ -2436,8 +2452,14 @@
     var appkey = option.appkey;
 
     var getHeaders = function getHeaders() {
+      var roomId = im.getRoomId();
+      var token = im.getToken();
+      var authPath = im.getAuthPath() || 'Fake';
       return {
-        'App-Key': appkey
+        'App-Key': appkey,
+        RoomId: roomId,
+        Token: token,
+        AuthHost: authPath
       };
     };
     var getBody = function getBody(desc) {
@@ -3471,6 +3493,15 @@
         msg: 'join:before',
         room: room
       });
+      if (im.isJoined()) {
+        var Inner = ErrorType.Inner;
+
+        Logger$1.log(LogTag.ROOM_HANDLER, {
+          msg: 'join:after',
+          extra: 'repeate join room'
+        });
+        return utils.Defer.reject(Inner.ROOM_REPEAT_JOIN);
+      }
       return im.joinRoom(room).then(function (users) {
         Logger$1.log(LogTag.ROOM_HANDLER, {
           msg: 'join:after',
@@ -8928,6 +8959,8 @@
       utils.extend(option, _option);
       var logger = option.logger,
           debug = option.debug;
+      var Inner = ErrorType.Inner,
+          Outer = ErrorType.Outer;
 
       if (utils.isFunction(logger)) {
         Logger$1.watch(logger);
@@ -8951,6 +8984,7 @@
         StreamSize: StreamSize,
         StorageType: StorageType,
         Message: Message$1,
+        ErrorType: Outer,
         option: option,
         client: client
       });
@@ -8961,8 +8995,6 @@
           error = option.error;
 
       if (utils.isEmpty(appkey)) {
-        var Inner = ErrorType.Inner;
-
         return error(Inner.APPKEY_ILLEGAL);
       }
       created();

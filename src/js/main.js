@@ -18,7 +18,7 @@
 
   var videoTimer = new common.SealTimer();
   var sealToast = new common.SealToast();
-
+  var EventName = RongSeal.EventName;
   // var casePreBtn = Dom.get('.rong-case-pre');
   // var caseNextBtn = Dom.get('.rong-case-next');
 
@@ -630,6 +630,9 @@
       mode: RongRTC.RTC,
       mounted: function () { },
       error: function (err) {
+        if(rongRTC.ErrorType.NETWORK_UNAVAILABLE == err.code){
+          RongSeal.eventEmitter.emit(EventName.NETWORK_ERROR);
+        }
         console.log('rtc err:', err)
         // backLoginPage();
         sealToast.destroy();

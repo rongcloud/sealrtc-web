@@ -6,6 +6,10 @@
     addClass = Dom.addClass,
     removeClass = Dom.removeClass;
 
+  var eventEmitter = new utils.EventEmitter();
+  var EventName = {
+    NETWORK_ERROR: 'network_error'
+  };
   var RongRTCPageTemp = Dom.getById('RongRTC').innerText; //RTC主页面
   var StreamListTemp = Dom.getById('RongStreamList').innerText; // 音视频列表展示模板
   var StreamBoxTemp = Dom.getById('RongStreamBox').innerText; // 单个音视频流展示模板
@@ -581,6 +585,8 @@
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.common = common;
+  win.RongSeal.eventEmitter = eventEmitter;
+  win.RongSeal.EventName = EventName;
 
 })({
   win: window,
