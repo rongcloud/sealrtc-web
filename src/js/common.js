@@ -542,6 +542,7 @@
     Dom.showByClass('rong-login');
     Dom.hideByClass('rong-btn-loading');
     Dom.showByClass('rong-btn-start');
+    Dom.getById('isCloseVideo').checked = false;
   }
 
   var WhiteBoard = (function () {
