@@ -500,7 +500,7 @@ ul, li {
   border: none;
   margin: 0;
   z-index: 12;
-  pointer-events: none;
+  /* pointer-events: none; */
 }
 
 .rong-stream-wrap .rong-is-zoom video {
