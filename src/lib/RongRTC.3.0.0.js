@@ -1576,6 +1576,21 @@
           tag: tag
         });
       }
+    }, {
+      key: 'getTagByStreamId',
+      value: function getTagByStreamId(id) {
+        var details = id.split('_');
+        return details[details.length - 1];
+      }
+    }, {
+      key: 'getStreamSymbolById',
+      value: function getStreamSymbolById(id) {
+        var connector = '_';
+        var details = id.split(connector);
+        var tag = details.pop();
+        var userId = details.join(connector);
+        return [userId, tag];
+      }
     }]);
     return PeerConnection;
   }(EventEmitter);
@@ -2538,10 +2553,7 @@
       return utils.map(publishList, function (stream) {
         var msid = stream.msid;
 
-        var _msid$split = msid.split('_'),
-            _msid$split2 = slicedToArray(_msid$split, 2),
-            tag = _msid$split2[1];
-
+        var tag = pc.getTagByStreamId(msid);
         utils.extend(stream, {
           tag: tag,
           state: StreamState.ENABLE
@@ -2764,10 +2776,10 @@
       var getStreamUser = function getStreamUser(stream) {
         var id = stream.id,
             type = StreamType.NODE;
-        var _id$split = id.split('_'),
-            _id$split2 = slicedToArray(_id$split, 2),
-            userId = _id$split2[0],
-            tag = _id$split2[1];
+        var _pc$getStreamSymbolBy = pc.getStreamSymbolById(id),
+            _pc$getStreamSymbolBy2 = slicedToArray(_pc$getStreamSymbolBy, 2),
+            userId = _pc$getStreamSymbolBy2[0],
+            tag = _pc$getStreamSymbolBy2[1];
 
         var videoTracks = stream.getVideoTracks();
         var audioTrakcks = stream.getAudioTracks();
