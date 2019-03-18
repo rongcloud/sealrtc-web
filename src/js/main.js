@@ -72,16 +72,16 @@
     SCREENSHARE: 'screenshare'
   };
 
-  function streamBoxSroll (event) {
+  function streamBoxSroll(event) {
     var direction = event.target.className;
     var streamListBox = Dom.get('.rong-stream-list');
-    if(direction == 'rong-case-pre'){
+    if (direction == 'rong-case-pre') {
       streamListBox.scrollLeft -= 152;
-    }else {
+    } else {
       streamListBox.scrollLeft += 152;
     }
   }
-  
+
   function destroyRongRTCPage() {
     if (rongRTCPage) {
       var bodyDom = Dom.get('body');
@@ -215,27 +215,27 @@
     var closeAudio = isSelf ? streamBox.closeAudioBySelf : streamBox.closeAudioByOther;
     var openAudio = isSelf ? streamBox.openAudioBySelf : streamBox.openAudioByOther;
     switch (type) {
-    case StreamType.AUDIO:
-      closeVideo.apply(streamBox);
-      openAudio.apply(streamBox);
-      break;
-    case StreamType.VIDEO:
-      openVideo.apply(streamBox);
-      closeAudio.apply(streamBox);
-      break;
-    case StreamType.AUDIO_AND_VIDEO:
-      openVideo.apply(streamBox);
-      openAudio.apply(streamBox);
-      break;
-    case StreamType.NONE:
-      closeVideo.apply(streamBox);
-      closeAudio.apply(streamBox);
-      break;
-    default:
-      break;
+      case StreamType.AUDIO:
+        closeVideo.apply(streamBox);
+        openAudio.apply(streamBox);
+        break;
+      case StreamType.VIDEO:
+        openVideo.apply(streamBox);
+        closeAudio.apply(streamBox);
+        break;
+      case StreamType.AUDIO_AND_VIDEO:
+        openVideo.apply(streamBox);
+        openAudio.apply(streamBox);
+        break;
+      case StreamType.NONE:
+        closeVideo.apply(streamBox);
+        closeAudio.apply(streamBox);
+        break;
+      default:
+        break;
     }
   }
-  
+
   // video实际分辨率添加
   function createResolutionDom(dom) {
     var p = document.createElement('p');
@@ -273,7 +273,7 @@
 
   function addUserStream(user) {
     var isSelf = user.id === loginUserId;
-    console.log('addUserStream user:', user);
+    console.log('addUserStream user:', JSON.stringify(user));
     var streamBox = StreamBox.get(user.id);
     if (isSelf) {
       showUserStream(user);
@@ -282,7 +282,7 @@
       streamBox.closeFlibScreenShare();
     } else {
       // user.stream.type = rongRTC.StreamType.AUDIO_AND_VIDEO;
-      console.log(user.stream)
+      console.log(JSON.stringify(user.stream))
       user.stream.size = rongRTC.StreamSize.MIN;
       rongRTCStream.subscribe(user).then(function (user) {
         showUserStream(user);
@@ -302,13 +302,13 @@
   }
 
   function removeUserStream(user) {
-    console.log('remove user stream', user);
+    console.log('remove user stream', JSON.stringify(user));
     var streamBox = StreamBox.get(user.id);
     if (user.stream.tag == 'screenshare') {
       streamBox.closeFlibScreenShare();
     }
     userStreams.remove(user);
-    if(user.id !== loginUserId){
+    if (user.id !== loginUserId) {
       rongRTCStream.unsubscribe(user);
     }
     var list = userStreams.getList(user.id);
@@ -329,8 +329,8 @@
         var streamBox = StreamBox.get(loginUserId);
         streamBox.closeScreenShare();
         removeUserStream(user);
-        rongRTCStream.unpublish(user).then(function(){
-        }).catch(function(err){
+        rongRTCStream.unpublish(user).then(function () {
+        }).catch(function (err) {
           console.log(err)
         });
       }
@@ -359,7 +359,7 @@
       };
       return rongRTCStream.publish(user);
     }, getScreenShareError).then(function () {
-      
+
       addUserStream(user);
       var streamBox = StreamBox.get(loginUserId);
       streamBox.openScreenShare();
@@ -473,7 +473,7 @@
   }
 
   function addUserBox(user) {
-    console.log('join user', user)
+    console.log('join user', JSON.stringify(user))
     var id = user.id,
       isSelf = id === loginUserId;
     var name = isSelf ? localeData.self : id;
@@ -496,16 +496,16 @@
       e.stopPropagation();
     };
     //添加左右滑动视频窗按钮
-    if(streamList.streamBoxList.length > 10) {
+    if (streamList.streamBoxList.length > 10) {
       Dom.showByClass(ClassName.CASE_PRE_BTN);
       Dom.showByClass(ClassName.CASE_NEXT_BTN);
-      Dom.get('.'+ClassName.CASE_PRE_BTN).onclick = streamBoxSroll;
-      Dom.get('.'+ClassName.CASE_NEXT_BTN).onclick = streamBoxSroll;
+      Dom.get('.' + ClassName.CASE_PRE_BTN).onclick = streamBoxSroll;
+      Dom.get('.' + ClassName.CASE_NEXT_BTN).onclick = streamBoxSroll;
     }
     openVideoTimer();
     createToast();
     hideToast();
-    console.log('streamList:', streamList)
+    console.log('streamList:', JSON.stringify(streamList))
   }
 
   function removeUserBox(user) {
@@ -525,7 +525,7 @@
       }
     }
     //隐藏左右滑动视频窗按钮
-    if(streamList.streamBoxList.length <= 10) {
+    if (streamList.streamBoxList.length <= 10) {
       Dom.hideByClass(ClassName.CASE_PRE_BTN);
       Dom.hideByClass(ClassName.CASE_NEXT_BTN);
     }
@@ -629,8 +629,8 @@
   }
 
   //切换浏览器 tab 关闭屏幕分享选项弹窗
-  document.addEventListener('visibilitychange', function() {
-    console.log( document.visibilityState );
+  document.addEventListener('visibilitychange', function () {
+    console.log(document.visibilityState);
     RongScreenShare.clearChooseBox();
     screenShareBtnOpen();
   });
@@ -659,7 +659,7 @@
       mode: RongRTC.RTC,
       mounted: function () { },
       error: function (err) {
-        if(rongRTC.ErrorType.NETWORK_UNAVAILABLE == err.code){
+        if (rongRTC.ErrorType.NETWORK_UNAVAILABLE == err.code) {
           RongSeal.eventEmitter.emit(EventName.NETWORK_ERROR);
         }
         console.log('rtc err:', err)
