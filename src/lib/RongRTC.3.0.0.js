@@ -280,8 +280,11 @@
   };
   function Observer() {
     var observers = [];
-    this.add = function (observer) {
+    this.add = function (observer, force) {
       if (isFunction(observer)) {
+        if (force) {
+          return observers = [observer];
+        }
         observers.push(observer);
       }
     };
@@ -402,14 +405,13 @@
     VIDEO_DISABLE: 'video_disable',
     VIDEO_ENABLE: 'video_enable',
 
-    DEVICE_CHECK: 'device_check',
-    DEVICE_GET_LIST: 'device_get_list',
-
     STORAGE_SET: 'strorage_set',
     STORAGE_GET: 'strorage_get',
     STORAGE_REMOVE: 'strorage_remove',
 
-    MESSAGE_SEND: 'message_send'
+    MESSAGE_SEND: 'message_send',
+
+    DEVICE_GET: 'device_get'
   };
 
   var RoomEvents = [{
@@ -486,6 +488,10 @@
       code: 20004,
       name: 'ROOM_REPEAT_JOIN',
       msg: '不可重复加入房间'
+    }, {
+      code: 20005,
+      name: 'STREAM_DESKTOPID_ILLEGAL',
+      msg: '获取屏幕共享流失败，desktopStreamId 非法'
     }, {
       code: 30001,
       name: 'PARAMTER_ILLEGAL',
@@ -744,7 +750,8 @@
     ROOM_HANDLER: 'room_handler',
     STORAGE_HANDLER: 'storage_handler',
     IM: 'im',
-    MESSAGE: 'message'
+    MESSAGE: 'message',
+    DEVICE: 'device'
   };
 
   var LogLevel = {
@@ -800,8 +807,8 @@
     var log = function log(tag, meta) {
       return write(LogLevel.VERBOSE, tag, meta);
     };
-    var watch = function watch(watcher) {
-      observer.add(watcher);
+    var watch = function watch(watcher, force) {
+      observer.add(watcher, force);
     };
     return {
       warn: warn,
@@ -3325,12 +3332,19 @@
       });
     };
     var getUserMedia = function getUserMedia(constraints) {
-      return navigator.mediaDevices.getUserMedia(constraints);
+      return navigator.mediaDevices.getUserMedia(constraints).then(function (mediaStream) {
+        return { mediaStream: mediaStream };
+      });
     };
     var getScreen = function getScreen(constraints) {
       var _constraints = constraints,
           desktopStreamId = _constraints.desktopStreamId;
 
+      if (!desktopStreamId) {
+        var Inner = ErrorType.Inner;
+
+        return utils.Defer.reject(Inner.STREAM_DESKTOPID_ILLEGAL);
+      }
       constraints = {
         video: {
           mandatory: {
@@ -3339,9 +3353,7 @@
           }
         }
       };
-      return getUserMedia(constraints).then(function (mediaStream) {
-        return { mediaStream: mediaStream };
-      });
+      return getUserMedia(constraints);
     };
     var getMS = function getMS(constraints) {
       if (utils.isEmpty(constraints)) {
@@ -3686,6 +3698,26 @@
           return send.apply(undefined, toConsumableArray(args));
         default:
           Logger$1.warn(LogTag.MESSAGE, {
+            event: event,
+            msg: 'unkown event'
+          });
+      }
+    };
+    return {
+      dispatch: dispatch
+    };
+  }
+
+  function DeviceHandler() {
+    var get$$1 = function get$$1() {
+      return navigator.mediaDevices.enumerateDevices();
+    };
+    var dispatch = function dispatch(event, args) {
+      switch (event) {
+        case UpEvent.DEVICE_GET:
+          return get$$1.apply(undefined, toConsumableArray(args));
+        default:
+          Logger$1.warn(LogTag.DEVICE, {
             event: event,
             msg: 'unkown event'
           });
@@ -8688,7 +8720,8 @@
         room: RoomHandler(im, option),
         stream: StreamHandler(im, option),
         storage: StorageHandler(im),
-        message: MessageHandler(im)
+        message: MessageHandler(im),
+        device: DeviceHandler(im)
       };
       var context = _this;
       var RongIMLib = option.RongIMLib;
@@ -8799,7 +8832,8 @@
             args = params.args,
             event = params.event;
 
-        if (!utils.isEqual(UpEvent.ROOM_JOIN, event) && !im.isJoined()) {
+        var APIWhitelist = [UpEvent.ROOM_JOIN, UpEvent.DEVICE_GET];
+        if (!utils.isInclude(APIWhitelist, event) && !im.isJoined()) {
           return utils.Defer.reject(ErrorType.Inner.RTC_NOT_JOIN_ROOM);
         }
         var RequestHandler = this.RequestHandler;
@@ -8851,7 +8885,7 @@
       var context = this;
       var client = context.getClient();
       var option = {
-        type: StorageType.USER
+        type: StorageType.ROOM
       };
       utils.extend(option, _option);
       utils.extend(context, {
@@ -8981,6 +9015,32 @@
     return Message;
   }();
 
+  var Device = function () {
+    function Device() {
+      classCallCheck(this, Device);
+
+      var context = this;
+      var client = context.getClient();
+      utils.extend(context, {
+        client: client
+      });
+    }
+
+    createClass(Device, [{
+      key: 'get',
+      value: function get$$1() {
+        var client = this.client;
+
+        return client.exec({
+          event: UpEvent.DEVICE_GET,
+          type: 'device',
+          args: []
+        });
+      }
+    }]);
+    return Device;
+  }();
+
   var RongRTC = function () {
     function RongRTC(_option) {
       classCallCheck(this, RongRTC);
@@ -9008,7 +9068,7 @@
           Outer = ErrorType.Outer;
 
       if (utils.isFunction(logger)) {
-        Logger$1.watch(logger);
+        Logger$1.watch(logger, true);
       }
       if (debug) {
         Logger$1.watch(function (log) {
@@ -9016,7 +9076,7 @@
         });
       }
       var client = new Client(option);
-      utils.forEach([Room, Stream, Storage, Message$1], function (module) {
+      utils.forEach([Room, Stream, Storage, Message$1, Device], function (module) {
         module.prototype.getClient = function () {
           return client;
         };
@@ -9029,6 +9089,7 @@
         StreamSize: StreamSize,
         StorageType: StorageType,
         Message: Message$1,
+        Device: Device,
         ErrorType: Outer,
         option: option,
         client: client
