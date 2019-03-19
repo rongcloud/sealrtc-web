@@ -133,8 +133,12 @@
   function screenShareBtnOpen() {
     Dom.showByClass('rong-share-openicon');
     Dom.hideByClass('rong-share-closeicon');
-    Dom.get('.rong-opt-hangup').disabled = false;
-    Dom.get('.rong-opt-hangup').style.cursor = 'pointer';
+    var hangUpDom = Dom.get('.rong-opt-hangup');
+    if(hangUpDom){
+      hangUpDom.disabled = false;
+      hangUpDom.style.cursor = 'pointer';
+      
+    }
   }
 
   function getScreenShareError(error) {
@@ -353,6 +357,7 @@
     };
     RongScreenShare.get().then(function (stream) {
       screenShareBtnOpen();
+      Dom.get('.rong-opt-share').title = '结束屏幕共享'
       user.stream.mediaStream = stream;
       stream.oninactive = function () {
         closeScreenShare(user.id);
@@ -630,11 +635,16 @@
 
   //切换浏览器 tab 关闭屏幕分享选项弹窗
   document.addEventListener('visibilitychange', function () {
-    console.log(document.visibilityState);
+    // console.log(document.visibilityState);
     RongScreenShare.clearChooseBox();
     screenShareBtnOpen();
   });
 
+  function getRoomUsers() {
+    rongRTCRoom.get().then(function(room){
+      console.log('room---',room)
+    })
+  }
   /**
   * 开始实时音视频
   * @param {object} params
@@ -661,8 +671,8 @@
       error: function (err) {
         if (rongRTC.ErrorType.NETWORK_UNAVAILABLE == err.code) {
           RongSeal.eventEmitter.emit(EventName.NETWORK_ERROR);
+          console.log('rtc err:', err)
         }
-        console.log('rtc err:', err)
         // backLoginPage();
         sealToast.destroy();
       }
@@ -684,11 +694,13 @@
       var videoEnable = params.videoEnable,
         audioEnable = params.audioEnable,
         resolution = params.resolution;
+      getRoomUsers();
       addUserBox({ id: loginUserId });
       publishSelfMediaStream(videoEnable, audioEnable, resolution).then(
         addUserStream, publishStreamError);
     }, joinRoomError);
     RongSeal.rongRTCRoom = rongRTCRoom;
+
   };
 
   RongSeal.startRTC = startRTC;
