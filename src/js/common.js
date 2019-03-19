@@ -268,7 +268,12 @@
         hour += 1;
       }
       timerDom = Dom.get('.rong-user-timer');
-      timerDom.innerHTML = '通话时长：' + format(hour) + ':' + format(minute) + ':' + format(second);
+      if(minute < 60 && hour <= 0){
+        timerDom.innerHTML = '通话时长：' + format(minute) + ':' + format(second);
+      }else {
+        timerDom.innerHTML = '通话时长：' + format(hour) + ':' + format(minute) + ':' + format(second);
+      }
+      
     }
 
     function start() {

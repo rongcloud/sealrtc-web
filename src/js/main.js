@@ -215,24 +215,24 @@
     var closeAudio = isSelf ? streamBox.closeAudioBySelf : streamBox.closeAudioByOther;
     var openAudio = isSelf ? streamBox.openAudioBySelf : streamBox.openAudioByOther;
     switch (type) {
-      case StreamType.AUDIO:
-        closeVideo.apply(streamBox);
-        openAudio.apply(streamBox);
-        break;
-      case StreamType.VIDEO:
-        openVideo.apply(streamBox);
-        closeAudio.apply(streamBox);
-        break;
-      case StreamType.AUDIO_AND_VIDEO:
-        openVideo.apply(streamBox);
-        openAudio.apply(streamBox);
-        break;
-      case StreamType.NONE:
-        closeVideo.apply(streamBox);
-        closeAudio.apply(streamBox);
-        break;
-      default:
-        break;
+    case StreamType.AUDIO:
+      closeVideo.apply(streamBox);
+      openAudio.apply(streamBox);
+      break;
+    case StreamType.VIDEO:
+      openVideo.apply(streamBox);
+      closeAudio.apply(streamBox);
+      break;
+    case StreamType.AUDIO_AND_VIDEO:
+      openVideo.apply(streamBox);
+      openAudio.apply(streamBox);
+      break;
+    case StreamType.NONE:
+      closeVideo.apply(streamBox);
+      closeAudio.apply(streamBox);
+      break;
+    default:
+      break;
     }
   }
 
