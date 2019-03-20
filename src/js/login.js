@@ -80,20 +80,25 @@
     };
   };
 
+  var clear = function () {
+    common.UI.backLoginPage();
+    RongSeal.videoTimer.stop();
+    RongSeal.userStreams.clearUsers();
+    RongSeal.destroyRongRTCPage();
+  };
+  var isRTCError = false;
+  var EventName = RongSeal.EventName;
+  RongSeal.eventEmitter.on(EventName.NETWORK_ERROR, function () {
+    console.log('isRTCError',isRTCError)
+    isRTCError = true;
+    clear();
+  });
+
   var reconnectionMechanism = function () {
-    var clear = function () {
-      common.UI.backLoginPage();
-      RongSeal.videoTimer.stop();
-      RongSeal.userStreams.clearUsers();
-      RongSeal.destroyRongRTCPage();
-    };
+    
     //30s前网络嗅探并重新连接
-    var total = 30, count = 0, isRTCError = false;
-    var EventName = RongSeal.EventName;
-    RongSeal.eventEmitter.on(EventName.NETWORK_ERROR, function () {
-      isRTCError = true;
-      clear();
-    });
+    var total = 30, count = 0;
+    
     var reconnect = function () {
       RongSeal.im.reconnect({
         success: function () {
