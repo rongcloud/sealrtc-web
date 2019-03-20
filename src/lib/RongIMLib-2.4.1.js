@@ -4093,6 +4093,7 @@ var RongIMLib;
         RongIMClient._memoryStore = { listenerList: [], isPullFinished: false, syncMsgQueue: [] };
         RongIMClient.isNotPullMsg = false;
         RongIMClient.userStatusObserver = null;
+        RongIMClient.isFirstConnect = true;
         RongIMClient.sdkver = '2.4.0';
         RongIMClient.otherDeviceLoginCount = 0;
         RongIMClient.serverStore = { index: 0 };
@@ -4255,14 +4256,13 @@ var RongIMLib;
             var StatusEvent = Channel._ConnectionStatusListener;
             var hasEvent = (typeof StatusEvent == "object");
             var me = this;
-            var isFirstConnect = true;
             me.socket.on("StatusChanged", function (code) {
                 if (!hasEvent) {
                     throw new Error("setConnectStatusListener:Parameter format is incorrect");
                 }
                 var isNetworkUnavailable = (code == RongIMLib.ConnectionStatus.NETWORK_UNAVAILABLE);
                 var isWebSocket = !RongIMLib.RongIMClient._memoryStore.depend.isPolling;
-                if (isFirstConnect && isNetworkUnavailable && isWebSocket) {
+                if (RongIMClient.isFirstConnect && isNetworkUnavailable && isWebSocket) {
                     code = RongIMLib.ConnectionStatus.WEBSOCKET_UNAVAILABLE;
                 }
                 me.connectionStatus = code;
@@ -4281,12 +4281,12 @@ var RongIMLib;
                 }
                 var isConnected = (code == RongIMLib.ConnectionStatus.CONNECTED);
                 if (isConnected) {
-                    isFirstConnect = false;
+                    RongIMClient.isFirstConnect = false;
                 }
                 var isWebsocketUnAvailable = (code == RongIMLib.ConnectionStatus.WEBSOCKET_UNAVAILABLE);
                 if (isWebsocketUnAvailable) {
                     me.changeConnectType();
-                    isFirstConnect = false;
+                    RongIMClient.isFirstConnect = false;
                     RongIMLib.RongIMClient.connect(self.token, RongIMLib.RongIMClient._memoryStore.callback);
                 }
             });
