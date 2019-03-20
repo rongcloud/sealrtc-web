@@ -1169,48 +1169,6 @@
     return EventEmitter;
   }();
 
-  var Request = function () {
-    function Request() {
-      classCallCheck(this, Request);
-    }
-
-    createClass(Request, [{
-      key: 'setOption',
-      value: function setOption(option) {
-        utils.extend(this, option);
-      }
-    }, {
-      key: 'post',
-      value: function post(option) {
-        var domain = this.url;
-        var path = option.path,
-            body = option.body;
-
-        var tpl = '{domain}{path}';
-        var url = utils.tplEngine(tpl, {
-          domain: domain,
-          path: path
-        });
-        var headers = {
-          'Content-Type': 'application/json;charset=UTF-8'
-        };
-        var _headers = option.headers;
-
-        if (utils.isObject(_headers)) {
-          utils.extend(headers, _headers);
-        }
-        return utils.request(url, {
-          method: 'POST',
-          body: JSON.stringify(body),
-          headers: headers
-        });
-      }
-    }]);
-    return Request;
-  }();
-
-  var request$1 = new Request();
-
   var PeerConnectionEvent = {
     ADDED: 'p_stream_added',
     REMOVED: 'p_stream_removed',
@@ -1228,8 +1186,62 @@
     LEFT: 'common_left',
     ERROR: 'common_error',
     CONSUME: 'common_consume',
-    CONSUME_FINISHED: 'common_consume_finished'
+    CONSUME_FINISHED: 'common_consume_finished',
+    REQUEST_CONSUME: 'common_request_consume'
   };
+
+  function request$1() {
+    var config = {};
+    var prosumer = new utils.Prosumer();
+    var eventEmitter = new EventEmitter();
+    var setOption = function setOption(_config) {
+      utils.extend(config, _config);
+    };
+    var postProcess = function postProcess(option) {
+      var domain = config.url;
+      var path = option.path,
+          body = option.body;
+
+      var tpl = '{domain}{path}';
+      var url = utils.tplEngine(tpl, {
+        domain: domain,
+        path: path
+      });
+      var headers = {
+        'Content-Type': 'application/json;charset=UTF-8'
+      };
+      var _headers = option.headers;
+
+      if (utils.isObject(_headers)) {
+        utils.extend(headers, _headers);
+      }
+      return utils.request(url, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: headers
+      });
+    };
+    eventEmitter.on(CommonEvent.REQUEST_CONSUME, function () {
+      prosumer.consume(function (_ref, next) {
+        var option = _ref.option,
+            resolve = _ref.resolve,
+            reject = _ref.reject;
+
+        postProcess(option).then(resolve, reject).finally(next);
+      });
+    });
+    var post = function post(option) {
+      return utils.deferred(function (resolve, reject) {
+        prosumer.produce({ option: option, resolve: resolve, reject: reject });
+        eventEmitter.emit(CommonEvent.REQUEST_CONSUME);
+      });
+    };
+    return {
+      setOption: setOption,
+      post: post
+    };
+  }
+  var request$2 = request$1();
 
   var PeerConnection = function (_EventEmitter) {
     inherits(PeerConnection, _EventEmitter);
@@ -2290,11 +2302,11 @@
             count += 1;
           }
         };
+        var Inner = ErrorType.Inner;
+
         timer.resume(function () {
           if (count > PingCount) {
             timer.pause();
-            var Inner = ErrorType.Inner;
-
             utils.extend(context, {
               isJoinRoom: false
             });
@@ -2311,7 +2323,7 @@
               Status.reset();
             },
             onError: function onError(code) {
-              var error = ErrorType[code];
+              var error = Inner[code];
               if (error) {
                 context.emit(CommonEvent.ERROR, error);
                 timer.pause();
@@ -2527,7 +2539,7 @@
           body: body
         });
         var headers = getHeaders();
-        return request$1.post({
+        return request$2.post({
           path: url,
           body: body,
           headers: headers
@@ -2694,7 +2706,7 @@
           options: body
         });
         pc.setOffer(sdp);
-        request$1.post(body).then(function (response) {
+        request$2.post(body).then(function (response) {
           var sdp = response.sdp;
 
           pc.setAnwser(sdp);
@@ -2978,7 +2990,7 @@
             body: body
           });
           var headers = getHeaders();
-          return request$1.post({
+          return request$2.post({
             path: url,
             body: body,
             headers: headers
@@ -3094,7 +3106,7 @@
             body: body
           });
           var headers = getHeaders();
-          return request$1.post({
+          return request$2.post({
             path: url,
             body: body,
             headers: headers
@@ -3250,7 +3262,7 @@
           body: body
         });
         var headers = getHeaders();
-        return request$1.post({
+        return request$2.post({
           path: url,
           body: body,
           headers: headers
@@ -3322,7 +3334,7 @@
           body: body
         });
         var headers = getHeaders();
-        return request$1.post({
+        return request$2.post({
           path: url,
           body: body,
           headers: headers
@@ -3615,7 +3627,7 @@
           var url = utils.tplEngine(Path.EXIT, {
             roomId: roomId
           });
-          request$1.post({
+          request$2.post({
             path: url,
             body: {
               token: token
@@ -8824,7 +8836,7 @@
       im.on(DownEvent.STREAM_UNMUTED, function (error, user) {
         eventHandler(DownEvent.STREAM_UNMUTED, user, error);
       });
-      request$1.setOption(option);
+      request$2.setOption(option);
       return _this;
     }
 
@@ -8894,6 +8906,7 @@
     function Storage(_option) {
       classCallCheck(this, Storage);
 
+      _option = _option || {};
       var context = this;
       var client = context.getClient();
       var option = {
