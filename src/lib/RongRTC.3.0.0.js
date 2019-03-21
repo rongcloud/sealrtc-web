@@ -777,10 +777,11 @@
   var LENGTH_ROOM_ID = 64;
 
   var DEFAULT_MS_PROFILE = {
-    height: 1280,
-    width: 720,
+    height: 720,
+    width: 1280,
     frameRate: 15
   };
+  var MIN_STREAM_SUFFIX = 'tiny';
 
   function Logger() {
     var observer = new utils.Observer();
@@ -1227,7 +1228,13 @@
             resolve = _ref.resolve,
             reject = _ref.reject;
 
-        postProcess(option).then(resolve, reject).finally(next);
+        postProcess(option).then(function (result) {
+          resolve(result);
+          next();
+        }, function (error) {
+          reject(error);
+          next();
+        });
       });
     });
     var post = function post(option) {
@@ -1565,6 +1572,49 @@
         });
         return offer;
       }
+      /* 
+        let ratio = {
+          msid: {
+            // 1大流    2小流 
+            simulcast: 1,
+            resolution: "0x0"
+          }
+        }
+      */
+
+    }, {
+      key: 'getStreamRatio',
+      value: function getStreamRatio(streams) {
+        var ratio = {},
+            tpl = '{width}x{height}';
+        utils.forEach(streams, function (_ref4) {
+          var id = _ref4.id,
+              mediaStream = _ref4.mediaStream;
+
+          var videoTrack = mediaStream.getVideoTracks()[0];
+          var simulcast = StreamSize.MAX;
+          if (!utils.isUndefined(videoTrack)) {
+            var _videoTrack$getConstr = videoTrack.getConstraints(),
+                height = _videoTrack$getConstr.height,
+                width = _videoTrack$getConstr.width;
+
+            height = height || DEFAULT_MS_PROFILE.height;
+            width = width || DEFAULT_MS_PROFILE.width;
+            if (utils.isInclude(id, MIN_STREAM_SUFFIX)) {
+              simulcast = StreamSize.MIN;
+            }
+            var resolution = utils.tplEngine(tpl, {
+              height: height,
+              width: width
+            });
+            ratio[id] = {
+              simulcast: simulcast,
+              resolution: resolution
+            };
+          }
+        });
+        return ratio;
+      }
     }, {
       key: 'getStreamId',
       value: function getStreamId(user, size) {
@@ -1581,11 +1631,12 @@
             tag = _stream2[0].tag;
 
         if (utils.isEqual(size, StreamSize.MIN)) {
-          tpl = '{userId}_{tag}_tiny';
+          tpl = '{userId}_{tag}_{suffix}';
         }
         return utils.tplEngine(tpl, {
           userId: userId,
-          tag: tag
+          tag: tag,
+          suffix: MIN_STREAM_SUFFIX
         });
       }
     }, {
@@ -2265,6 +2316,14 @@
         return context.connectState === CONNECTED;
       }
     }, {
+      key: 'getAppInfo',
+      value: function getAppInfo() {
+        var context = this;
+        var im = context.im;
+
+        return im.getInstance().getAppInfo();
+      }
+    }, {
       key: 'isJoined',
       value: function isJoined() {
         var context = this;
@@ -2410,9 +2469,12 @@
     };
     var SubPromiseCache = utils.Cache();
     var PubResourceCache = utils.Cache();
+    // 缓存自己发布的视频流
+    var PublishStreamCache = utils.Cache();
     /* 
       缓存已订阅 MediaStream
       userId_type: mediaStream
+      方便视频流操作
     */
     var StreamCache = utils.Cache();
     /* 
@@ -2460,6 +2522,7 @@
       PubResourceCache.clear();
       StreamCache.clear();
       SubscribeCache.clear();
+      PublishStreamCache.clear();
     };
     var eventEmitter = new EventEmitter();
     var getSubPromiseUId = function getSubPromiseUId(user) {
@@ -2486,14 +2549,16 @@
       });
       return subs;
     };
-    var appkey = option.appkey;
-
     var getHeaders = function getHeaders() {
       var roomId = im.getRoomId();
       var token = im.getToken();
       var authPath = im.getAuthPath() || 'Fake';
+
+      var _im$getAppInfo = im.getAppInfo(),
+          appKey = _im$getAppInfo.appKey;
+
       return {
-        'App-Key': appkey,
+        'App-Key': appKey,
         RoomId: roomId,
         Token: token,
         AuthHost: authPath
@@ -2502,9 +2567,20 @@
     var getBody = function getBody(desc) {
       var token = im.getToken();
       var subs = getSubs();
+      var streams = [];
+      var streamIds = PublishStreamCache.getKeys();
+      streams = utils.map(streamIds, function (id) {
+        var mediaStream = PublishStreamCache.get(id);
+        return {
+          id: id,
+          mediaStream: mediaStream
+        };
+      });
+      var resolutionInfo = pc.getStreamRatio(streams);
       var body = {
         token: token,
-        subscribeList: subs
+        subscribeList: subs,
+        resolutionInfo: resolutionInfo
       };
       if (desc) {
         utils.extend(body, {
@@ -2715,6 +2791,14 @@
             roomId: roomId,
             user: user,
             response: response
+          });
+          next();
+        }, function (error) {
+          Logger$1.log(LogTag.STREAM_HANDLER, {
+            msg: 'subscribe:response',
+            roomId: roomId,
+            user: user,
+            error: error
           });
           next();
         });
@@ -3037,6 +3121,7 @@
           stream: stream
         }, size);
         StreamCache.set(streamId, mediaStream);
+        PublishStreamCache.set(streamId, mediaStream);
       });
 
       if (prosumer.isExeuting()) {
@@ -3092,6 +3177,9 @@
         utils.forEach(tracks, function (track) {
           track.stop();
         });
+        var streamId = mediaStream.id;
+
+        PublishStreamCache.remove(streamId);
       });
       return pc.removeStream(user).then(function (desc) {
         pc.setOffer(desc);
@@ -9072,7 +9160,6 @@
 
       var context = this;
       var option = {
-        appkey: '',
         url: 'https://msqa.rongcloud.net',
         debug: false,
         bitrate: {
