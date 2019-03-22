@@ -424,9 +424,14 @@
     function zoom(user) {
       var self = this;
       user = user || {};
-      clearStreamBoxZoom(user.id);
-      self.isZoom = true;
-      addClass(this.dom, OptClassName.IS_ZOOM)
+      if(self.isZoom){
+        // do nothing
+      } else {
+        clearStreamBoxZoom(user.id);
+        self.isZoom = true;
+        addClass(this.dom, OptClassName.IS_ZOOM)
+      }
+      // self.dom.childNodes[1].style.objectFit='contain';
     }
     function closeVideoBySelf() {
       setClass(this.dom, OptClassName.CLOSE_VIDEO_BY_SELF, true);
@@ -475,6 +480,17 @@
     function closeFlibScreenShare() {
       this.dom.childNodes[1].style.transform = 'rotateY(180deg)';
     }
+    function disabledVideoBySelf() {
+      console.log(this.dom.childNodes[9].childNodes[1])
+      var selfOptDom = this.dom.childNodes[9]
+      selfOptDom.childNodes[1].style.display = 'none';
+      selfOptDom.childNodes[3].style.display = 'inline-block';
+    }
+    function disabledAudioBySelf() {
+      var selfOptDom = this.dom.childNodes[9]
+      selfOptDom.childNodes[5].style.display = 'none';
+      selfOptDom.childNodes[7].style.display = 'inline-block';
+    }
     return function (id, params, temp) {
       params = params || {};
       temp = temp || StreamBoxTemp;
@@ -494,8 +510,12 @@
       dom.setAttribute('user', customizeValue);
       dom.onclick = function (e) {
         e.stopPropagation();
-        self.zoom();
-        self.resizeEvent(true, id);
+        if (self.isZoom) {
+          // do nothing
+        } else {
+          self.zoom();
+          self.resizeEvent(true, id);
+        }
       };
 
       self.id = id;
@@ -527,6 +547,8 @@
       self.closeScreenShare = closeScreenShare;
       self.openFlibScreenShare = openFlibScreenShare;
       self.closeFlibScreenShare = closeFlibScreenShare;
+      self.disabledVideoBySelf = disabledVideoBySelf;
+      self.disabledAudioBySelf = disabledAudioBySelf;
 
       StreamBoxList[id] = self;
 
@@ -579,7 +601,7 @@
     StreamList: StreamList,
     StreamBox: StreamBox,
     WhiteBoard: WhiteBoard,
-    backLoginPage: backLoginPage
+    backLoginPage: backLoginPage,
   };
 
   var common = {

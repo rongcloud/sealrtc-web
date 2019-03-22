@@ -10,14 +10,15 @@
     Cache = utils.Cache,
     Config = RongSeal.Config;
 
-  var randomUserId;
+  // var randomUserId;
+  var userId;
   // console.log('randomUserId: ', typeof randomUserId);
 
   var locale = RongSeal.locale[common.lang],
     localeData = locale.data;
 
   var roomDom = getDomById('roomId'),
-    // userDom = getDomById('userId'),
+    userDom = getDomById('userId'),
     startBtnDom = getDomById('start'),
     inputDomList = Dom.getList('.rong-login-input');
 
@@ -65,8 +66,8 @@
       closeVideoDom = getSelectedByName('isCloseVideo');
     // closeAudioDom = getSelectedByName('isCloseAudio');
     var roomId = roomDom.value,
-      // userId = userDom.value,
-      userId = randomUserId,
+      userId = userDom.value,
+      // userId = randomUserId,
       resolution = common.formatResolution(resolutionDom.value), // 格式如: { width: 640, height: 320 }
       videoEnable = !closeVideoDom;
     // console.log(resolutionDom);
@@ -151,9 +152,11 @@
     }
     Dom.hideByClass('rong-btn-start');
     Dom.showByClass('rong-btn-loading');
-    randomUserId = new Date().getTime().toString();
+    userId = userDom.value;
+    // randomUserId = new Date().getTime().toString();
     common.getIMToken({
-      id: randomUserId
+      // id: randomUserId
+      id: userId
     }).then(function (user) {
       connect(user);
     }, function (error) {

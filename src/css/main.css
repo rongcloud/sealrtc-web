@@ -397,6 +397,7 @@ ul, li {
   top: 0;
   width: 100%;
   height: 100%;
+  /* object-fit: fill; */
 }
 
 .rong-stream-wrap .rong-stream-box .rong-user-name {
@@ -475,10 +476,20 @@ ul, li {
   background-image: url("./img/video-enable.png");
 }
 
+.rong-stream-wrap .rong-stream-box .rong-opt-video-disabled {
+  display: none;
+  cursor: not-allowed;
+  background-image: url("./img/video-disable.png");
+}
+
 .rong-stream-wrap .rong-stream-box .rong-opt-audio {
   background-image: url("./img/audio-enable.png");
 }
-
+.rong-stream-wrap .rong-stream-box .rong-opt-audio-disabled {
+  display: none;
+  cursor: not-allowed;
+  background-image: url("./img/audio-disable.png");
+}
 .rong-stream-wrap .rong-stream-box:hover .rong-user-name {
   display: inline-block;
 }
