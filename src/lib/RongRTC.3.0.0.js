@@ -187,9 +187,10 @@
           } else {
             var status = xhr.status;
 
-            reject({
+            extend(result, {
               status: status
             });
+            reject(result);
           }
         }
       };
@@ -1200,7 +1201,9 @@
   };
 
   function request$1() {
-    var config = {};
+    var config = {
+      url: ''
+    };
     var prosumer = new utils.Prosumer();
     var eventEmitter = new EventEmitter();
     var setOption = function setOption(_config) {
@@ -2117,8 +2120,8 @@
         return id;
       }
     }, {
-      key: 'getAuthPath',
-      value: function getAuthPath() {
+      key: 'getMSUrl',
+      value: function getMSUrl() {
         var im = this.im;
 
         var navi = im.getInstance().getNavi();
@@ -2127,7 +2130,7 @@
         rtcInfo = rtcInfo || '{"callEngine": [{}]}';
         rtcInfo = utils.parse(rtcInfo);
         var engine = rtcInfo.callEngine[0];
-        return engine.rtcAuAddr;
+        return engine.mediaServer;
       }
     }, {
       key: 'getUser',
@@ -2590,7 +2593,6 @@
     var getHeaders = function getHeaders() {
       var roomId = im.getRoomId();
       var token = im.getRTCToken();
-      var authPath = im.getAuthPath() || 'Fake';
 
       var _im$getAppInfo = im.getAppInfo(),
           appKey = _im$getAppInfo.appKey;
@@ -2598,8 +2600,7 @@
       return {
         'App-Key': appKey,
         RoomId: roomId,
-        Token: token,
-        AuthHost: authPath
+        Token: token
       };
     };
     var getBody = function getBody(desc) {
@@ -2810,7 +2811,8 @@
       var roomId = im.getRoomId();
       prosumer.consume(function (_ref4, next) {
         var sdp = _ref4.sdp,
-            body = _ref4.body;
+            body = _ref4.body,
+            inputUser = _ref4.user;
 
         Logger$1.log(LogTag.STREAM_HANDLER, {
           msg: 'subscribe:request',
@@ -2836,7 +2838,7 @@
             user: user,
             error: error
           });
-          var uid = getSubPromiseUId(user);
+          var uid = getSubPromiseUId(inputUser);
           var promise = SubPromiseCache.get(uid);
           if (!utils.isUndefined(promise)) {
             promise.reject(error);
@@ -3362,7 +3364,8 @@
             prosumer.produce({
               sdp: sdp,
               body: body,
-              headers: headers
+              headers: headers,
+              user: user
             });
             eventEmitter.emit(CommonEvent.CONSUME);
           });
@@ -8909,6 +8912,13 @@
       };
       utils.forEach(RoomEvents, bindEvent);
       im.on(CommonEvent.JOINED, function () {
+        var url = im.getMSUrl();
+        var customUrl = option.url;
+
+        url = customUrl || url;
+        request$2.setOption({
+          url: url
+        });
         context.emit(DownEvent.RTC_MOUNTED);
       });
       im.on(CommonEvent.LEFT, function () {
@@ -8978,7 +8988,6 @@
       im.on(DownEvent.STREAM_UNMUTED, function (error, user) {
         eventHandler(DownEvent.STREAM_UNMUTED, user, error);
       });
-      request$2.setOption(option);
       return _this;
     }
 
@@ -9021,6 +9030,9 @@
             func: event,
             type: EventType.RESPONSE,
             error: error
+          });
+          error = utils.rename(error, {
+            resultCode: 'code'
           });
           throw error;
         });
@@ -9214,7 +9226,7 @@
 
       var context = this;
       var option = {
-        url: 'https://msqa.rongcloud.net',
+        url: '',
         debug: false,
         bitrate: {
           max: 1000,
