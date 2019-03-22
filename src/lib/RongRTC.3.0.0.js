@@ -221,6 +221,13 @@
   var toJSON = function toJSON(value) {
     return JSON.stringify(value);
   };
+  var toArray = function toArray(obj) {
+    var arrs = [];
+    forEach(obj, function (v, k) {
+      arrs.push([k, v]);
+    });
+    return arrs;
+  };
   function Timer(_option) {
     _option = _option || {};
     var option = {
@@ -365,7 +372,8 @@
     toJSON: toJSON,
     isInclude: isInclude,
     isNull: isNull,
-    isNumber: isNumber
+    isNumber: isNumber,
+    toArray: toArray
   };
 
   var DownEvent = {
@@ -1591,6 +1599,7 @@
           var id = _ref4.id,
               mediaStream = _ref4.mediaStream;
 
+          var resolutions = ratio[id] || [];
           var videoTrack = mediaStream.getVideoTracks()[0];
           var simulcast = StreamSize.MAX;
           if (!utils.isUndefined(videoTrack)) {
@@ -1607,10 +1616,11 @@
               height: height,
               width: width
             });
-            ratio[id] = {
+            resolutions.push({
               simulcast: simulcast,
               resolution: resolution
-            };
+            });
+            ratio[id] = resolutions;
           }
         });
         return ratio;
@@ -2000,12 +2010,37 @@
         return utils.deferred(function (resolve, reject) {
           im.getInstance().joinRTCRoom(room, {
             onSuccess: function onSuccess(users) {
+              context.rtcPing(room);
               utils.extend(room, {
                 users: users
               });
-              context.emit(CommonEvent.JOINED, room);
-              context.rtcPing(room);
-              resolve(users);
+              Logger$1.log(LogTag.STREAM_HANDLER, {
+                msg: 'getRTCToken:before',
+                roomId: room.id
+              });
+              im.getInstance().getRTCToken(room, {
+                onSuccess: function onSuccess(_ref) {
+                  var rtcToken = _ref.rtcToken;
+
+                  Logger$1.log(LogTag.STREAM_HANDLER, {
+                    msg: 'getRTCToken:after:success',
+                    roomId: room.id
+                  });
+                  utils.extend(room, {
+                    rtcToken: rtcToken
+                  });
+                  context.emit(CommonEvent.JOINED, room);
+                  resolve(users);
+                },
+                onError: function onError(code) {
+                  Logger$1.log(LogTag.STREAM_HANDLER, {
+                    msg: 'getRTCToken:after:error',
+                    roomId: room.id,
+                    error: code
+                  });
+                  return errorHandler(code, reject);
+                }
+              });
             },
             onError: function onError(code) {
               return errorHandler(code, reject);
@@ -2068,11 +2103,11 @@
         });
       }
     }, {
-      key: 'getToken',
-      value: function getToken() {
-        var token = this.room.user.token;
+      key: 'getRTCToken',
+      value: function getRTCToken() {
+        var rtcToken = this.room.rtcToken;
 
-        return token;
+        return rtcToken;
       }
     }, {
       key: 'getRoomId',
@@ -2382,7 +2417,10 @@
               Status.reset();
             },
             onError: function onError(code) {
-              var error = Inner[code];
+              Logger$1.error(LogTag.IM, {
+                msg: 'RTC Ping Error' + code
+              });
+              var error = ErrorType[code];
               if (error) {
                 context.emit(CommonEvent.ERROR, error);
                 timer.pause();
@@ -2551,7 +2589,7 @@
     };
     var getHeaders = function getHeaders() {
       var roomId = im.getRoomId();
-      var token = im.getToken();
+      var token = im.getRTCToken();
       var authPath = im.getAuthPath() || 'Fake';
 
       var _im$getAppInfo = im.getAppInfo(),
@@ -2565,7 +2603,6 @@
       };
     };
     var getBody = function getBody(desc) {
-      var token = im.getToken();
       var subs = getSubs();
       var streams = [];
       var streamIds = PublishStreamCache.getKeys();
@@ -2578,7 +2615,6 @@
       });
       var resolutionInfo = pc.getStreamRatio(streams);
       var body = {
-        token: token,
         subscribeList: subs,
         resolutionInfo: resolutionInfo
       };
@@ -2800,6 +2836,11 @@
             user: user,
             error: error
           });
+          var uid = getSubPromiseUId(user);
+          var promise = SubPromiseCache.get(uid);
+          if (!utils.isUndefined(promise)) {
+            promise.reject(error);
+          }
           next();
         });
       }, function () {
@@ -3061,40 +3102,43 @@
         roomId: roomId,
         user: user
       });
-      return pc.createOffer(user).then(function (desc) {
-        pc.setOffer(desc);
-        return getBody(desc).then(function (body) {
-          var url = utils.tplEngine(Path.SUBSCRIBE, {
-            roomId: roomId
-          });
-          Logger$1.log(LogTag.STREAM_HANDLER, {
-            msg: 'publish:request',
-            roomId: roomId,
-            user: user,
-            body: body
-          });
-          var headers = getHeaders();
-          return request$2.post({
-            path: url,
-            body: body,
-            headers: headers
-          }).then(function (response) {
+      return utils.deferred(function (resolve, reject) {
+        pc.createOffer(user).then(function (desc) {
+          pc.setOffer(desc);
+          return getBody(desc).then(function (body) {
+            var url = utils.tplEngine(Path.SUBSCRIBE, {
+              roomId: roomId
+            });
             Logger$1.log(LogTag.STREAM_HANDLER, {
-              msg: 'publish:response',
+              msg: 'publish:request',
               roomId: roomId,
               user: user,
-              response: response
+              body: body
             });
-            publishTempStreams.length = 0;
-            exchangeHandler(response, user, Message.PUBLISH);
-          }, function (error) {
-            Logger$1.log(LogTag.STREAM_HANDLER, {
-              msg: 'publish:response',
-              roomId: roomId,
-              user: user,
-              error: error
+            var headers = getHeaders();
+            return request$2.post({
+              path: url,
+              body: body,
+              headers: headers
+            }).then(function (response) {
+              Logger$1.log(LogTag.STREAM_HANDLER, {
+                msg: 'publish:response',
+                roomId: roomId,
+                user: user,
+                response: response
+              });
+              publishTempStreams.length = 0;
+              exchangeHandler(response, user, Message.PUBLISH);
+              resolve();
+            }, function (error) {
+              Logger$1.log(LogTag.STREAM_HANDLER, {
+                msg: 'publish:response:error',
+                roomId: roomId,
+                user: user,
+                error: error
+              });
+              reject(error);
             });
-            return error;
           });
         });
       });
@@ -3674,17 +3718,17 @@
       return im.joinRoom(room).then(function (users) {
         Logger$1.log(LogTag.ROOM_HANDLER, {
           msg: 'join:after',
-          room: room
+          users: users
         });
-        utils.forEach(users, function (user, id) {
-          Logger$1.log(LogTag.ROOM_HANDLER, {
-            msg: 'join:after:existUsers',
-            user: user
-          });
-          im.emit(DownEvent.ROOM_USER_JOINED, {
-            id: id
-          });
-        });
+        // utils.forEach(users, (user, id) => {
+        //   Logger.log(LogTag.ROOM_HANDLER, {
+        //     msg: 'join:after:existUsers',
+        //     user
+        //   });
+        //   im.emit(DownEvent.ROOM_USER_JOINED, {
+        //     id
+        //   });
+        // });
       }, function (error) {
         Logger$1.log(LogTag.ROOM_HANDLER, {
           msg: 'join:after',
@@ -3693,7 +3737,17 @@
         });
         return error;
       }).then(function () {
-        return room;
+        var users = room.users;
+
+        users = utils.toArray(users);
+        users = utils.map(users, function (user) {
+          return {
+            id: user[0]
+          };
+        });
+        return {
+          users: users
+        };
       });
     };
     var leave = function leave() {
@@ -8963,7 +9017,7 @@
           });
           return result;
         }, function (error) {
-          Logger$1.log(type, {
+          Logger$1.error(type, {
             func: event,
             type: EventType.RESPONSE,
             error: error

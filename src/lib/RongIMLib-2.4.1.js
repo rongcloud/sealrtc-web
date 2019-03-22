@@ -4086,6 +4086,16 @@ var RongIMLib;
         RongIMClient.prototype.getNavi = function () {
             return RongIMClient._dataAccessProvider.getNavi();
         };
+        RongIMClient.prototype.getRTCToken = function (room, callback) {
+            RongIMLib.CheckParam.getInstance().check(["object", "object"], "getRTCToken", false, arguments);
+            return RongIMClient._dataAccessProvider.getRTCToken(room, callback);
+        };
+        RongIMClient.prototype.getAppInfo = function () {
+            var appKey = RongIMClient._memoryStore.appKey;
+            return {
+                appKey: appKey
+            };
+        };
         RongIMClient.RTCListener = function () { };
         RongIMClient.LogFactory = {};
         RongIMClient.MessageType = {};
@@ -4093,10 +4103,10 @@ var RongIMLib;
         RongIMClient._memoryStore = { listenerList: [], isPullFinished: false, syncMsgQueue: [] };
         RongIMClient.isNotPullMsg = false;
         RongIMClient.userStatusObserver = null;
-        RongIMClient.isFirstConnect = true;
         RongIMClient.sdkver = '2.4.0';
         RongIMClient.otherDeviceLoginCount = 0;
         RongIMClient.serverStore = { index: 0 };
+        RongIMClient.isFirstConnect = true;
         RongIMClient.statusListeners = [];
         RongIMClient.userStatusListener = null;
         return RongIMClient;
@@ -4262,7 +4272,7 @@ var RongIMLib;
                 }
                 var isNetworkUnavailable = (code == RongIMLib.ConnectionStatus.NETWORK_UNAVAILABLE);
                 var isWebSocket = !RongIMLib.RongIMClient._memoryStore.depend.isPolling;
-                if (RongIMClient.isFirstConnect && isNetworkUnavailable && isWebSocket) {
+                if (RongIMLib.RongIMClient.isFirstConnect && isNetworkUnavailable && isWebSocket) {
                     code = RongIMLib.ConnectionStatus.WEBSOCKET_UNAVAILABLE;
                 }
                 me.connectionStatus = code;
@@ -4281,12 +4291,12 @@ var RongIMLib;
                 }
                 var isConnected = (code == RongIMLib.ConnectionStatus.CONNECTED);
                 if (isConnected) {
-                    RongIMClient.isFirstConnect = false;
+                    RongIMLib.RongIMClient.isFirstConnect = false;
                 }
                 var isWebsocketUnAvailable = (code == RongIMLib.ConnectionStatus.WEBSOCKET_UNAVAILABLE);
                 if (isWebsocketUnAvailable) {
                     me.changeConnectType();
-                    RongIMClient.isFirstConnect = false;
+                    RongIMLib.RongIMClient.isFirstConnect = false;
                     RongIMLib.RongIMClient.connect(self.token, RongIMLib.RongIMClient._memoryStore.callback);
                 }
             });
@@ -9965,6 +9975,17 @@ var RongIMLib;
             var navi = RongIMLib.RongIMClient._storageProvider.getItem("fullnavi") || "{}";
             return JSON.parse(navi);
         };
+        ServerDataProvider.prototype.getRTCToken = function (room, callback) {
+            var modules = new RongIMLib.RongIMClient.Protobuf.RtcInput();
+            RongIMLib.RongIMClient.bridge.queryMsg("rtcToken", RongIMLib.MessageUtil.ArrayForm(modules.toArrayBuffer()), room.id, {
+                onSuccess: function (result) {
+                    callback.onSuccess(result);
+                },
+                onError: function (errorCode) {
+                    callback.onError(errorCode);
+                }
+            }, "RtcTokenOutput");
+        };
         return ServerDataProvider;
     })();
     RongIMLib.ServerDataProvider = ServerDataProvider;
@@ -10960,6 +10981,8 @@ var RongIMLib;
         VCDataProvider.prototype.removeRTCRoomData = function (roomId, key, isInner, callback, message) {
         };
         VCDataProvider.prototype.getNavi = function () {
+        };
+        VCDataProvider.prototype.getRTCToken = function (room, callback) {
         };
         return VCDataProvider;
     })();
