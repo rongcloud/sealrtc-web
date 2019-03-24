@@ -1420,6 +1420,8 @@
         var pc = context.pc;
 
         pc.close();
+        context.pc = null;
+        delete context.pc;
       }
     }, {
       key: 'getOption',
