@@ -70,12 +70,13 @@
         audio: true,
         video: false
       };
-    }else if(video === false){
+    } else if (video === false) {
       opts = {
         audio: true,
         video: true
       };
     } else {
+      option.video.frameRate = 15;
       opts = option;
     }
     return mediaDevices.getUserMedia(opts).then(function (stream) {
