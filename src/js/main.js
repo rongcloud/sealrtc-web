@@ -657,7 +657,8 @@
   }
 
   function joinCancel() {
-    window.location.reload();
+    // window.location.reload();
+    quit();
   }
   function RTCJoinConfirm(peopleNum,params) {
     console.log(peopleNum,params);
