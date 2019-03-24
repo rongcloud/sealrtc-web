@@ -748,7 +748,7 @@
     OFFLINE: 2
   };
 
-  var PingCount = 3;
+  var PingCount = 4;
 
   var LogTag = {
     ICE: 'ice',
@@ -3059,12 +3059,17 @@
           utils.forEach(streams, function (stream) {
             var tag = stream.tag;
 
+            var msUris = utils.filter(uris, function (_ref5) {
+              var msid = _ref5.msid;
+
+              return utils.isInclude(msid, tag);
+            });
             setTimeout(function () {
               im.emit(DownEvent.STREAM_PUBLISHED, {
                 id: id,
                 stream: {
                   tag: tag,
-                  uris: uris
+                  uris: msUris
                 }
               });
             });
@@ -3211,8 +3216,8 @@
         roomId: roomId,
         user: user
       });
-      utils.forEach(streams, function (_ref5) {
-        var mediaStream = _ref5.mediaStream;
+      utils.forEach(streams, function (_ref6) {
+        var mediaStream = _ref6.mediaStream;
 
         var tracks = mediaStream.getTracks();
         utils.forEach(tracks, function (track) {
@@ -3274,8 +3279,8 @@
         };
         var key = getUId(tUser);
 
-        var _DataCache$get = DataCache.get(key),
-            uri = _DataCache$get.uri;
+        var _ref7 = DataCache.get(key) || {},
+            uri = _ref7.uri;
 
         if (utils.isUndefined(uri)) {
           isError = true;
@@ -3309,8 +3314,8 @@
         };
         var key = getUId(tUser);
 
-        var _DataCache$get2 = DataCache.get(key),
-            uri = _DataCache$get2.uri;
+        var _DataCache$get = DataCache.get(key),
+            uri = _DataCache$get.uri;
 
         var isAdd = true;
         utils.forEach(subs, function (sub) {
@@ -3621,10 +3626,10 @@
       var subs = SubscribeCache.get(id);
       var streams = {},
           msTypes = {};
-      utils.forEach(subs, function (_ref6) {
-        var msid = _ref6.msid,
-            tag = _ref6.tag,
-            type = _ref6.type;
+      utils.forEach(subs, function (_ref8) {
+        var msid = _ref8.msid,
+            tag = _ref8.tag,
+            type = _ref8.type;
 
         streams[msid] = tag;
         var types = msTypes[msid] || [];
