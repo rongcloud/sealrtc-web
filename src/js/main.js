@@ -34,7 +34,9 @@
     CASE_PRE_BTN: 'rong-case-pre',
     CASE_NEXT_BTN: 'rong-case-next'
   };
-
+  var VideoPrefix = {
+    STREAM: 'Rong-{id}'
+  };
   var loginUserId, rongRTC, rongRTCRoom, rongRTCStream;
   var rongRTCPage, streamList;
   var userStreams = {
@@ -134,7 +136,7 @@
     Dom.showByClass('rong-share-openicon');
     Dom.hideByClass('rong-share-closeicon');
     var hangUpDom = Dom.get('.rong-opt-hangup');
-    if(hangUpDom){
+    if (hangUpDom) {
       hangUpDom.disabled = false;
       hangUpDom.style.cursor = 'pointer';
     }
@@ -219,24 +221,24 @@
     var closeAudio = isSelf ? streamBox.closeAudioBySelf : streamBox.closeAudioByOther;
     var openAudio = isSelf ? streamBox.openAudioBySelf : streamBox.openAudioByOther;
     switch (type) {
-    case StreamType.AUDIO:
-      closeVideo.apply(streamBox);
-      openAudio.apply(streamBox);
-      break;
-    case StreamType.VIDEO:
-      openVideo.apply(streamBox);
-      closeAudio.apply(streamBox);
-      break;
-    case StreamType.AUDIO_AND_VIDEO:
-      openVideo.apply(streamBox);
-      openAudio.apply(streamBox);
-      break;
-    case StreamType.NONE:
-      closeVideo.apply(streamBox);
-      closeAudio.apply(streamBox);
-      break;
-    default:
-      break;
+      case StreamType.AUDIO:
+        closeVideo.apply(streamBox);
+        openAudio.apply(streamBox);
+        break;
+      case StreamType.VIDEO:
+        openVideo.apply(streamBox);
+        closeAudio.apply(streamBox);
+        break;
+      case StreamType.AUDIO_AND_VIDEO:
+        openVideo.apply(streamBox);
+        openAudio.apply(streamBox);
+        break;
+      case StreamType.NONE:
+        closeVideo.apply(streamBox);
+        closeAudio.apply(streamBox);
+        break;
+      default:
+        break;
     }
   }
 
@@ -251,13 +253,23 @@
     p.innerHTML = text;
     dom.parentNode.appendChild(p);
   }
-  function showResolution(id) {
-    var videoDom = utils.tplEngine('video[stream=Rong-{id}]', {
-      id: id
+  function getVideoAttr(key, value) {
+    return utils.tplEngine('video[{key}={value}]', {
+      key: key,
+      value: value
     });
-    var videoNode = Dom.get(videoDom);
-    videoNode.onloadeddata = function () {
-      createResolutionDom(videoNode)
+  }
+  function getVideoByAttr(id){
+    var value = utils.tplEngine(VideoPrefix.STREAM, {
+      id
+    });
+    var arrt = getVideoAttr('stream', value);
+    return Dom.get(arrt);
+  }
+  function showResolution(id) {
+    var node = getVideoByAttr(id);
+    node.onloadeddata = function () {
+      createResolutionDom(node)
     }
   }
 
@@ -280,9 +292,20 @@
     console.log('addUserStream user:', JSON.stringify(user));
     var streamBox = StreamBox.get(user.id);
     if (isSelf) {
-      showUserStream(user);
+      var stream = user.stream;
+      var ms = stream.mediaStream;
+      var tag = stream.tag;
+      var userId = user.id;
+      var isShare = CustomizeTag.SCREENSHARE === tag;
+      if (!isShare) {
+        showUserStream(user);
+      }
+      if (isShare) {
+        var node = getVideoByAttr(user.id);
+        node && node.pause();
+      }
       userStreams.add(user);
-      setStreamBox(user.id, user.stream.mediaStream);
+      setStreamBox(userId, ms);
       streamBox.closeFlibScreenShare();
     } else {
       console.log('有人订阅了----')
@@ -501,11 +524,11 @@
       utils.Dom.addClass(streamBox.dom, 'rong-is-self');
       console.log(streamBox.dom);
       streamBox.zoom(user);
-    }else {
+    } else {
       addUserStream(user);
     }
     var childDom = streamBox.childDom;
-    
+
     childDom.videoBtn.onclick = function (e) {
       streamBox.isVideoOpenedBySelf ? closeVideo(user) : openVideo(user);
       e.stopPropagation();
@@ -525,14 +548,14 @@
     createToast();
     hideToast();
     console.log('streamList:', JSON.stringify(streamList));
-    
+
   }
 
   function removeUserBox(user) {
-    console.log('left user:',user)
+    console.log('left user:', user)
     var id = user.id;
     var streamBox = StreamBox.get(id);
-    if(streamBox){
+    if (streamBox) {
       var isRemoveBoxZoom = streamBox.isZoom;
       streamList.removeBox(streamBox);
       StreamBox.clearQuitUser(id);
@@ -604,7 +627,7 @@
     rongRTCPage.createPage(bodyDom, function () {
       videoTimer = new common.SealTimer();
     });
-    
+
     // 设置 UI 上的房间号和个人信息
     var roomTitleDom = Dom.getByClass(ClassName.ROOM_TITLE);
     roomTitleDom.textContent = localeData.room + ': ' + params.roomId;
@@ -649,9 +672,9 @@
   }
 
   function addVideoViewBox(user) {
-    if(user.stream.tag == 'screenshare'){
+    if (user.stream.tag == 'screenshare') {
       addUserStream(user);
-      return ;
+      return;
     }
     addUserBox(user);
   }
@@ -660,30 +683,30 @@
     // window.location.reload();
     quit();
   }
-  function RTCJoinConfirm(peopleNum,params) {
-    console.log(peopleNum,params);
+  function RTCJoinConfirm(peopleNum, params) {
+    console.log(peopleNum, params);
     addUserBox({ id: loginUserId });
     var streamBox = StreamBox.get(loginUserId);
-    if(peopleNum>=3 && peopleNum<5) {
+    if (peopleNum >= 3 && peopleNum < 5) {
       streamBox.disabledVideoBySelf();
       var audioOnly = true;
-      publishSelfMediaStream(false, true, params.resolution,audioOnly).then(
+      publishSelfMediaStream(false, true, params.resolution, audioOnly).then(
         addUserStream, publishStreamError);
-    }else if(peopleNum >= 5) {
+    } else if (peopleNum >= 5) {
       streamBox.closeVideoBySelf();
       streamBox.closeAudioBySelf();
       streamBox.disabledVideoBySelf();
       streamBox.disabledAudioBySelf();
     }
   }
-  
+
   //多人加入音视频处理
-  function RTCNumberCheck(peopleNum,params){
+  function RTCNumberCheck(peopleNum, params) {
     //弹窗提示：n>9  （n>3）展示
     var tipStr1 = '会议室中视频通话人数已超过 3 人，您将以音频模式加入会议室。';
     var tipStr2 = '会议室中视频通话人数已超过 5 人，您将以旁听者模式加入会议室。';
-    
-    if(peopleNum <3){
+
+    if (peopleNum < 3) {
       // 隐藏 login, 展示 rtc
       Dom.hideByClass(ClassName.LOGIN_PAGE);
       Dom.showByClass(ClassName.RTC_PAGE);
@@ -693,29 +716,29 @@
       addUserBox({ id: loginUserId });
       publishSelfMediaStream(videoEnable, audioEnable, resolution).then(
         addUserStream, publishStreamError);
-    }else if(peopleNum>=3 && peopleNum<5){
-      sealAlert(tipStr1,{
+    } else if (peopleNum >= 3 && peopleNum < 5) {
+      sealAlert(tipStr1, {
         isShowCancel: true,
-        confirmCallback: function(){
+        confirmCallback: function () {
           Dom.hideByClass(ClassName.LOGIN_PAGE);
           Dom.showByClass(ClassName.RTC_PAGE);
           Dom.hideByClass('rong-share-openicon');
           Dom.showByClass('rong-share-closeicon');
-          
-          RTCJoinConfirm(peopleNum,params)
+
+          RTCJoinConfirm(peopleNum, params)
         },
         cancelCallback: joinCancel
       })
-    }else if(peopleNum >= 5) {
-      sealAlert(tipStr2,{
+    } else if (peopleNum >= 5) {
+      sealAlert(tipStr2, {
         isShowCancel: true,
-        confirmCallback: function(){
+        confirmCallback: function () {
           // 隐藏 login, 展示 rtc
           Dom.hideByClass(ClassName.LOGIN_PAGE);
           Dom.showByClass(ClassName.RTC_PAGE);
           Dom.hideByClass('rong-share-openicon');
           Dom.showByClass('rong-share-closeicon');
-          RTCJoinConfirm(peopleNum,params)
+          RTCJoinConfirm(peopleNum, params)
         },
         cancelCallback: joinCancel
       })
@@ -772,7 +795,7 @@
       console.log(roomUsers.users.length)
       var peopleNum = roomUsers.users.length;
       // var peopleNum = 4;
-      RTCNumberCheck(peopleNum,params);
+      RTCNumberCheck(peopleNum, params);
 
       // var videoEnable = params.videoEnable,
       //   audioEnable = params.audioEnable,

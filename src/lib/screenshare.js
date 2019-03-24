@@ -47,9 +47,13 @@
     var screenMediaConfig = {
       video: {
         mandatory: {
-          chromeMediaSource: 'desktop',
-          chromeMediaSourceId: sourceId
-        },
+          chromeMediaSource: 'screen',
+          chromeMediaSourceId: sourceId,
+          maxWidth:1280,
+          maxHeight: 720,
+          minFrameRate: 15, 
+          maxFrameRate: 15
+        }
         // optional: [{ googTemporalLayeredScreencast: true }]
       }
     };
