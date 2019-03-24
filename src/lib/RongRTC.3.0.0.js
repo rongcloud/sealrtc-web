@@ -872,7 +872,7 @@
     createClass(Room, [{
       key: 'join',
       value: function join(user) {
-        var _check = check(user, ['id', 'token']),
+        var _check = check(user, ['id']),
             isIllegal = _check.isIllegal,
             name = _check.name;
 
@@ -1010,6 +1010,7 @@
           });
         });
       });
+      client.extendOption(option);
       utils.extend(context, {
         option: option,
         client: client,
@@ -1871,17 +1872,10 @@
       var renameMessage = function renameMessage(message) {
         var messageType = message.messageType;
 
-        if (!utils.isEqual(im.MessageType.UnknownMessage, messageType)) {
-          return message;
-        }
-        var objectName = message.objectName;
-
+        var isCustom = utils.isEqual(im.MessageType.UnknownMessage, messageType);
         var clear = function clear(msg, content) {
-          var objName = content.objectName;
-
-          if (utils.isEqual(objName, objectName)) {
-            delete content.objectName;
-          }
+          delete content.objectName;
+          delete content.messageName;
           delete msg.conversationType;
           delete msg.messageId;
           delete msg.offLineMessage;
@@ -1890,9 +1884,13 @@
           delete msg.targetId;
         };
         var msg = utils.parse(utils.toJSON(message));
-        var _msg = msg,
-            content = _msg.content.message.content;
-
+        var content = {};
+        if (isCustom) {
+          var customMsg = msg.content;
+          content = customMsg.content;
+        } else {
+          content = msg.content;
+        }
         clear(msg, content);
         utils.extend(msg, {
           content: content
@@ -2425,11 +2423,6 @@
               Logger$1.error(LogTag.IM, {
                 msg: 'RTC Ping Error' + code
               });
-              var error = ErrorType[code];
-              if (error) {
-                context.emit(CommonEvent.ERROR, error);
-                timer.pause();
-              }
             }
           });
         }, true);
@@ -9043,6 +9036,12 @@
       key: 'isDestroyed',
       value: function isDestroyed() {
         return this.destroyed;
+      }
+    }, {
+      key: 'extendOption',
+      value: function extendOption(_option) {
+        var context = this;
+        utils.extend(context.option, _option);
       }
     }, {
       key: 'destroy',
