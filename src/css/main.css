@@ -491,7 +491,7 @@ ul, li {
   background-image: url("./img/audio-disable.png");
 }
 .rong-stream-wrap .rong-stream-box:hover .rong-user-name {
-  display: inline-block;
+  /* display: inline-block; */
 }
 
 .rong-stream-wrap .rong-is-self .rong-video {
@@ -499,6 +499,9 @@ ul, li {
 }
 
 .rong-stream-wrap .rong-is-self .rong-user-name {
+  /* display: inline-block; */
+}
+.rong-stream-wrap .rong-is-self:hover .rong-user-name {
   display: inline-block;
 }
 
