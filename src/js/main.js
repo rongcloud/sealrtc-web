@@ -187,12 +187,13 @@
     return type;
   }
 
-  function getSelfMediaStream(videoEnable, audioEnable, resolution) {
+  function getSelfMediaStream(videoEnable, audioEnable, resolution, audioOnly) {
     var videoConfig = videoEnable ? resolution : videoEnable;
     var constraints = {
       video: videoConfig,
       audio: audioEnable,
-      frameRate: 15
+      frameRate: 15,
+      audioOnly: audioOnly,
     };
     return new Promise(function (resolve, reject) {
       RongMedia.get(constraints).then(function (stream) {
@@ -497,6 +498,8 @@
     });
     streamList.addBox(streamBox);
     if (isSelf) {
+      utils.Dom.addClass(streamBox.dom, 'rong-is-self');
+      console.log(streamBox.dom);
       streamBox.zoom(user);
     }else {
       addUserStream(user);
@@ -554,7 +557,7 @@
     showToast();
   }
 
-  function publishSelfMediaStream(videoEnable, audioEnable, resolution) {
+  function publishSelfMediaStream(videoEnable, audioEnable, resolution, audioOnly) {
     return new Promise(function (resolve, reject) {
       // if(!videoEnable){
       //   videoEnable= true;
@@ -566,7 +569,7 @@
       //   }, getSelfMediaStreamError);
       // }
 
-      getSelfMediaStream(videoEnable, audioEnable, resolution).then(function (user) {
+      getSelfMediaStream(videoEnable, audioEnable, resolution, audioOnly).then(function (user) {
         rongRTCStream.publish(user).then(function () {
           if (!videoEnable) {
             closeVideo(user);
@@ -654,7 +657,8 @@
   }
 
   function joinCancel() {
-    window.location.reload();
+    // window.location.reload();
+    quit();
   }
   function RTCJoinConfirm(peopleNum,params) {
     console.log(peopleNum,params);
@@ -662,7 +666,8 @@
     var streamBox = StreamBox.get(loginUserId);
     if(peopleNum>=3 && peopleNum<5) {
       streamBox.disabledVideoBySelf();
-      publishSelfMediaStream(false, true, params.resolution).then(
+      var audioOnly = true;
+      publishSelfMediaStream(false, true, params.resolution,audioOnly).then(
         addUserStream, publishStreamError);
     }else if(peopleNum >= 5) {
       streamBox.closeVideoBySelf();

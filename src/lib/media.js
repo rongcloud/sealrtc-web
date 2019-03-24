@@ -64,7 +64,13 @@
 
   var get = function (option) {
     var video = option.video, opts;
-    if (video === false) {
+    var audioOnly = option.audioOnly;
+    if (video === false && audioOnly === true) {
+      opts = {
+        audio: true,
+        video: false
+      };
+    }else if(video === false){
       opts = {
         audio: true,
         video: true
