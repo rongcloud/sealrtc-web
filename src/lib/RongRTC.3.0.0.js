@@ -2026,10 +2026,12 @@
               utils.forEach(users, function (user) {
                 var uris = user.uris;
 
-                uris = utils.parse(uris);
-                utils.extend(user, {
-                  uris: uris
-                });
+                if (!utils.isUndefined(uris)) {
+                  uris = utils.parse(uris);
+                  utils.extend(user, {
+                    uris: uris
+                  });
+                }
               });
               Logger$1.log(LogTag.STREAM_HANDLER, {
                 msg: 'getRTCToken:before',
@@ -3046,6 +3048,94 @@
         pc.close();
       }
     });
+    var unpublish = function unpublish(user) {
+      user = utils.clone(user);
+      var streamId = pc.getStreamId(user);
+      var mediaStream = StreamCache.get(streamId);
+      if (!mediaStream) {
+        return utils.Defer.reject(ErrorType.Inner.STREAM_NOT_EXIST);
+      }
+      var streams = [];
+      var _user = user,
+          stream = _user.stream;
+
+      var tinyStream = utils.clone(stream);
+      var _user2 = user,
+          id = _user2.id;
+
+      stream = utils.extend(stream, {
+        mediaStream: mediaStream
+      });
+      streams.push(stream);
+
+      var tinyStreamId = pc.getStreamId({
+        id: id,
+        stream: tinyStream
+      }, StreamSize.MIN);
+      var tinyMeidaStream = StreamCache.get(tinyStreamId);
+      if (tinyMeidaStream) {
+        tinyStream = utils.extend(tinyStream, {
+          mediaStream: tinyMeidaStream
+        });
+        streams.push(tinyStream);
+      }
+      utils.extend(user, {
+        stream: streams
+      });
+      var roomId = im.getRoomId();
+      Logger$1.log(LogTag.STREAM_HANDLER, {
+        msg: 'unpublish:start',
+        roomId: roomId,
+        user: user
+      });
+      utils.forEach(streams, function (_ref10) {
+        var mediaStream = _ref10.mediaStream;
+
+        var tracks = mediaStream.getTracks();
+        utils.forEach(tracks, function (track) {
+          track.stop();
+        });
+        var streamId = mediaStream.id;
+
+        PublishStreamCache.remove(streamId);
+      });
+      return pc.removeStream(user).then(function (desc) {
+        pc.setOffer(desc);
+        return getBody().then(function (body) {
+          var url = utils.tplEngine(Path.UNPUBLISH, {
+            roomId: roomId
+          });
+          Logger$1.log(LogTag.STREAM_HANDLER, {
+            msg: 'unpublish:request',
+            roomId: roomId,
+            user: user,
+            body: body
+          });
+          var headers = getHeaders();
+          return request$2.post({
+            path: url,
+            body: body,
+            headers: headers
+          }).then(function (response) {
+            Logger$1.log(LogTag.STREAM_HANDLER, {
+              msg: 'unpublish:response',
+              roomId: roomId,
+              user: user,
+              response: response
+            });
+            StreamCache.remove(streamId);
+            exchangeHandler(response, user, Message.UNPUBLISH);
+          }, function (error) {
+            Logger$1.log(LogTag.STREAM_HANDLER, {
+              msg: 'unpublish:response',
+              roomId: roomId,
+              user: user,
+              error: error
+            });
+          });
+        });
+      });
+    };
     /* 加入房间成功后，主动获取已发布资源的人员列表，通知应用层 */
     im.on(CommonEvent.JOINED, function (error, room) {
       if (error) {
@@ -3215,8 +3305,8 @@
           utils.forEach(streams, function (stream) {
             var tag = stream.tag;
 
-            var msUris = utils.filter(uris, function (_ref10) {
-              var msid = _ref10.msid;
+            var msUris = utils.filter(uris, function (_ref11) {
+              var msid = _ref11.msid;
 
               return utils.isInclude(msid, tag);
             });
@@ -3332,94 +3422,7 @@
       }
       return publishInvoke(user);
     };
-    var unpublish = function unpublish(user) {
-      user = utils.clone(user);
-      var streamId = pc.getStreamId(user);
-      var mediaStream = StreamCache.get(streamId);
-      if (!mediaStream) {
-        return utils.Defer.reject(ErrorType.Inner.STREAM_NOT_EXIST);
-      }
-      var streams = [];
-      var _user = user,
-          stream = _user.stream;
 
-      var tinyStream = utils.clone(stream);
-      var _user2 = user,
-          id = _user2.id;
-
-      stream = utils.extend(stream, {
-        mediaStream: mediaStream
-      });
-      streams.push(stream);
-
-      var tinyStreamId = pc.getStreamId({
-        id: id,
-        stream: tinyStream
-      }, StreamSize.MIN);
-      var tinyMeidaStream = StreamCache.get(tinyStreamId);
-      if (tinyMeidaStream) {
-        tinyStream = utils.extend(tinyStream, {
-          mediaStream: tinyMeidaStream
-        });
-        streams.push(tinyStream);
-      }
-      utils.extend(user, {
-        stream: streams
-      });
-      var roomId = im.getRoomId();
-      Logger$1.log(LogTag.STREAM_HANDLER, {
-        msg: 'unpublish:start',
-        roomId: roomId,
-        user: user
-      });
-      utils.forEach(streams, function (_ref11) {
-        var mediaStream = _ref11.mediaStream;
-
-        var tracks = mediaStream.getTracks();
-        utils.forEach(tracks, function (track) {
-          track.stop();
-        });
-        var streamId = mediaStream.id;
-
-        PublishStreamCache.remove(streamId);
-      });
-      return pc.removeStream(user).then(function (desc) {
-        pc.setOffer(desc);
-        return getBody().then(function (body) {
-          var url = utils.tplEngine(Path.UNPUBLISH, {
-            roomId: roomId
-          });
-          Logger$1.log(LogTag.STREAM_HANDLER, {
-            msg: 'unpublish:request',
-            roomId: roomId,
-            user: user,
-            body: body
-          });
-          var headers = getHeaders();
-          return request$2.post({
-            path: url,
-            body: body,
-            headers: headers
-          }).then(function (response) {
-            Logger$1.log(LogTag.STREAM_HANDLER, {
-              msg: 'unpublish:response',
-              roomId: roomId,
-              user: user,
-              response: response
-            });
-            StreamCache.remove(streamId);
-            exchangeHandler(response, user, Message.UNPUBLISH);
-          }, function (error) {
-            Logger$1.log(LogTag.STREAM_HANDLER, {
-              msg: 'unpublish:response',
-              roomId: roomId,
-              user: user,
-              error: error
-            });
-          });
-        });
-      });
-    };
     var isTrackExist = function isTrackExist(user, types) {
       var userId = user.id,
           tag = user.stream.tag;
