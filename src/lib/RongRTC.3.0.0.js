@@ -3171,11 +3171,23 @@
             currentUserId = _im$getUser3.id;
 
         utils.forEach(users, function (data, id) {
-          if (utils.isEqual(currentUserId, id)) {
-            return;
-          }
           var uris = data.uris;
 
+          if (utils.isEqual(currentUserId, id)) {
+            var _uris2 = slicedToArray(uris, 1),
+                _uris2$ = _uris2[0],
+                type = _uris2$.mediaType,
+                tag = _uris2$.tag;
+
+            type = utils.isEqual(uris.length, 1) ? type : StreamType.AUDIO_AND_VIDEO;
+            return unpublish({
+              id: id,
+              stream: {
+                tag: tag,
+                type: type
+              }
+            });
+          }
           utils.forEach(uris, function (uri) {
             var type = uri.mediaType,
                 tag = uri.tag;
