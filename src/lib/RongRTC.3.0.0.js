@@ -548,6 +548,73 @@
   };
   var ErrorType = getErrors();
 
+  var StreamType = {
+    NODE: -1,
+    AUDIO: 0,
+    VIDEO: 1,
+    AUDIO_AND_VIDEO: 2
+  };
+
+  var StreamSize = {
+    MAX: 1,
+    MIN: 2
+  };
+
+  var StreamState = {
+    ENABLE: 1,
+    DISBALE: 0
+  };
+
+  var UserState = {
+    JOINED: 0,
+    LEFT: 1,
+    OFFLINE: 2
+  };
+
+  var PingCount = 4;
+
+  var LogTag = {
+    ICE: 'ice',
+    LIFECYCLE: 'lifecycle',
+    ROOM: 'room',
+    STREAM: 'stream',
+    STREAM_HANDLER: 'stream_handler',
+    ROOM_HANDLER: 'room_handler',
+    STORAGE_HANDLER: 'storage_handler',
+    IM: 'im',
+    MESSAGE: 'message',
+    DEVICE: 'device'
+  };
+
+  var LogLevel = {
+    INFO: 'I',
+    DEBUG: 'D',
+    VERBOSE: 'V',
+    WARN: 'W',
+    ERROR: 'E'
+  };
+
+  var EventType = {
+    REQUEST: 1,
+    RESPONSE: 2
+  };
+
+  var StorageType = {
+    ROOM: 1,
+    USER: 2
+  };
+
+  var REGEXP_ROOM_ID = /[A-Za-z0-9+=-_]+$/;
+
+  var LENGTH_ROOM_ID = 64;
+
+  var DEFAULT_MS_PROFILE = {
+    height: 720,
+    width: 1280,
+    frameRate: 15
+  };
+  var MIN_STREAM_SUFFIX = 'tiny';
+
   var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
     return typeof obj;
   } : function (obj) {
@@ -725,72 +792,83 @@
     });
   };
 
-  var StreamType = {
-    NODE: -1,
-    AUDIO: 0,
-    VIDEO: 1,
-    AUDIO_AND_VIDEO: 2
+  var dispatchStreamEvent = function dispatchStreamEvent(user, callback) {
+    var id = user.id,
+        uris = user.uris;
+
+    if (utils.isString(uris)) {
+      uris = utils.parse(uris);
+    }
+    var streams = [user];
+    if (uris) {
+      streams = utils.uniq(uris, function (target) {
+        var streamId = target.streamId,
+            tag = target.tag,
+            mediaType = target.mediaType,
+            state = target.state;
+
+        return {
+          key: [streamId, tag].join('_'),
+          value: {
+            tag: tag,
+            uris: uris,
+            mediaType: mediaType,
+            state: state
+          }
+        };
+      });
+    }
+    utils.forEach(streams, function (stream) {
+      callback({
+        id: id,
+        stream: stream
+      });
+    });
   };
 
-  var StreamSize = {
-    MAX: 1,
-    MIN: 2
+  var dispatchOperationEvent = function dispatchOperationEvent(user, callback) {
+    var getModifyEvents = function getModifyEvents() {
+      var events = {},
+          tpl = '{type}_{state}';
+      // 禁用视频
+      var name = utils.tplEngine(tpl, {
+        type: StreamType.VIDEO,
+        state: StreamState.DISBALE
+      });
+      events[name] = DownEvent.STREAM_DISABLED;
+      // 启用视频
+      name = utils.tplEngine(tpl, {
+        type: StreamType.VIDEO,
+        state: StreamState.ENABLE
+      });
+      events[name] = DownEvent.STREAM_ENABLED;
+      // 音频静音
+      name = utils.tplEngine(tpl, {
+        type: StreamType.AUDIO,
+        state: StreamState.DISBALE
+      });
+      events[name] = DownEvent.STREAM_MUTED;
+      // 音频取消静音
+      name = utils.tplEngine(tpl, {
+        type: StreamType.AUDIO,
+        state: StreamState.ENABLE
+      });
+      events[name] = DownEvent.STREAM_UNMUTED;
+      return events;
+    };
+    var _user$stream = user.stream,
+        type = _user$stream.mediaType,
+        state = _user$stream.state;
+
+    var tpl = '{type}_{state}';
+    var name = utils.tplEngine(tpl, {
+      type: type,
+      state: state
+    });
+    var events = getModifyEvents();
+    var event = events[name];
+    return callback(event, user);
   };
-
-  var StreamState = {
-    ENABLE: 1,
-    DISBALE: 0
-  };
-
-  var UserState = {
-    JOINED: 0,
-    LEFT: 1,
-    OFFLINE: 2
-  };
-
-  var PingCount = 4;
-
-  var LogTag = {
-    ICE: 'ice',
-    LIFECYCLE: 'lifecycle',
-    ROOM: 'room',
-    STREAM: 'stream',
-    STREAM_HANDLER: 'stream_handler',
-    ROOM_HANDLER: 'room_handler',
-    STORAGE_HANDLER: 'storage_handler',
-    IM: 'im',
-    MESSAGE: 'message',
-    DEVICE: 'device'
-  };
-
-  var LogLevel = {
-    INFO: 'I',
-    DEBUG: 'D',
-    VERBOSE: 'V',
-    WARN: 'W',
-    ERROR: 'E'
-  };
-
-  var EventType = {
-    REQUEST: 1,
-    RESPONSE: 2
-  };
-
-  var StorageType = {
-    ROOM: 1,
-    USER: 2
-  };
-
-  var REGEXP_ROOM_ID = /[A-Za-z0-9+=-_]+$/;
-
-  var LENGTH_ROOM_ID = 64;
-
-  var DEFAULT_MS_PROFILE = {
-    height: 720,
-    width: 1280,
-    frameRate: 15
-  };
-  var MIN_STREAM_SUFFIX = 'tiny';
 
   function Logger() {
     var observer = new utils.Observer();
@@ -1198,7 +1276,8 @@
     ERROR: 'common_error',
     CONSUME: 'common_consume',
     CONSUME_FINISHED: 'common_consume_finished',
-    REQUEST_CONSUME: 'common_request_consume'
+    REQUEST_CONSUME: 'common_request_consume',
+    CONNECTED: 'common_connected'
   };
 
   function request$1() {
@@ -1775,74 +1854,13 @@
         switch (status) {
           case CONNECTED:
             init();
+            context.emit(CommonEvent.CONNECTED);
             break;
         }
         utils.extend(context, {
           connectState: status
         });
       });
-      var dispatchStreamEvent = function dispatchStreamEvent(user, callback) {
-        var id = user.id,
-            uris = user.uris;
-
-        if (utils.isString(uris)) {
-          uris = JSON.parse(uris);
-        }
-        var streams = [user];
-        if (uris) {
-          streams = utils.uniq(uris, function (target) {
-            var streamId = target.streamId,
-                tag = target.tag,
-                mediaType = target.mediaType,
-                state = target.state;
-
-            return {
-              key: [streamId, tag].join('_'),
-              value: {
-                tag: tag,
-                uris: uris,
-                mediaType: mediaType,
-                state: state
-              }
-            };
-          });
-        }
-        utils.forEach(streams, function (stream) {
-          callback({
-            id: id,
-            stream: stream
-          });
-        });
-      };
-      var getModifyEvents = function getModifyEvents() {
-        var events = {},
-            tpl = '{type}_{state}';
-        // 禁用视频
-        var name = utils.tplEngine(tpl, {
-          type: StreamType.VIDEO,
-          state: StreamState.DISBALE
-        });
-        events[name] = DownEvent.STREAM_DISABLED;
-        // 启用视频
-        name = utils.tplEngine(tpl, {
-          type: StreamType.VIDEO,
-          state: StreamState.ENABLE
-        });
-        events[name] = DownEvent.STREAM_ENABLED;
-        // 音频静音
-        name = utils.tplEngine(tpl, {
-          type: StreamType.AUDIO,
-          state: StreamState.DISBALE
-        });
-        events[name] = DownEvent.STREAM_MUTED;
-        // 音频取消静音
-        name = utils.tplEngine(tpl, {
-          type: StreamType.AUDIO,
-          state: StreamState.ENABLE
-        });
-        events[name] = DownEvent.STREAM_UNMUTED;
-        return events;
-      };
       var roomEventHandler = function roomEventHandler(users) {
         utils.forEach(users, function (user) {
           var id = user.userId,
@@ -1930,18 +1948,9 @@
           case Message.MODIFY:
             user = { id: id, uris: uris };
             dispatchStreamEvent(user, function (user) {
-              var _user$stream = user.stream,
-                  type = _user$stream.mediaType,
-                  state = _user$stream.state;
-
-              var tpl = '{type}_{state}';
-              var name = utils.tplEngine(tpl, {
-                type: type,
-                state: state
+              dispatchOperationEvent(user, function (event, user) {
+                context.emit(event, user);
               });
-              var events = getModifyEvents();
-              var event = events[name];
-              context.emit(event, user);
             });
             break;
           default:
@@ -2014,8 +2023,13 @@
           im.getInstance().joinRTCRoom(room, {
             onSuccess: function onSuccess(users) {
               context.rtcPing(room);
-              utils.extend(room, {
-                users: users
+              utils.forEach(users, function (user) {
+                var uris = user.uris;
+
+                uris = utils.parse(uris);
+                utils.extend(user, {
+                  uris: uris
+                });
               });
               Logger$1.log(LogTag.STREAM_HANDLER, {
                 msg: 'getRTCToken:before',
@@ -2030,7 +2044,8 @@
                     roomId: room.id
                   });
                   utils.extend(room, {
-                    rtcToken: rtcToken
+                    rtcToken: rtcToken,
+                    users: users
                   });
                   context.emit(CommonEvent.JOINED, room);
                   resolve(users);
@@ -2346,8 +2361,8 @@
         };
       }
     }, {
-      key: 'isReady',
-      value: function isReady() {
+      key: 'isIMReady',
+      value: function isIMReady() {
         var context = this;
         var CONNECTED = context.RongIMLib.ConnectionStatus.CONNECTED;
 
@@ -2635,7 +2650,138 @@
         pc.setAnwser(sdp);
       });
     };
-    var republish = function republish() {
+    /* 
+    人员比较:
+      1、clone 本地数据
+      2、遍历服务端数据，在本地获取，本地没有认为是新增，本地有认为人员无变化
+      3、本地有同时删掉 clone 数据，最终剩下的数据认为已离开房间
+    资源比较:
+      1、本地数据、远端数据转换为 {msid: [uri1, uri2]}
+    最后更新本地数据
+    */
+    var compare = function compare() {
+      var format = function format(users) {
+        var streams = {};
+        utils.forEach(users, function (_ref2) {
+          var uris = _ref2.uris;
+
+          utils.forEach(uris, function (uri) {
+            var msid = uri.msid;
+
+            var resources = streams[msid] || [];
+            resources.push(uri);
+            streams[msid] = resources;
+          });
+        });
+        return streams;
+      };
+      var dispatch = function dispatch(event, id, uris, callback) {
+        dispatchStreamEvent({ id: id, uris: uris }, function (user) {
+          if (utils.isFunction(callback)) {
+            return callback(user);
+          }
+          im.emit(event, user);
+        });
+      };
+      // 发布、取消发布、视频操作、音频操作
+      var compareStreams = function compareStreams(localUsers, remoteUsers) {
+        localUsers = format(localUsers);
+        remoteUsers = format(remoteUsers);
+        var tempLocalUsers = utils.clone(localUsers);
+        utils.forEach(remoteUsers, function (remoteUris, remoteMSId) {
+          /** 
+           * 包含本地资源说明流没有变化，删除 tempLocalUsers，且需比对 track 变化，state 有差异，以 remoteUsers 为准
+           * 未包含说明是新发布资源，触发 published 事件 
+           * 遍历后 tempLocalUsers 还有数据认为是取消发布
+           */
+          var isInclude = remoteMSId in localUsers;
+
+          var _pc$getStreamSymbolBy = pc.getStreamSymbolById(remoteMSId),
+              _pc$getStreamSymbolBy2 = slicedToArray(_pc$getStreamSymbolBy, 1),
+              userId = _pc$getStreamSymbolBy2[0];
+
+          var _im$getUser = im.getUser(),
+              currentUserId = _im$getUser.id;
+
+          var isCurrent = utils.isEqual(currentUserId, userId);
+          if (isInclude) {
+            delete tempLocalUsers[remoteMSId];
+            var tempRemote = utils.toJSON(remoteUris);
+            var localUris = localUsers[remoteMSId];
+            var tempLocal = utils.toJSON(localUris);
+            if (!utils.isEqual(tempRemote, tempLocal)) {
+              dispatch('', userId, remoteUris, function (user) {
+                dispatchOperationEvent(user, function (event, user) {
+                  im.emit(event, user);
+                });
+              });
+            }
+          } else {
+            if (!isCurrent) {
+              dispatch(DownEvent.STREAM_PUBLISHED, userId, remoteUris);
+            }
+          }
+        });
+        utils.forEach(tempLocalUsers, function (localUris, localMSId) {
+          var _pc$getStreamSymbolBy3 = pc.getStreamSymbolById(localMSId),
+              _pc$getStreamSymbolBy4 = slicedToArray(_pc$getStreamSymbolBy3, 1),
+              userId = _pc$getStreamSymbolBy4[0];
+
+          dispatch(DownEvent.STREAM_UNPUBLISHED, userId, localUris);
+        });
+      };
+      // 成员加入、退出
+      var compareUser = function compareUser(localUsers, remoteUsers) {
+        var tempLocalUsers = utils.clone(localUsers);
+        var tempRemoteUsers = utils.toArray(remoteUsers);
+
+        var _im$getUser2 = im.getUser(),
+            currentUserId = _im$getUser2.id;
+
+        utils.forEach(tempRemoteUsers, function (_ref3) {
+          var _ref4 = slicedToArray(_ref3, 1),
+              remoteUserId = _ref4[0];
+
+          var isInclude = remoteUserId in localUsers;
+          var isCurrent = utils.isEqual(currentUserId, remoteUserId);
+          if (isInclude) {
+            delete tempLocalUsers[remoteUserId];
+          } else {
+            if (!isCurrent) {
+              im.emit(DownEvent.ROOM_USER_JOINED, { id: remoteUserId });
+            }
+          }
+        });
+        tempLocalUsers = utils.toArray(tempLocalUsers);
+        utils.forEach(tempLocalUsers, function (_ref5) {
+          var _ref6 = slicedToArray(_ref5, 1),
+              id = _ref6[0];
+
+          im.emit(DownEvent.ROOM_USER_LEFT, { id: id });
+        });
+      };
+      im.getUsers().then(function (remoteUsers) {
+        utils.forEach(remoteUsers, function (user) {
+          var uris = user.uris;
+
+          uris = utils.parse(uris);
+          utils.extend(user, {
+            uris: uris
+          });
+        });
+        var localUsers = DataCache.get(DataCacheName.USERS);
+        compareUser(localUsers, remoteUsers);
+        compareStreams(localUsers, remoteUsers);
+        DataCache.set(DataCacheName.USERS, remoteUsers);
+      });
+    };
+    im.on(CommonEvent.CONNECTED, function () {
+      var users = DataCache.get(DataCacheName.USERS);
+      if (users) {
+        compare();
+      }
+    });
+    var reconnect = function reconnect() {
       var roomId = im.getRoomId();
       getBody().then(function (body) {
         var url = utils.tplEngine(Path.SUBSCRIBE, {
@@ -2657,7 +2803,6 @@
             roomId: roomId,
             response: response
           });
-          //TODO: 重新设置数据
           negotiate(response);
         }, function (error) {
           Logger$1.log(LogTag.STREAM_HANDLER, {
@@ -2689,8 +2834,8 @@
         streams = [streams];
       }
       var result = {};
-      utils.forEach(streams, function (_ref2) {
-        var mediaStream = _ref2.mediaStream;
+      utils.forEach(streams, function (_ref7) {
+        var mediaStream = _ref7.mediaStream;
         var streamId = mediaStream.streamId;
 
         var videoTracks = mediaStream.getVideoTracks();
@@ -2718,9 +2863,9 @@
 
       var states = getTrackState(streams);
       var update = function update(_uris) {
-        utils.forEach(states, function (_ref3, streamId) {
-          var audio = _ref3.audio,
-              video = _ref3.video;
+        utils.forEach(states, function (_ref8, streamId) {
+          var audio = _ref8.audio,
+              video = _ref8.video;
 
           utils.map(_uris, function (uri) {
             var isSameStream = utils.isEqual(uri.msid, streamId);
@@ -2804,10 +2949,10 @@
     eventEmitter.on(CommonEvent.CONSUME, function () {
       var user = im.getUser();
       var roomId = im.getRoomId();
-      prosumer.consume(function (_ref4, next) {
-        var sdp = _ref4.sdp,
-            body = _ref4.body,
-            inputUser = _ref4.user;
+      prosumer.consume(function (_ref9, next) {
+        var sdp = _ref9.sdp,
+            body = _ref9.body,
+            inputUser = _ref9.user;
 
         Logger$1.log(LogTag.STREAM_HANDLER, {
           msg: 'subscribe:request',
@@ -2857,7 +3002,7 @@
         type: type
       });
     };
-    var dispatchStreamEvent = function dispatchStreamEvent(user, callback) {
+    var dispatchStreamEvent$$1 = function dispatchStreamEvent$$1(user, callback) {
       var id = user.id,
           uris = user.stream.uris;
 
@@ -2874,7 +3019,7 @@
       if (error) {
         throw error;
       }
-      dispatchStreamEvent(user, function (key, uri) {
+      dispatchStreamEvent$$1(user, function (key, uri) {
         DataCache.set(key, uri);
       });
     });
@@ -2883,7 +3028,7 @@
       if (error) {
         throw error;
       }
-      dispatchStreamEvent(user, function (key, uri) {
+      dispatchStreamEvent$$1(user, function (key, uri) {
         DataCache.set(key, uri);
       });
     });
@@ -2910,10 +3055,10 @@
       var getStreamUser = function getStreamUser(stream) {
         var id = stream.id,
             type = StreamType.NODE;
-        var _pc$getStreamSymbolBy = pc.getStreamSymbolById(id),
-            _pc$getStreamSymbolBy2 = slicedToArray(_pc$getStreamSymbolBy, 2),
-            userId = _pc$getStreamSymbolBy2[0],
-            tag = _pc$getStreamSymbolBy2[1];
+        var _pc$getStreamSymbolBy5 = pc.getStreamSymbolById(id),
+            _pc$getStreamSymbolBy6 = slicedToArray(_pc$getStreamSymbolBy5, 2),
+            userId = _pc$getStreamSymbolBy6[0],
+            tag = _pc$getStreamSymbolBy6[1];
 
         var videoTracks = stream.getVideoTracks();
         var audioTrakcks = stream.getAudioTracks();
@@ -3005,7 +3150,7 @@
         if (pc.isNegotiate()) {
           network.detect(function (isOnline) {
             if (isOnline) {
-              republish();
+              reconnect();
             } else {
               var Inner = ErrorType.Inner;
 
@@ -3022,8 +3167,8 @@
           DataCache.set(DataCacheName.IS_NOTIFY_READY, true);
         }
 
-        var _im$getUser = im.getUser(),
-            currentUserId = _im$getUser.id;
+        var _im$getUser3 = im.getUser(),
+            currentUserId = _im$getUser3.id;
 
         utils.forEach(users, function (data, id) {
           if (utils.isEqual(currentUserId, id)) {
@@ -3031,7 +3176,6 @@
           }
           var uris = data.uris;
 
-          uris = JSON.parse(uris);
           utils.forEach(uris, function (uri) {
             var type = uri.mediaType,
                 tag = uri.tag;
@@ -3059,8 +3203,8 @@
           utils.forEach(streams, function (stream) {
             var tag = stream.tag;
 
-            var msUris = utils.filter(uris, function (_ref5) {
-              var msid = _ref5.msid;
+            var msUris = utils.filter(uris, function (_ref10) {
+              var msid = _ref10.msid;
 
               return utils.isInclude(msid, tag);
             });
@@ -3080,8 +3224,8 @@
       usersHandler();
     });
     var isCurrentUser = function isCurrentUser(user) {
-      var _im$getUser2 = im.getUser(),
-          id = _im$getUser2.id;
+      var _im$getUser4 = im.getUser(),
+          id = _im$getUser4.id;
 
       return utils.isEqual(user.id, id);
     };
@@ -3216,8 +3360,8 @@
         roomId: roomId,
         user: user
       });
-      utils.forEach(streams, function (_ref6) {
-        var mediaStream = _ref6.mediaStream;
+      utils.forEach(streams, function (_ref11) {
+        var mediaStream = _ref11.mediaStream;
 
         var tracks = mediaStream.getTracks();
         utils.forEach(tracks, function (track) {
@@ -3279,8 +3423,8 @@
         };
         var key = getUId(tUser);
 
-        var _ref7 = DataCache.get(key) || {},
-            uri = _ref7.uri;
+        var _ref12 = DataCache.get(key) || {},
+            uri = _ref12.uri;
 
         if (utils.isUndefined(uri)) {
           isError = true;
@@ -3626,10 +3770,10 @@
       var subs = SubscribeCache.get(id);
       var streams = {},
           msTypes = {};
-      utils.forEach(subs, function (_ref8) {
-        var msid = _ref8.msid,
-            tag = _ref8.tag,
-            type = _ref8.type;
+      utils.forEach(subs, function (_ref13) {
+        var msid = _ref13.msid,
+            tag = _ref13.tag,
+            type = _ref13.type;
 
         streams[msid] = tag;
         var types = msTypes[msid] || [];
@@ -3664,7 +3808,7 @@
       if (error) {
         throw error;
       }
-      dispatchStreamEvent(user, function (key) {
+      dispatchStreamEvent$$1(user, function (key) {
         DataCache.remove(key);
       });
       unsubscribe(user);
@@ -9000,7 +9144,7 @@
         if (context.isDestroyed()) {
           return utils.Defer.reject(ErrorType.Inner.INSTANCE_IS_DESTROYED);
         }
-        if (!im.isReady()) {
+        if (!im.isIMReady()) {
           return utils.Defer.reject(ErrorType.Inner.IM_NOT_CONNECTED);
         }
         var type = params.type,
