@@ -462,47 +462,87 @@
       name: 'INSTANCE_IS_DESTROYED',
       msg: 'RongRTC 实例已销毁，请重新创建实例'
     }, {
-      code: 10001,
+      code: 50000,
       name: 'IM_NOT_CONNECTED',
       msg: '请在 IM 连接成功后开始音频业务'
     }, {
-      code: 10002,
-      name: 'RTC_NOT_JOIN_ROOM',
-      msg: '未加入房间，加入成功后方可调用业务方法'
-    }, {
-      code: 10003,
-      name: 'SOCKET_UNAVAILABLE',
-      msg: 'IM Socket 连接不可用'
-    }, {
-      code: 10004,
-      name: 'NETWORK_UNAVAILABLE',
-      msg: '网络不可用'
-    }, {
-      code: 10005,
-      name: 'APPKEY_ILLEGAL',
-      msg: 'AppKey 不可为空'
-    }, {
-      code: 20001,
-      name: 'STREAM_NOT_EXIST',
-      msg: 'stream 不存在，请检查传入参数, id、stream.type、stream.tag 是否正确'
-    }, {
-      code: 20002,
-      name: 'STREAM_TRACK_NOT_EXIST',
-      msg: 'Track 不存在，请检查传入参数 stream.type 是否正确'
-    }, {
-      code: 20003,
+      code: 50001,
       name: 'ROOM_ID_IS_ILLEGAL',
       msg: '房间号不合法，只能包含大小写字母、阿拉伯数字、+、=、-、_ 且长度不能超过 64 个字符'
     }, {
-      code: 20004,
+      code: 50002,
       name: 'ROOM_REPEAT_JOIN',
-      msg: '不可重复加入房间'
+      msg: '重复加入房间'
     }, {
-      code: 20005,
+      code: 50010,
+      name: '',
+      msg: 'http 请求超时'
+    }, {
+      code: 50011,
+      name: '',
+      msg: 'http response 异常（404、500）'
+    }, {
+      code: 50012,
+      name: '',
+      msg: '请求未发出去、断网'
+    }, {
+      code: 50020,
+      name: '',
+      msg: '资源已发布'
+    }, {
+      code: 50021,
+      name: 'SET_OFFER_ERROR',
+      msg: '设置 Offer 错误'
+    }, {
+      code: 50021,
+      name: 'SET_ANSWER_ERROR',
+      msg: '设置 Answer 错误'
+    }, {
+      code: 50023,
+      name: 'PUBLISH_STREAM_EXCEED_LIMIT',
+      msg: '发布资源个数已经到达上限'
+    }, {
+      code: 50030,
+      name: 'SUBSCRIBE_STREAM_NOT_EXIST',
+      msg: '订阅不存在的资源'
+    }, {
+      code: 50030,
+      name: 'STREAM_NOT_EXIST',
+      msg: 'stream 不存在，请检查传入参数, id、stream.type、stream.tag 是否正确'
+    }, {
+      code: 50030,
+      name: 'STREAM_TRACK_NOT_EXIST',
+      msg: 'Track 不存在，请检查传入参数 stream.type 是否正确'
+    }, {
+      code: 50031,
+      name: 'STREAM_SUBSCRIBED',
+      msg: '资源已订阅'
+    }, {
+      code: 50032,
+      name: 'UNSUBSCRIBE_STREAM_NOT_EXIST',
+      msg: '取消订阅不存在资源'
+    }, {
+      code: 50050,
+      name: 'RTC_NOT_JOIN_ROOM',
+      msg: '未加入房间，加入成功后方可调用业务方法'
+    }, {
+      code: 50051,
+      name: 'SOCKET_UNAVAILABLE',
+      msg: 'IM Socket 连接不可用'
+    }, {
+      code: 50052,
+      name: 'NETWORK_UNAVAILABLE',
+      msg: '网络不可用'
+    }, {
+      code: 50053,
+      name: 'IM_SDK_VER_NOT_MATCH',
+      msg: 'IM SDK 版本过低，最低版本 2.4.0，详细请参考: https://www.rongcloud.cn/docs/web_rtclib.html'
+    }, {
+      code: 50054,
       name: 'STREAM_DESKTOPID_ILLEGAL',
       msg: '获取屏幕共享流失败，desktopStreamId 非法'
     }, {
-      code: 30001,
+      code: 50055,
       name: 'PARAMTER_ILLEGAL',
       msg: '请检查参数，{name} 参数为必传入项'
     }, {
@@ -1850,6 +1890,7 @@
       if (utils.isEqual(connectState, CONNECTED)) {
         init();
       }
+      im.statusWatch = im.statusWatch || utils.noop;
       im.statusWatch(function (status) {
         switch (status) {
           case CONNECTED:
@@ -1921,6 +1962,7 @@
         });
         return msg;
       };
+      im.messageWatch = im.messageWatch || utils.noop;
       im.messageWatch(function (message) {
         var type = message.messageType,
             id = message.senderUserId,
@@ -2023,7 +2065,11 @@
           im.getInstance().joinRTCRoom(room, {
             onSuccess: function onSuccess(users) {
               context.rtcPing(room);
-              utils.forEach(users, function (user) {
+              utils.forEach(users, function (user, userId) {
+                // 过滤自己和为空的用户
+                if (utils.isEmpty(user)) {
+                  delete users[userId];
+                }
                 var uris = user.uris;
 
                 if (!utils.isUndefined(uris)) {
@@ -2383,6 +2429,18 @@
       value: function isJoined() {
         var context = this;
         return context.isJoinRoom;
+      }
+    }, {
+      key: 'isSupportRTC',
+      value: function isSupportRTC() {
+        var context = this;
+        var im = context.im;
+
+        var isSupport = false;
+        if (utils.isFunction(im.getInstance().RTCPing)) {
+          isSupport = true;
+        }
+        return isSupport;
       }
     }, {
       key: 'rePing',
@@ -3263,6 +3321,15 @@
         utils.forEach(users, function (data, id) {
           var uris = data.uris;
 
+          if (utils.isUndefined(uris)) {
+            Logger$1.log(LogTag.STREAM_HANDLER, {
+              msg: 'user exist, uris is empty',
+              user: {
+                id: id
+              }
+            });
+            return;
+          }
           if (utils.isEqual(currentUserId, id)) {
             var _uris2 = slicedToArray(uris, 1),
                 _uris2$ = _uris2[0],
@@ -9159,6 +9226,9 @@
         if (context.isDestroyed()) {
           return utils.Defer.reject(ErrorType.Inner.INSTANCE_IS_DESTROYED);
         }
+        if (!im.isSupportRTC()) {
+          return utils.Defer.reject(ErrorType.Inner.IM_SDK_VER_NOT_MATCH);
+        }
         if (!im.isIMReady()) {
           return utils.Defer.reject(ErrorType.Inner.IM_NOT_CONNECTED);
         }
@@ -9407,8 +9477,7 @@
       utils.extend(option, _option);
       var logger = option.logger,
           debug = option.debug;
-      var Inner = ErrorType.Inner,
-          Outer = ErrorType.Outer;
+      var Outer = ErrorType.Outer;
 
       if (utils.isFunction(logger)) {
         Logger$1.watch(logger, true);
@@ -9437,15 +9506,11 @@
         option: option,
         client: client
       });
-      var appkey = option.appkey,
-          created = option.created,
+      var created = option.created,
           mounted = option.mounted,
           unmounted = option.unmounted,
           error = option.error;
 
-      if (utils.isEmpty(appkey)) {
-        return error(Inner.APPKEY_ILLEGAL);
-      }
       created();
       Logger$1.log(LogTag.LIFECYCLE, {
         state: 'created'
