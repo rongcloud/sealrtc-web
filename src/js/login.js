@@ -25,6 +25,7 @@
   var telDom = getDomById('telNumber'),
     verifyCodeDom = getDomById('verifyCode'),
     verifyCodeBtnDom = getDomById('verifyCodeBtn'),
+    inputTelVerifyDomList = Dom.getList('.rong-login-verify-input'),
     verifyLoginDom = getDomById('verifyLogin');
 
   var StorageKeys = {
@@ -427,6 +428,12 @@
     var token = hasIMToken();
     if ((e.keyCode || e.which) == 13) {
       startRTC(token);
+      // verifyLogin();
+    }
+  };
+  var pressVerifyLogin = function(e) {
+    if ((e.keyCode || e.which) == 13) {
+      verifyLogin();
     }
   };
 
@@ -434,10 +441,14 @@
     setDefaultRTCInfo();
     checkRoomTelValue();
     bindCodeFn();
+    // pressVerifyLogin();
     roomTelNumDom.onkeyup = checkRoomTelValue;
     // startBtnDom.onclick = startRTC;
     utils.forEach(inputDomList, function (dom) {
       dom.onkeydown = pressInput;
+    });
+    utils.forEach(inputTelVerifyDomList, function (dom) {
+      dom.onkeydown = pressVerifyLogin;
     });
     common.setLocale();
   })();
