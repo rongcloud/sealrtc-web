@@ -47,6 +47,7 @@
     textContent: {
       closeVideo: '加入时关闭摄像头',
       closeAudio: '加入时关闭麦克风',
+      bystanders: '以旁观者模式加入',
       setting: '通话设置',
       resolution: '分辨率',
       screenshareBusy: '正在分享屏幕',

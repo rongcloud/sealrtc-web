@@ -165,7 +165,7 @@
         tel: tel,
         region: '86',
         code: code,
-        key: 'lzp'
+        key: tel
       };
       verifySmsCode(params).then(function (data) {
         //验证正确：
@@ -210,7 +210,7 @@
   var hasIMToken = function () {
     var roomTel = roomTelNumDom.value;
     var imTokenKey = StorageKeys.IMToken + '_' + roomTel;
-    console.log(roomTel)
+    // console.log(roomTel)
     var IMToken = Cache.get(imTokenKey);
     if (IMToken) {
       return IMToken;
