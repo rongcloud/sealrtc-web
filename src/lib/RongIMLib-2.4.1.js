@@ -9817,7 +9817,8 @@ var RongIMLib;
             RongIMLib.RongIMClient.bridge.queryMsg("rtcRInfo", RongIMLib.MessageUtil.ArrayForm(modules.toArrayBuffer()), room.id, {
                 onSuccess: function (result) {
                     var room = {
-                        id: result.roomId
+                        id: result.roomId,
+                        total: result.userCount
                     };
                     RongIMLib.RongUtil.forEach(result.roomData, function (data) {
                         room[data.key] = data.value;
@@ -9864,7 +9865,7 @@ var RongIMLib;
             RongIMLib.RongIMClient.bridge.queryMsg("rtcRJoin_data", RongIMLib.MessageUtil.ArrayForm(modules.toArrayBuffer()), room.id, {
                 onSuccess: function (result) {
                     var users = {};
-                    var list = result.list;
+                    var list = result.list, token = result.token;
                     RongIMLib.RongUtil.forEach(list, function (item) {
                         var userId = item.userId;
                         var tmpData = {};
@@ -9875,7 +9876,10 @@ var RongIMLib;
                         });
                         users[userId] = tmpData;
                     });
-                    callback.onSuccess(users);
+                    callback.onSuccess({
+                        users: users,
+                        token: token
+                    });
                 },
                 onError: function (errorCode) {
                     callback.onError(errorCode);

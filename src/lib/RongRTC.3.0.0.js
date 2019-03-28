@@ -2179,7 +2179,7 @@
 
         rtcInfo = rtcInfo || '{"callEngine": [{}]}';
         rtcInfo = utils.parse(rtcInfo);
-        var engines = rtcInfo.callEngine[0];
+        var engines = rtcInfo.callEngine;
         var engine = utils.filter(engines, function (e) {
           return e.engineType === 4;
         })[0] || {};
