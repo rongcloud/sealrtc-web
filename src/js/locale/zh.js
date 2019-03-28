@@ -13,6 +13,10 @@
       userIdEmpty: '用户 ID 不能为空',
       roomIdIllegal: '会议室 ID 只能包含大小写字母、阿拉伯数字、+、=、-、_ 且长度不能超过 64 个字符',
       networkError: '网络已断开',
+      phoneNumberErr: '手机号格式非法',
+      verifyCodeErr: '请输入手机验证码',
+      verifyCodeIncorrect: '验证码错误',
+      verifyCodeExpired: '验证码过期',
 
       getTokenError: '获取 token 失败',
       rtcError: '初始化 RTC 失败',
@@ -33,7 +37,9 @@
     },
     placeholder: {
       roomId: '请输入会议室 ID',
-      userId: '请输入用户 ID'
+      userId: '请输入用户 ID',
+      phoneNumber: '手机号',
+      verifyCode: '手机验证码'
     },
     textContent: {
       closeVideo: '加入时关闭摄像头',
@@ -43,12 +49,15 @@
       screenshareBusy: '正在分享屏幕',
       videoClosed: '摄像头已关闭',
       otherVideoClosed: '对方已关闭摄像头',
-      alertTitle: '提示'
+      alertTitle: '提示',
+      phoneTips: '请输入手机号验证登录，目前只支持中国区',
     },
     value: {
       startRTC: '开始会议',
       cancel: '取消',
-      conform: '确定'
+      conform: '确定',
+      sendVerifyCode: '发送验证码',
+      verifyLogin: '验证登录'
     },
     title: {
       hangup: '挂断',

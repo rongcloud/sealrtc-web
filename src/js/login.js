@@ -11,7 +11,7 @@
     Config = RongSeal.Config;
 
   // var randomUserId;
-  var userId;
+  var userId,rongIMToken;
   // console.log('randomUserId: ', typeof randomUserId);
 
   var locale = RongSeal.locale[common.lang],
@@ -21,12 +21,201 @@
     userDom = getDomById('userId'),
     startBtnDom = getDomById('start'),
     inputDomList = Dom.getList('.rong-login-input');
+  var telDom = getDomById('telNumber'),
+    verifyCodeDom = getDomById('verifyCode'),
+    verifyCodeBtnDom = getDomById('verifyCodeBtn'),
+    verifyLoginDom = getDomById('verifyLogin');
 
   var StorageKeys = {
     RoomId: 'rong-sealv2-roomid',
-    Resolution: 'rong-sealv2-resolution'
+    Resolution: 'rong-sealv2-resolution',
+    IMToken: 'rong-im-token'
   };
+  /**
+   * 获取手机验证码 
+   * @param {object} params 
+   * @param {object} params.getSmsCodeUrl 获取 手机验证码 的 url
+   * @param {object} params.tel 获取手机号
+   * @param {object} params.region 获取
+   */
+  function getSmsCode(params, callback) {
+    callback = callback || utils.noop;
+    var url = RongSeal.Config.GET_SMS_CODE_URL;
+    return new Promise(function (resolve, reject) {
+      utils.ajax({
+        url: url,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        method: 'POST',
+        body: JSON.stringify({
+          phone: params.tel,
+          region: params.region
+        }),
+        success: function (result) {
+          result = JSON.parse(result);
+          callback(null, result);
+          resolve(result);
+        },
+        fail: function (error) {
+          callback(error);
+          reject(error);
+        }
+      });
+    });
+  }
+  /**
+   * 验证手机验证码 
+   * @param {object} params 
+   * @param {object} params.tokenUrl 验证手机验证码er的 url
+   * @param {object} params.tel 手机号
+   * @param {object} params.region 国际区号
+   * @param {object} params.code 手机验证码
+   * @param {object} params.key ???
+   */
+  function verifySmsCode(params, callback) {
+    callback = callback || utils.noop;
+    var url = RongSeal.Config.VERIFY_SMS_CODE_URL;
+    return new Promise(function (resolve, reject) {
+      utils.ajax({
+        url: url,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        method: 'POST',
+        body: JSON.stringify({
+          phone: params.tel,
+          region: params.region,
+          code: params.code,
+          key: params.key
+        }),
+        success: function (result) {
+          result = JSON.parse(result);
+          callback(null, result);
+          resolve(result);
+        },
+        fail: function (error) {
+          callback(error);
+          reject(error);
+        }
+      });
+    });
+  }
+  var setVerifyCodeBtnEnable = function() {
+    verifyCodeBtnDom.style.background = '#28d6f6';
+    verifyCodeBtnDom.style.border = '#28d6f6';
+    verifyCodeBtnDom.onclick = sendSmsCode;
+  }
+  var setVErifyCodeBtnDisable = function() {
+    verifyCodeBtnDom.style.background = '#475163';
+    verifyCodeBtnDom.style.border = '#475163';
+    verifyCodeBtnDom.onclick = function () {};
+  }
+  var setCountDownTimer = function (countDown) {
+    if(countDown === 0) {
+      verifyCodeBtnDom.value = '发送验证码';
+      countDown = 60;
+      setVerifyCodeBtnEnable();
+      return ;
+    }else {
+      countDown --;
+      setVErifyCodeBtnDisable();
+    }
+    setTimeout(function(){
+      verifyCodeBtnDom.value = countDown+'s后重新发送';
+      setCountDownTimer(countDown)
+    },1000)
+  }
+  var sendSmsCode = function () {
+    var telReg=/^[1][3,4,5,7,8][0-9]{9}$/; 
+    if(telReg.test(telDom.value)){
+      console.log(telDom.value);
+      var params = {
+        tel: telDom.value,
+        region: 86
+      }
+      getSmsCode(params).then(function(data){
+        console.log('data',data)
+      }).catch(function(err) {
+        console.log('getSMSCodeERR:',err)
+      })
+      var countDown = 60;
+      setCountDownTimer(countDown);
+    }else {
+      sealAlert(localeData.phoneNumberErr);
+    }
+    
+  }
+  var verifyLogin = function () {
+    var tel = telDom.value,
+      code = verifyCodeDom.value;
+    if(tel && code) {
+      //发送验证码
+      var params = {
+        tel: tel,
+        region: '86',
+        code: code,
+        key: 'lzp'
+      };
+      verifySmsCode(params).then(function(data){
+        //验证正确：
+        // var resData = data;
+        if(data.code === 200){
+          rongIMToken = data.result.token;
+          if(rongIMToken){
+            Cache.set(StorageKeys.IMToken,rongIMToken)
+          }else{
+            console.log('IM token 为空----')
+          }
+          //join room 页面
+          Dom.showByClass('rong-login-roomjoin')
+          Dom.hideByClass('rong-login-telverify')
+        }else if(data.code === 1000 ){
+          sealAlert(localeData.verifyCodeIncorrect)
+        }else if(data.code === 2000 ){
+          sealAlert(localeData.verifyCodeExpired)
+        }
+      }).catch(function(err){
+        console.log('veriyCodeErr:',err)
+      })
 
+    }else {
+      sealAlert(localeData.verifyCodeErr)
+    }
+
+  }
+  var bindCodeFn = function () {
+    verifyLoginDom.onclick = verifyLogin;
+    telDom.onkeyup = function (){
+      var telLength = telDom.value.length;
+      if(telLength === 11){
+        //可点击
+        setVerifyCodeBtnEnable()
+      }else {
+        //不可点击
+        setVErifyCodeBtnDisable();
+      }
+    }
+  }
+  var  hasIMToken = function() {
+    var IMToken = Cache.get(StorageKeys.IMToken);
+    if(IMToken) {
+      return true;
+    }else {
+      return false;
+    }
+  }
+  var RTCEnterLogic = function () {
+    if(hasIMToken()){
+      // join room page
+      Dom.showByClass('rong-login-roomjoin')
+      Dom.hideByClass('rong-login-telverify')
+    }else {
+      // verify tel page
+      Dom.hideByClass('rong-login-roomjoin')
+      Dom.showByClass('rong-login-telverify')
+    }
+  }
   var setDefaultRTCInfo = function () {
     var roomId = Cache.get(StorageKeys.RoomId);
     if (roomId) {
@@ -80,7 +269,7 @@
       audioEnable: true
     };
   };
-
+  
   var clear = function () {
     common.UI.backLoginPage();
     RongSeal.videoTimer.stop();
@@ -153,19 +342,23 @@
     Dom.hideByClass('rong-btn-start');
     Dom.showByClass('rong-btn-loading');
     userId = userDom.value;
+    connect({
+      userId: userId,
+      token: rongIMToken
+    })
     // randomUserId = new Date().getTime().toString();
-    common.getIMToken({
-      // id: randomUserId
-      id: userId
-    }).then(function (user) {
-      connect(user);
-    }, function (error) {
-      console.log(error)
-      sealAlert(localeData.networkError);
-      Dom.hideByClass('rong-btn-loading');
-      Dom.showByClass('rong-btn-start');
-      RongSeal.im.instance().logout();
-    });
+    // common.getIMToken({
+    //   // id: randomUserId
+    //   id: userId
+    // }).then(function (user) {
+    //   connect(user);
+    // }, function (error) {
+    //   console.log(error)
+    //   sealAlert(localeData.networkError);
+    //   Dom.hideByClass('rong-btn-loading');
+    //   Dom.showByClass('rong-btn-start');
+    //   RongSeal.im.instance().logout();
+    // });
   };
 
   var checkRoomIdValue = function () {
@@ -191,6 +384,8 @@
   (function init() {
     setDefaultRTCInfo();
     checkRoomIdValue();
+    bindCodeFn();
+    RTCEnterLogic();
     roomDom.onkeyup = checkRoomIdValue;
     startBtnDom.onclick = startRTC;
     utils.forEach(inputDomList, function (dom) {

@@ -21,7 +21,7 @@ module.exports = {
     "no-multi-spaces": ["error", { "ignoreEOLComments": true }],
     "no-underscore-dangle": "warn",
     "no-control-regex": "warn",
-    "no-use-before-define": "error",
+    "no-use-before-define": "warn",
     "no-restricted-globals": "warn",
     "indent": ["error", 2],
     "max-nested-callbacks": ["error", { "max": 3 }],

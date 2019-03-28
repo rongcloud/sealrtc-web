@@ -22,19 +22,31 @@
     <div class="rong-login-content">
       <img class="rong-login-logo" src="./css/img/logo.png">
       <h3 class="rong-login-title">SealRTC v2.0.0</h3>
-      <input id="roomId" class="rong-login-input" type="text" lang-placeholder="roomId">
-      <input id="userId" class="rong-login-input" type="text" lang-placeholder="userId">
-      <div class="rong-opt-stream">
-        <div class="rong-opt-checkbox">
-          <input type="checkbox" id="isCloseVideo" name="isCloseVideo"><label for="isCloseVideo"></label><span lang-textContent="closeVideo"></span>
+      <div class="rong-login-roomjoin">
+        <input id="roomId" class="rong-login-input" type="text" lang-placeholder="roomId">
+        <input id="userId" class="rong-login-input" type="text" lang-placeholder="userId">
+        <div class="rong-opt-stream">
+          <div class="rong-opt-checkbox">
+            <input type="checkbox" id="isCloseVideo" name="isCloseVideo"><label for="isCloseVideo"></label><span lang-textContent="closeVideo"></span>
+          </div>
+          <!-- <div class="rong-opt-checkbox">
+            <input type="checkbox" id="isCloseAudio" name="isCloseAudio"><label for="isCloseAudio"></label><span lang-textContent="closeAudio"></span>
+          </div> -->
         </div>
-        <!-- <div class="rong-opt-checkbox">
-          <input type="checkbox" id="isCloseAudio" name="isCloseAudio"><label for="isCloseAudio"></label><span lang-textContent="closeAudio"></span>
-        </div> -->
+        <input id="start" class="rong-btn-start" type="button" lang-value="startRTC">
+        <div class="rong-btn-loading">
+          <img src="./css/img/loading.gif"> 加载中...
+        </div>
       </div>
-      <input id="start" class="rong-btn-start" type="button" lang-value="startRTC">
-      <div class="rong-btn-loading">
-        <img src="./css/img/loading.gif"> 加载中...
+      <div class="rong-login-telverify">
+        <p class="rong-login-sms-tip" lang-textContent="phoneTips"></p>
+        <input id="telNumber" class="rong-login-telNum" type="text" lang-placeholder="phoneNumber">
+        <div class="rong-login-codeline">
+          <input id="verifyCode" class="rong-login-verifyCode" type="number" lang-placeholder="verifyCode">
+          <input id="verifyCodeBtn" class="rong-login-verifyBtn" type="button" lang-value="sendVerifyCode">
+        </div>
+        <!-- <p class="rong-login-verifyTips">tips</p> -->
+        <input id="verifyLogin" class="rong-btn-verifyLogin" type="button" lang-value="verifyLogin">
       </div>
     </div>
     <div class="rong-opt-resolution">

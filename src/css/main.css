@@ -17,6 +17,14 @@ ul, li {
   list-style: none;
 }
 
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+input[type="number"]{
+    -moz-appearance: textfield;
+}
+
 .rong-wrap {
   position: absolute;
   top: 0;
@@ -223,7 +231,71 @@ ul, li {
   margin: 3px 45px 3px 5px;
   vertical-align: middle;
 }
+.rong-login .rong-login-roomjoin {
+  display: none;
+}
+.rong-login-telverify .rong-login-sms-tip {
+  color: #fff;
+  font-size: 15px;
+  margin-bottom: -20px;
+}
+.rong-login-telverify .rong-login-telNum  {
+  display: block;
+  margin: 40px 0;
+  padding: 10px 20px;
+  width: 100%;
+  height: 48px;
+  border: 1px #DDDDDD solid;
+  border-radius: 40px;
+  background-color: white;
+  text-align: left;
+  font-size: 15px;
+  color: #777;
+  box-sizing: border-box;
+}
+.rong-login-telverify .rong-login-verifyCode {
+  display: block;
+  float:left;
+  padding: 10px 20px;
+  width: 60%;
+  height: 48px;
+  border: 1px #DDDDDD solid;
+  border-radius: 40px;
+  background-color: white;
+  text-align: left;
+  font-size: 15px;
+  color: #777;
+  box-sizing: border-box;
+}
 
+.rong-login-telverify .rong-login-verifyBtn {
+  float: right;
+  width: 33%;
+  height: 50px;
+  border-radius: 40px;
+  border: 1px #475163 solid;
+  background: #475163;
+  font-size: 15px;
+  color: #FFFFFF;
+  cursor: pointer;
+}
+.rong-login-telverify .rong-btn-verifyLogin {
+  float: left;
+  width: 100%;
+  height: 50px;
+  margin: 30px 0;
+  border-radius: 40px;
+  border: 1px #28d6f6 solid;
+  background: #28d6f6;
+  font-size: 15px;
+  color: #FFFFFF;
+  cursor: pointer;
+}
+.rong-login-telverify .rong-login-verifyTips {
+  text-align: left;
+  padding-left: 20px;
+  color: red;
+}
 .rong-rtc {
   display: none;
   overflow: hidden;
