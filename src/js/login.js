@@ -11,7 +11,7 @@
     Config = RongSeal.Config;
 
   // var randomUserId;
-  var userId,rongIMToken;
+  var userId, rongIMToken;
   // console.log('randomUserId: ', typeof randomUserId);
 
   var locale = RongSeal.locale[common.lang],
@@ -102,63 +102,63 @@
       });
     });
   }
-  function verifyTelNum(telNum){
-    if(telNum.length === 11){
+  function verifyTelNum(telNum) {
+    if (telNum.length === 11) {
       return true;
-    }else {
+    } else {
       return false;
     }
   }
-  var setVerifyCodeBtnEnable = function() {
+  var setVerifyCodeBtnEnable = function () {
     verifyCodeBtnDom.style.background = '#28d6f6';
     verifyCodeBtnDom.style.border = '#28d6f6';
     verifyCodeBtnDom.onclick = sendSmsCode;
   }
-  var setVErifyCodeBtnDisable = function() {
+  var setVErifyCodeBtnDisable = function () {
     verifyCodeBtnDom.style.background = '#475163';
     verifyCodeBtnDom.style.border = '#475163';
-    verifyCodeBtnDom.onclick = function () {};
+    verifyCodeBtnDom.onclick = function () { };
   }
   var setCountDownTimer = function (countDown) {
-    if(countDown === 0) {
+    if (countDown === 0) {
       verifyCodeBtnDom.value = '发送验证码';
       countDown = 60;
       setVerifyCodeBtnEnable();
-      return ;
-    }else {
-      countDown --;
+      return;
+    } else {
+      countDown--;
       setVErifyCodeBtnDisable();
     }
-    setTimeout(function(){
-      verifyCodeBtnDom.value = countDown+'s后重新发送';
+    setTimeout(function () {
+      verifyCodeBtnDom.value = countDown + 's后重新发送';
       setCountDownTimer(countDown)
-    },1000)
+    }, 1000)
   }
   var sendSmsCode = function () {
-    var telReg=/^[1][3,4,5,7,8][0-9]{9}$/;
-    if(telReg.test(telDom.value)){
+    var telReg = /^[1][3,4,5,7,8][0-9]{9}$/;
+    if (telReg.test(telDom.value)) {
       console.log(telDom.value);
       var params = {
         tel: telDom.value,
         region: 86
       }
-      getSmsCode(params).then(function(data){
-        console.log('data',data)
-      }).catch(function(err) {
-        console.log('getSMSCodeERR:',err)
+      getSmsCode(params).then(function (data) {
+        console.log('data', data)
+      }).catch(function (err) {
+        console.log('getSMSCodeERR:', err)
       })
       var countDown = 60;
       setCountDownTimer(countDown);
-    }else {
+    } else {
       sealAlert(localeData.phoneNumberErr);
     }
-    
+
   }
   var verifyLogin = function () {
     var tel = telDom.value,
       code = verifyCodeDom.value;
-    var imTokenKey = StorageKeys.IMToken+'_'+tel;
-    if(tel && code) {
+    var imTokenKey = StorageKeys.IMToken + '_' + tel;
+    if (tel && code) {
       //发送验证码
       var params = {
         tel: tel,
@@ -166,68 +166,68 @@
         code: code,
         key: 'lzp'
       };
-      verifySmsCode(params).then(function(data){
+      verifySmsCode(params).then(function (data) {
         //验证正确：
         // var resData = data;
-        if(data.code === 200){
+        if (data.code === 200) {
           rongIMToken = data.result.token;
-          if(rongIMToken){
-            Cache.set(imTokenKey,rongIMToken)
-          }else{
+          if (rongIMToken) {
+            Cache.set(imTokenKey, rongIMToken)
+          } else {
             console.log('IM token 为空----')
           }
           //join room 页面
           Dom.showByClass('rong-login-roomjoin')
           Dom.hideByClass('rong-login-telverify')
-        }else if(data.code === 1000 ){
+        } else if (data.code === 1000) {
           sealAlert(localeData.verifyCodeIncorrect)
-        }else if(data.code === 2000 ){
+        } else if (data.code === 2000) {
           sealAlert(localeData.verifyCodeExpired)
         }
-      }).catch(function(err){
-        console.log('veriyCodeErr:',err)
+      }).catch(function (err) {
+        console.log('veriyCodeErr:', err)
       })
 
-    }else {
+    } else {
       sealAlert(localeData.verifyCodeErr)
     }
 
   }
   var bindCodeFn = function () {
     verifyLoginDom.onclick = verifyLogin;
-    telDom.onkeyup = function (){
+    telDom.onkeyup = function () {
       var telLength = telDom.value.length;
-      if(telLength === 11){
+      if (telLength === 11) {
         //可点击
         setVerifyCodeBtnEnable()
-      }else {
+      } else {
         //不可点击
         setVErifyCodeBtnDisable();
       }
     }
   }
-  var hasIMToken = function() {
+  var hasIMToken = function () {
     var roomTel = roomTelNumDom.value;
-    var imTokenKey = StorageKeys.IMToken+'_'+roomTel;
+    var imTokenKey = StorageKeys.IMToken + '_' + roomTel;
     console.log(roomTel)
     var IMToken = Cache.get(imTokenKey);
-    if(IMToken) {
+    if (IMToken) {
       return IMToken;
-    }else {
+    } else {
       return false;
     }
   }
   var RTCEnterLogic = function () {
     var imToken = hasIMToken();
-    if(imToken){
+    if (imToken) {
       startRTC(imToken);
       // join room page
       // Dom.showByClass('rong-login-roomjoin')
       // Dom.hideByClass('rong-login-telverify')
-    }else {
+    } else {
       // verify tel page
       var tips = localeData.verifyCodeTips;
-      sealAlert(tips,{
+      sealAlert(tips, {
         confirmCallback: function () {
           telDom.value = roomTelNumDom.value;
           setVerifyCodeBtnEnable();
@@ -290,7 +290,7 @@
       audioEnable: true
     };
   };
-  
+
   var clear = function () {
     common.UI.backLoginPage();
     RongSeal.videoTimer.stop();
@@ -300,16 +300,16 @@
   var isRTCError = false;
   var EventName = RongSeal.EventName;
   RongSeal.eventEmitter.on(EventName.NETWORK_ERROR, function () {
-    console.log('isRTCError',isRTCError)
+    console.log('isRTCError', isRTCError)
     isRTCError = true;
     clear();
   });
 
   var reconnectionMechanism = function () {
-    
+
     //30s前网络嗅探并重新连接
     var total = 30, count = 0;
-    
+
     var reconnect = function () {
       RongSeal.im.reconnect({
         success: function () {
@@ -336,6 +336,18 @@
   var connect = function (user) {
     user.navi = Config.NAVI;
     user.appKey = Config.APP_ID;
+    var goVerifyPage = function () {
+      common.UI.backLoginPage();
+      telDom.value = roomTelNumDom.value;
+      setVerifyCodeBtnEnable();
+      //回到手机验证页面
+      Dom.hideByClass('rong-login-roomjoin')
+      Dom.showByClass('rong-login-telverify')
+    };
+    var token = user.token;
+    if(!token){
+      return goVerifyPage();
+    }
     RongSeal.im.connect(user, {
       connected: function (/* userId */) {
         var option = getRTCOption();
@@ -354,20 +366,13 @@
       tokenIncorrect: function () {
         console.log('token expired')
         var tips = localeData.tokenExpired;
-        sealAlert( tips ,{
-          confirmCallback: function () {
-            common.UI.backLoginPage();
-            telDom.value = roomTelNumDom.value;
-            setVerifyCodeBtnEnable();
-            //回到手机验证页面
-            Dom.hideByClass('rong-login-roomjoin')
-            Dom.showByClass('rong-login-telverify')
-          }
+        sealAlert(tips, {
+          confirmCallback: goVerifyPage
         })
       },
       kickedByOther: function () {
         var tips = localeData.kickedByOtherTips;
-        sealAlert( tips ,{
+        sealAlert(tips, {
           confirmCallback: function () {
             common.UI.backLoginPage();
           }
@@ -419,8 +424,9 @@
   }
 
   var pressInput = function (e) {
+    var token = hasIMToken();
     if ((e.keyCode || e.which) == 13) {
-      startRTC();
+      startRTC(token);
     }
   };
 
