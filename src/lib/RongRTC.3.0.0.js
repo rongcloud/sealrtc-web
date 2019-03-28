@@ -502,13 +502,13 @@
       name: 'PUBLISH_STREAM_EXCEED_LIMIT',
       msg: '发布资源个数已经到达上限'
     }, {
+      code: 50024,
+      name: 'STREAM_NOT_EXIST',
+      msg: 'stream 不存在，请检查传入参数, id、stream.type、stream.tag 是否正确'
+    }, {
       code: 50030,
       name: 'SUBSCRIBE_STREAM_NOT_EXIST',
       msg: '订阅不存在的资源'
-    }, {
-      code: 50030,
-      name: 'STREAM_NOT_EXIST',
-      msg: 'stream 不存在，请检查传入参数, id、stream.type、stream.tag 是否正确'
     }, {
       code: 50030,
       name: 'STREAM_TRACK_NOT_EXIST',
@@ -545,6 +545,10 @@
       code: 50055,
       name: 'PARAMTER_ILLEGAL',
       msg: '请检查参数，{name} 参数为必传入项'
+    }, {
+      code: 50056,
+      name: 'ENGINE_ERROR',
+      msg: '音视频引擎不正确'
     }, {
       code: 40001,
       name: 'NOT_IN_ROOM',
@@ -1822,11 +1826,11 @@
   var Timeout = {
     TIME: 10 * 1000
   };
-  var errorHandler = function errorHandler(code, reject) {
+  var errorHandler = function errorHandler(code) {
     var error = ErrorType[code] || {
       code: code
     };
-    reject(error);
+    return error;
   };
   var getMsgName = function getMsgName(type) {
     switch (type) {
@@ -2063,14 +2067,19 @@
         });
         return utils.deferred(function (resolve, reject) {
           im.getInstance().joinRTCRoom(room, {
-            onSuccess: function onSuccess(users) {
+            onSuccess: function onSuccess(_ref) {
+              var users = _ref.users,
+                  token = _ref.token;
+
               context.rtcPing(room);
               utils.forEach(users, function (user, userId) {
+                user = user || {};
                 // 过滤自己和为空的用户
                 if (utils.isEmpty(user)) {
                   delete users[userId];
                 }
-                var uris = user.uris;
+                var _user = user,
+                    uris = _user.uris;
 
                 if (!utils.isUndefined(uris)) {
                   uris = utils.parse(uris);
@@ -2079,37 +2088,15 @@
                   });
                 }
               });
-              Logger$1.log(LogTag.STREAM_HANDLER, {
-                msg: 'getRTCToken:before',
-                roomId: room.id
+              utils.extend(room, {
+                rtcToken: token,
+                users: users
               });
-              im.getInstance().getRTCToken(room, {
-                onSuccess: function onSuccess(_ref) {
-                  var rtcToken = _ref.rtcToken;
-
-                  Logger$1.log(LogTag.STREAM_HANDLER, {
-                    msg: 'getRTCToken:after:success',
-                    roomId: room.id
-                  });
-                  utils.extend(room, {
-                    rtcToken: rtcToken,
-                    users: users
-                  });
-                  context.emit(CommonEvent.JOINED, room);
-                  resolve(users);
-                },
-                onError: function onError(code) {
-                  Logger$1.log(LogTag.STREAM_HANDLER, {
-                    msg: 'getRTCToken:after:error',
-                    roomId: room.id,
-                    error: code
-                  });
-                  return errorHandler(code, reject);
-                }
-              });
+              context.emit(CommonEvent.JOINED, room);
+              resolve(users);
             },
             onError: function onError(code) {
-              return errorHandler(code, reject);
+              return reject(errorHandler(code));
             }
           });
         });
@@ -2133,7 +2120,7 @@
               resolve();
             },
             onError: function onError(code) {
-              return errorHandler(code, reject);
+              return reject(errorHandler(code));
             }
           });
         });
@@ -2148,7 +2135,7 @@
           im.getInstance().getRTCRoomInfo(room, {
             onSuccess: resolve,
             reject: function reject(code) {
-              return errorHandler(code, _reject);
+              return _reject(errorHandler(code));
             }
           });
         });
@@ -2163,7 +2150,7 @@
           im.getInstance().getRTCUserInfoList(room, {
             onSuccess: resolve,
             onError: function onError(code) {
-              return errorHandler(code, reject);
+              return reject(errorHandler(code));
             }
           });
         });
@@ -2192,7 +2179,10 @@
 
         rtcInfo = rtcInfo || '{"callEngine": [{}]}';
         rtcInfo = utils.parse(rtcInfo);
-        var engine = rtcInfo.callEngine[0];
+        var engines = rtcInfo.callEngine[0];
+        var engine = utils.filter(engines, function (e) {
+          return e.engineType === 4;
+        })[0] || {};
         return engine.mediaServer;
       }
     }, {
@@ -2355,7 +2345,7 @@
           im.getInstance().getRTCUserList(room, {
             onSuccess: resolve,
             onError: function onError(code) {
-              return errorHandler(code, reject);
+              return reject(errorHandler(code));
             }
           });
         });
@@ -3944,39 +3934,29 @@
         });
         return utils.Defer.reject(Inner.ROOM_REPEAT_JOIN);
       }
-      return im.joinRoom(room).then(function (users) {
-        Logger$1.log(LogTag.ROOM_HANDLER, {
-          msg: 'join:after',
-          users: users
+      return utils.deferred(function (resolve, reject) {
+        im.joinRoom(room).then(function (users) {
+          Logger$1.log(LogTag.ROOM_HANDLER, {
+            msg: 'join:after',
+            users: users
+          });
+          users = utils.toArray(users);
+          users = utils.map(users, function (user) {
+            return {
+              id: user[0]
+            };
+          });
+          resolve({
+            users: users
+          });
+        }).catch(function (error) {
+          Logger$1.log(LogTag.ROOM_HANDLER, {
+            msg: 'join:after:error',
+            room: room,
+            error: error
+          });
+          reject(error);
         });
-        // utils.forEach(users, (user, id) => {
-        //   Logger.log(LogTag.ROOM_HANDLER, {
-        //     msg: 'join:after:existUsers',
-        //     user
-        //   });
-        //   im.emit(DownEvent.ROOM_USER_JOINED, {
-        //     id
-        //   });
-        // });
-      }, function (error) {
-        Logger$1.log(LogTag.ROOM_HANDLER, {
-          msg: 'join:after',
-          room: room,
-          error: error
-        });
-        return error;
-      }).then(function () {
-        var users = room.users;
-
-        users = utils.toArray(users);
-        users = utils.map(users, function (user) {
-          return {
-            id: user[0]
-          };
-        });
-        return {
-          users: users
-        };
       });
     };
     var leave = function leave() {
@@ -9139,6 +9119,12 @@
       utils.forEach(RoomEvents, bindEvent);
       im.on(CommonEvent.JOINED, function () {
         var url = im.getMSUrl();
+        if (utils.isUndefined(url)) {
+          var Inner = ErrorType.Inner;
+
+          var error = Inner.ENGINE_ERROR;
+          return context.emit(DownEvent.RTC_ERROR, error);
+        }
         var customUrl = option.url;
 
         url = customUrl || url;
