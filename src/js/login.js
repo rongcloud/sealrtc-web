@@ -274,13 +274,15 @@
 
   var getRTCOption = function () {
     var resolutionDom = getSelectedByName('resolution'),
-      closeVideoDom = getSelectedByName('isCloseVideo');
+      closeVideoDom = getSelectedByName('isCloseVideo'),
+      bystanderDom = getSelectedByName('isBystander');
     // closeAudioDom = getSelectedByName('isCloseAudio');
     var roomId = roomDom.value,
       userId = roomTelNumDom.value,
       // userId = randomUserId,
       resolution = common.formatResolution(resolutionDom.value), // 格式如: { width: 640, height: 320 }
       videoEnable = !closeVideoDom;
+    var bystanderEnable = bystanderDom ? true : false;
     // console.log(resolutionDom);
     // audioEnable = !closeAudioDom;
     return {
@@ -288,7 +290,8 @@
       roomId: roomId,
       resolution: resolution,
       videoEnable: videoEnable,
-      audioEnable: true
+      audioEnable: true,
+      bystanderEnable: bystanderEnable
     };
   };
 

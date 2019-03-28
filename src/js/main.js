@@ -698,49 +698,56 @@
       streamBox.disabledAudioBySelf();
     }
   }
-
+  function unpublishedVideoUI() {
+    Dom.hideByClass(ClassName.LOGIN_PAGE);
+    Dom.showByClass(ClassName.RTC_PAGE);
+    Dom.hideByClass('rong-share-openicon');
+    Dom.showByClass('rong-share-closeicon');
+  }
   //多人加入音视频处理
   function RTCNumberCheck(peopleNum, params) {
     //弹窗提示：n>9  （n>3）展示
     var tipStr1 = '会议室中视频通话人数已超过 3 人，您将以音频模式加入会议室。';
     var tipStr2 = '会议室中视频通话人数已超过 5 人，您将以旁听者模式加入会议室。';
-
-    if (peopleNum < 3) {
-      // 隐藏 login, 展示 rtc
-      Dom.hideByClass(ClassName.LOGIN_PAGE);
-      Dom.showByClass(ClassName.RTC_PAGE);
-      var videoEnable = params.videoEnable,
-        audioEnable = params.audioEnable,
-        resolution = params.resolution;
+    if(params.bystanderEnable == false) {
+      if (peopleNum < 3) {
+        // 隐藏 login, 展示 rtc
+        Dom.hideByClass(ClassName.LOGIN_PAGE);
+        Dom.showByClass(ClassName.RTC_PAGE);
+        var videoEnable = params.videoEnable,
+          audioEnable = params.audioEnable,
+          resolution = params.resolution;
+        addUserBox({ id: loginUserId });
+        publishSelfMediaStream(videoEnable, audioEnable, resolution).then(
+          addUserStream, publishStreamError);
+      } else if (peopleNum >= 3 && peopleNum < 5) {
+        sealAlert(tipStr1, {
+          isShowCancel: true,
+          confirmCallback: function () {
+            unpublishedVideoUI();
+            RTCJoinConfirm(peopleNum, params)
+          },
+          cancelCallback: joinCancel
+        })
+      } else if (peopleNum >= 5) {
+        sealAlert(tipStr2, {
+          isShowCancel: true,
+          confirmCallback: function () {
+            // 隐藏 login, 展示 rtc
+            unpublishedVideoUI();
+            RTCJoinConfirm(peopleNum, params)
+          },
+          cancelCallback: joinCancel
+        })
+      }
+    }else {
       addUserBox({ id: loginUserId });
-      publishSelfMediaStream(videoEnable, audioEnable, resolution).then(
-        addUserStream, publishStreamError);
-    } else if (peopleNum >= 3 && peopleNum < 5) {
-      sealAlert(tipStr1, {
-        isShowCancel: true,
-        confirmCallback: function () {
-          Dom.hideByClass(ClassName.LOGIN_PAGE);
-          Dom.showByClass(ClassName.RTC_PAGE);
-          Dom.hideByClass('rong-share-openicon');
-          Dom.showByClass('rong-share-closeicon');
-
-          RTCJoinConfirm(peopleNum, params)
-        },
-        cancelCallback: joinCancel
-      })
-    } else if (peopleNum >= 5) {
-      sealAlert(tipStr2, {
-        isShowCancel: true,
-        confirmCallback: function () {
-          // 隐藏 login, 展示 rtc
-          Dom.hideByClass(ClassName.LOGIN_PAGE);
-          Dom.showByClass(ClassName.RTC_PAGE);
-          Dom.hideByClass('rong-share-openicon');
-          Dom.showByClass('rong-share-closeicon');
-          RTCJoinConfirm(peopleNum, params)
-        },
-        cancelCallback: joinCancel
-      })
+      unpublishedVideoUI();
+      var streamBox = StreamBox.get(loginUserId);
+      streamBox.closeVideoBySelf();
+      streamBox.closeAudioBySelf();
+      streamBox.disabledVideoBySelf();
+      streamBox.disabledAudioBySelf();
     }
   }
 
