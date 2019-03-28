@@ -18,9 +18,10 @@
     localeData = locale.data;
 
   var roomDom = getDomById('roomId'),
-    userDom = getDomById('userId'),
+    // userDom = getDomById('userId'),
     startBtnDom = getDomById('start'),
-    inputDomList = Dom.getList('.rong-login-input');
+    inputDomList = Dom.getList('.rong-login-input'),
+    roomTelNumDom = getDomById('roomTelNum');
   var telDom = getDomById('telNumber'),
     verifyCodeDom = getDomById('verifyCode'),
     verifyCodeBtnDom = getDomById('verifyCodeBtn'),
@@ -101,6 +102,13 @@
       });
     });
   }
+  function verifyTelNum(telNum){
+    if(telNum.length === 11){
+      return true;
+    }else {
+      return false;
+    }
+  }
   var setVerifyCodeBtnEnable = function() {
     verifyCodeBtnDom.style.background = '#28d6f6';
     verifyCodeBtnDom.style.border = '#28d6f6';
@@ -127,7 +135,7 @@
     },1000)
   }
   var sendSmsCode = function () {
-    var telReg=/^[1][3,4,5,7,8][0-9]{9}$/; 
+    var telReg=/^[1][3,4,5,7,8][0-9]{9}$/;
     if(telReg.test(telDom.value)){
       console.log(telDom.value);
       var params = {
@@ -149,6 +157,7 @@
   var verifyLogin = function () {
     var tel = telDom.value,
       code = verifyCodeDom.value;
+    var imTokenKey = StorageKeys.IMToken+'_'+tel;
     if(tel && code) {
       //发送验证码
       var params = {
@@ -163,7 +172,7 @@
         if(data.code === 200){
           rongIMToken = data.result.token;
           if(rongIMToken){
-            Cache.set(StorageKeys.IMToken,rongIMToken)
+            Cache.set(imTokenKey,rongIMToken)
           }else{
             console.log('IM token 为空----')
           }
@@ -197,23 +206,35 @@
       }
     }
   }
-  var  hasIMToken = function() {
-    var IMToken = Cache.get(StorageKeys.IMToken);
+  var hasIMToken = function() {
+    var roomTel = roomTelNumDom.value;
+    var imTokenKey = StorageKeys.IMToken+'_'+roomTel;
+    console.log(roomTel)
+    var IMToken = Cache.get(imTokenKey);
     if(IMToken) {
-      return true;
+      return IMToken;
     }else {
       return false;
     }
   }
   var RTCEnterLogic = function () {
-    if(hasIMToken()){
+    var imToken = hasIMToken();
+    if(imToken){
+      startRTC(imToken);
       // join room page
-      Dom.showByClass('rong-login-roomjoin')
-      Dom.hideByClass('rong-login-telverify')
+      // Dom.showByClass('rong-login-roomjoin')
+      // Dom.hideByClass('rong-login-telverify')
     }else {
       // verify tel page
-      Dom.hideByClass('rong-login-roomjoin')
-      Dom.showByClass('rong-login-telverify')
+      var tips = localeData.verifyCodeTips;
+      sealAlert(tips,{
+        confirmCallback: function () {
+          telDom.value = roomTelNumDom.value;
+          setVerifyCodeBtnEnable();
+          Dom.hideByClass('rong-login-roomjoin')
+          Dom.showByClass('rong-login-telverify')
+        }
+      })
     }
   }
   var setDefaultRTCInfo = function () {
@@ -255,7 +276,7 @@
       closeVideoDom = getSelectedByName('isCloseVideo');
     // closeAudioDom = getSelectedByName('isCloseAudio');
     var roomId = roomDom.value,
-      userId = userDom.value,
+      userId = roomTelNumDom.value,
       // userId = randomUserId,
       resolution = common.formatResolution(resolutionDom.value), // 格式如: { width: 640, height: 320 }
       videoEnable = !closeVideoDom;
@@ -329,22 +350,43 @@
       },
       backLoginPage: function () {
         reconnectionMechanism();
-        // 隐藏 rtc, 展示 login
+      },
+      tokenIncorrect: function () {
+        console.log('token expired')
+        var tips = localeData.tokenExpired;
+        sealAlert( tips ,{
+          confirmCallback: function () {
+            common.UI.backLoginPage();
+            telDom.value = roomTelNumDom.value;
+            setVerifyCodeBtnEnable();
+            //回到手机验证页面
+            Dom.hideByClass('rong-login-roomjoin')
+            Dom.showByClass('rong-login-telverify')
+          }
+        })
+      },
+      kickedByOther: function () {
+        var tips = localeData.kickedByOtherTips;
+        sealAlert( tips ,{
+          confirmCallback: function () {
+            common.UI.backLoginPage();
+          }
+        })
       }
     });
   };
 
-  var startRTC = function () {
+  var startRTC = function (imToken) {
     var checkContent = checkRTCValue();
     if (!checkContent.isValid) {
       return sealAlert(checkContent.prompt);
     }
     Dom.hideByClass('rong-btn-start');
     Dom.showByClass('rong-btn-loading');
-    userId = userDom.value;
+    userId = roomTelNumDom.value;
     connect({
       userId: userId,
-      token: rongIMToken
+      token: imToken
     })
     // randomUserId = new Date().getTime().toString();
     // common.getIMToken({
@@ -361,12 +403,13 @@
     // });
   };
 
-  var checkRoomIdValue = function () {
-    var roomId = roomDom.value;
-    if (roomId) {
+  var checkRoomTelValue = function () {
+    // var roomId = roomDom.value;
+    var telNum = roomTelNumDom.value;
+    if (verifyTelNum(telNum)) {
       startBtnDom.style.background = '#28d6f6';
       startBtnDom.style.border = '#28d6f6';
-      startBtnDom.onclick = startRTC;
+      startBtnDom.onclick = RTCEnterLogic;
     } else {
       startBtnDom.style.background = '#475163';
       startBtnDom.style.border = '#475163';
@@ -383,11 +426,10 @@
 
   (function init() {
     setDefaultRTCInfo();
-    checkRoomIdValue();
+    checkRoomTelValue();
     bindCodeFn();
-    RTCEnterLogic();
-    roomDom.onkeyup = checkRoomIdValue;
-    startBtnDom.onclick = startRTC;
+    roomTelNumDom.onkeyup = checkRoomTelValue;
+    // startBtnDom.onclick = startRTC;
     utils.forEach(inputDomList, function (dom) {
       dom.onkeydown = pressInput;
     });

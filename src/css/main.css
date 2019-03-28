@@ -231,7 +231,10 @@ input[type="number"]{
   margin: 3px 45px 3px 5px;
   vertical-align: middle;
 }
-.rong-login .rong-login-roomjoin {
+/* .rong-login .rong-login-roomjoin {
+  display: block;
+} */
+.rong-login .rong-login-telverify {
   display: none;
 }
 .rong-login-telverify .rong-login-sms-tip {

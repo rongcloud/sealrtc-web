@@ -23,8 +23,9 @@
       <img class="rong-login-logo" src="./css/img/logo.png">
       <h3 class="rong-login-title">SealRTC v2.0.0</h3>
       <div class="rong-login-roomjoin">
-        <input id="roomId" class="rong-login-input" type="text" lang-placeholder="roomId">
-        <input id="userId" class="rong-login-input" type="text" lang-placeholder="userId">
+        <input id="roomId" class="rong-login-input" type="text" autocomplete="off" lang-placeholder="roomId">
+        <input id="roomTelNum" class="rong-login-input" type="text" autocomplete="off" lang-placeholder="phoneNumber">
+        <!-- <input id="userId" class="rong-login-input" type="text" autocomplete="off" lang-placeholder="userId"> -->
         <div class="rong-opt-stream">
           <div class="rong-opt-checkbox">
             <input type="checkbox" id="isCloseVideo" name="isCloseVideo"><label for="isCloseVideo"></label><span lang-textContent="closeVideo"></span>
@@ -40,10 +41,10 @@
       </div>
       <div class="rong-login-telverify">
         <p class="rong-login-sms-tip" lang-textContent="phoneTips"></p>
-        <input id="telNumber" class="rong-login-telNum" type="text" lang-placeholder="phoneNumber">
+        <input id="telNumber" class="rong-login-telNum" type="text" autocomplete="off" lang-placeholder="phoneNumber">
         <div class="rong-login-codeline">
-          <input id="verifyCode" class="rong-login-verifyCode" type="number" lang-placeholder="verifyCode">
-          <input id="verifyCodeBtn" class="rong-login-verifyBtn" type="button" lang-value="sendVerifyCode">
+          <input id="verifyCode" class="rong-login-verifyCode" type="number" autocomplete="off" lang-placeholder="verifyCode">
+          <input id="verifyCodeBtn" class="rong-login-verifyBtn" type="button"  lang-value="sendVerifyCode">
         </div>
         <!-- <p class="rong-login-verifyTips">tips</p> -->
         <input id="verifyLogin" class="rong-btn-verifyLogin" type="button" lang-value="verifyLogin">

@@ -17,6 +17,9 @@
       verifyCodeErr: '请输入手机验证码',
       verifyCodeIncorrect: '验证码错误',
       verifyCodeExpired: '验证码过期',
+      tokenExpired: 'token 已失效，请重新获取',
+      kickedByOtherTips: '此用户已被其他端登录！',
+      verifyCodeTips: '您还未验证过手机号，请先验证',
 
       getTokenError: '获取 token 失败',
       rtcError: '初始化 RTC 失败',

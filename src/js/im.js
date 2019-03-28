@@ -53,6 +53,7 @@
         case RongIMLib.ConnectionStatus['KICKED_OFFLINE_BY_OTHER_CLIENT']:
         case 6:
           console.log('用户账户在其他设备登录，本机会被踢掉线');
+          callbacks.kickedByOther()
           break;
 
         case RongIMLib.ConnectionStatus['DOMAIN_INCORRECT']:
@@ -76,6 +77,7 @@
         callbacks.connected && callbacks.connected();
       },
       onTokenIncorrect: function () {
+        callbacks.tokenIncorrect()
         console.log('token 无效');
       },
       onError: function (errorCode) {
