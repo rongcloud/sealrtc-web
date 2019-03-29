@@ -211,7 +211,10 @@
           } else if (data.code === 1000) {
             sealAlert(localeData.verifyCodeIncorrect)
           } else if (data.code === 2000) {
-            sealAlert(localeData.verifyCodeExpired)
+            sealAlert(localeData.verifyCodeIncorrect)
+          } else {
+            // console.log(data.message,'----') 
+            sealAlert(data.message)
           }
         }).catch(function (err) {
           console.log('veriyCodeErr:', err)
