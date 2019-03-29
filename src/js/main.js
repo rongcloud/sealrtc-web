@@ -818,6 +818,7 @@
   RongSeal.clearBox = clearBox;
   RongSeal.destroyRongRTCPage = destroyRongRTCPage;
   RongSeal.videoTimer = videoTimer;
+  RongSeal.sealToast = sealToast;
   RongSeal.userStreams = userStreams;
 
 })({

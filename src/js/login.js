@@ -9,7 +9,6 @@
     getDomById = Dom.getById,
     Cache = utils.Cache,
     Config = RongSeal.Config;
-
   // var randomUserId;
   var userId, rongIMToken;
   // console.log('randomUserId: ', typeof randomUserId);
@@ -33,6 +32,7 @@
     Resolution: 'rong-sealv2-resolution',
     IMToken: 'rong-im-token'
   };
+  var sealToast = new common.SealToast();
   /**
    * 获取手机验证码 
    * @param {object} params 
@@ -408,7 +408,9 @@
         var tips = localeData.kickedByOtherTips;
         sealAlert(tips, {
           confirmCallback: function () {
-            common.UI.backLoginPage();
+            // common.UI.backLoginPage();
+            clear();
+            sealToast.destroy();
           }
         })
       }
