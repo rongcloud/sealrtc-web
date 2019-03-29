@@ -3116,7 +3116,7 @@
       var streamId = pc.getStreamId(user);
       var mediaStream = StreamCache.get(streamId);
       if (!mediaStream) {
-        return utils.Defer.reject(ErrorType.Inner.STREAM_NOT_EXIST);
+        mediaStream = new MediaStream();
       }
       var streams = [];
       var _user = user,
