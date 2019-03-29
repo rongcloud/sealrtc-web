@@ -135,9 +135,18 @@
       setCountDownTimer(countDown)
     }, 1000)
   }
+  var verifyPhoneNumber = function (phoneNumber){
+    return new Promise(function(resolve,reject){
+      var telReg = /^[1][3,4,5,7,8][0-9]{9}$/;
+      if(telReg.test(phoneNumber)){
+        resolve();
+      }else {
+        reject();
+      }
+    })
+  };
   var sendSmsCode = function () {
-    var telReg = /^[1][3,4,5,7,8][0-9]{9}$/;
-    if (telReg.test(telDom.value)) {
+    verifyPhoneNumber(telDom.value).then(function(){
       console.log(telDom.value);
       var params = {
         tel: telDom.value,
@@ -150,49 +159,70 @@
       })
       var countDown = 60;
       setCountDownTimer(countDown);
-    } else {
+    }).catch(function(){
       sealAlert(localeData.phoneNumberErr);
-    }
+    })
+    // var telReg = /^[1][3,4,5,7,8][0-9]{9}$/;
+    // if (telReg.test(telDom.value)) {
+    //   console.log(telDom.value);
+    //   var params = {
+    //     tel: telDom.value,
+    //     region: 86
+    //   }
+    //   getSmsCode(params).then(function (data) {
+    //     console.log('data', data)
+    //   }).catch(function (err) {
+    //     console.log('getSMSCodeERR:', err)
+    //   })
+    //   var countDown = 60;
+    //   setCountDownTimer(countDown);
+    // } else {
+    //   sealAlert(localeData.phoneNumberErr);
+    // }
 
   }
   var verifyLogin = function () {
     var tel = telDom.value,
       code = verifyCodeDom.value;
     var imTokenKey = StorageKeys.IMToken + '_' + tel;
-    if (tel && code) {
-      //发送验证码
-      var params = {
-        tel: tel,
-        region: '86',
-        code: code,
-        key: tel
-      };
-      verifySmsCode(params).then(function (data) {
-        //验证正确：
-        // var resData = data;
-        if (data.code === 200) {
-          rongIMToken = data.result.token;
-          if (rongIMToken) {
-            Cache.set(imTokenKey, rongIMToken)
-          } else {
-            console.log('IM token 为空----')
+    verifyPhoneNumber(tel).then(function(){
+      console.log(tel,'tel ss')
+      if (tel && code) {
+        //发送验证码
+        var params = {
+          tel: tel,
+          region: '86',
+          code: code,
+          key: tel
+        };
+        verifySmsCode(params).then(function (data) {
+          //验证正确：
+          // var resData = data;
+          if (data.code === 200) {
+            rongIMToken = data.result.token;
+            if (rongIMToken) {
+              Cache.set(imTokenKey, rongIMToken)
+            } else {
+              console.log('IM token 为空----')
+            }
+            //join room 页面
+            Dom.showByClass('rong-login-roomjoin')
+            Dom.hideByClass('rong-login-telverify')
+          } else if (data.code === 1000) {
+            sealAlert(localeData.verifyCodeIncorrect)
+          } else if (data.code === 2000) {
+            sealAlert(localeData.verifyCodeExpired)
           }
-          //join room 页面
-          Dom.showByClass('rong-login-roomjoin')
-          Dom.hideByClass('rong-login-telverify')
-        } else if (data.code === 1000) {
-          sealAlert(localeData.verifyCodeIncorrect)
-        } else if (data.code === 2000) {
-          sealAlert(localeData.verifyCodeExpired)
-        }
-      }).catch(function (err) {
-        console.log('veriyCodeErr:', err)
-      })
-
-    } else {
-      sealAlert(localeData.verifyCodeErr)
-    }
-
+        }).catch(function (err) {
+          console.log('veriyCodeErr:', err)
+        })
+      } else {
+        sealAlert(localeData.verifyCodeErr)
+      }
+    }).catch(function(){
+      console.log(tel,'tel ff')
+      sealAlert(localeData.phoneNumberErr);
+    })
   }
   var bindCodeFn = function () {
     verifyLoginDom.onclick = verifyLogin;
