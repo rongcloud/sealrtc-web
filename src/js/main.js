@@ -686,12 +686,12 @@
     console.log(peopleNum, params);
     addUserBox({ id: loginUserId });
     var streamBox = StreamBox.get(loginUserId);
-    if (peopleNum >= 3 && peopleNum < 5) {
+    if (peopleNum >= 9 && peopleNum < 30) {
       streamBox.disabledVideoBySelf();
       var audioOnly = true;
       publishSelfMediaStream(false, true, params.resolution, audioOnly).then(
         addUserStream, publishStreamError);
-    } else if (peopleNum >= 5) {
+    } else if (peopleNum >= 30) {
       streamBox.closeVideoBySelf();
       streamBox.closeAudioBySelf();
       streamBox.disabledVideoBySelf();
@@ -707,10 +707,10 @@
   //多人加入音视频处理
   function RTCNumberCheck(peopleNum, params) {
     //弹窗提示：n>9  （n>3）展示
-    var tipStr1 = '会议室中视频通话人数已超过 3 人，您将以音频模式加入会议室。';
-    var tipStr2 = '会议室中视频通话人数已超过 5 人，您将以旁听者模式加入会议室。';
+    var tipStr1 = '会议室中视频通话人数已超过 9 人，您将以音频模式加入会议室。';
+    var tipStr2 = '会议室中视频通话人数已超过 30 人，您将以旁听者模式加入会议室。';
     if(params.bystanderEnable == false) {
-      if (peopleNum < 3) {
+      if (peopleNum < 9) {
         // 隐藏 login, 展示 rtc
         Dom.hideByClass(ClassName.LOGIN_PAGE);
         Dom.showByClass(ClassName.RTC_PAGE);
@@ -720,7 +720,7 @@
         addUserBox({ id: loginUserId });
         publishSelfMediaStream(videoEnable, audioEnable, resolution).then(
           addUserStream, publishStreamError);
-      } else if (peopleNum >= 3 && peopleNum < 5) {
+      } else if (peopleNum >= 9 && peopleNum < 30) {
         sealAlert(tipStr1, {
           isShowCancel: true,
           confirmCallback: function () {
@@ -729,7 +729,7 @@
           },
           cancelCallback: joinCancel
         })
-      } else if (peopleNum >= 5) {
+      } else if (peopleNum >= 30) {
         sealAlert(tipStr2, {
           isShowCancel: true,
           confirmCallback: function () {
