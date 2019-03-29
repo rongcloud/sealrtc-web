@@ -1945,12 +1945,13 @@
           delete msg.receivedStatus;
           delete msg.messageType;
           delete msg.targetId;
+          delete msg.messageDirection;
         };
         var msg = utils.parse(utils.toJSON(message));
         var content = {};
         if (isCustom) {
           var customMsg = msg.content;
-          content = customMsg.content;
+          content = customMsg.message.content;
         } else {
           content = msg.content;
         }
@@ -1961,8 +1962,7 @@
         msg = utils.rename(msg, {
           objectName: 'name',
           messageUId: 'uId',
-          senderUserId: 'senderId',
-          messageDirection: 'direction'
+          senderUserId: 'senderId'
         });
         return msg;
       };
@@ -2354,16 +2354,31 @@
       key: 'sendMessage',
       value: function sendMessage(message) {
         var im = this.im,
-            room = this.room;
+            room = this.room,
+            RongIMLib = this.RongIMLib;
 
         return utils.deferred(function (resolve, reject) {
           var conversationType = 12,
               targetId = room.id;
+          var register = function register(name) {
+            var isCounted = false;
+            var isPersited = false;
+            var tag = new RongIMLib.MessageTag(isCounted, isPersited);
+            var content = message.content;
+
+            var props = utils.map(utils.toArray(content), function (columns) {
+              return columns[0];
+            });
+            im.registerMessageType(name, name, tag, props);
+          };
           var create = function create() {
-            var type = message.type,
+            var name = message.name,
                 content = message.content;
 
-            return new im.RegisterMessage[type](content);
+            if (utils.isUndefined(im.RegisterMessage[name])) {
+              register(name);
+            }
+            return new im.RegisterMessage[name](content);
           };
           var msg = create();
           Logger$1.log(LogTag.IM, {
@@ -2427,7 +2442,7 @@
         var im = context.im;
 
         var isSupport = false;
-        if (utils.isFunction(im.getInstance().RTCPing)) {
+        if (utils.isFunction(im.prototype.RTCPing)) {
           isSupport = true;
         }
         return isSupport;
@@ -3322,9 +3337,13 @@
           }
           if (utils.isEqual(currentUserId, id)) {
             var _uris2 = slicedToArray(uris, 1),
-                _uris2$ = _uris2[0],
-                type = _uris2$.mediaType,
-                tag = _uris2$.tag;
+                stream = _uris2[0];
+
+            if (utils.isUndefined(stream)) {
+              return;
+            }
+            var type = stream.mediaType,
+                tag = stream.tag;
 
             type = utils.isEqual(uris.length, 1) ? type : StreamType.AUDIO_AND_VIDEO;
             return unpublish({
@@ -9215,15 +9234,18 @@
         if (!im.isSupportRTC()) {
           return utils.Defer.reject(ErrorType.Inner.IM_SDK_VER_NOT_MATCH);
         }
-        if (!im.isIMReady()) {
-          return utils.Defer.reject(ErrorType.Inner.IM_NOT_CONNECTED);
-        }
         var type = params.type,
             args = params.args,
             event = params.event;
 
-        var APIWhitelist = [UpEvent.ROOM_JOIN, UpEvent.DEVICE_GET];
-        if (!utils.isInclude(APIWhitelist, event) && !im.isJoined()) {
+        var APIWhitelist = [UpEvent.ROOM_JOIN, UpEvent.DEVICE_GET, UpEvent.STREAM_GET];
+        var isInclude = utils.isInclude(APIWhitelist, event);
+
+        if (!im.isIMReady() && !isInclude) {
+          return utils.Defer.reject(ErrorType.Inner.IM_NOT_CONNECTED);
+        }
+
+        if (!isInclude && !im.isJoined()) {
           return utils.Defer.reject(ErrorType.Inner.RTC_NOT_JOIN_ROOM);
         }
         var RequestHandler = this.RequestHandler;
