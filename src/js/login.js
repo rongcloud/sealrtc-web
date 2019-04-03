@@ -465,6 +465,9 @@
     //   Dom.showByClass('rong-btn-start');
     //   RongSeal.im.instance().logout();
     // });
+    RongSeal.userInfo = {
+      userName: userNameDom.value
+    }
   };
 
   var checkRoomTelValue = function () {
@@ -511,6 +514,7 @@
   })();
   RongSeal.setUserInfoObj = setUserInfoObj;
   RongSeal.StorageKeys = StorageKeys;
+  
 })({
   win: window,
   RongSeal: window.RongSeal,

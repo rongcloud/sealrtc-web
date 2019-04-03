@@ -515,7 +515,9 @@
     console.log('join user', JSON.stringify(user))
     var id = user.id,
       isSelf = id === loginUserId;
-    var name = isSelf ? localeData.self : id;
+    // var userName =
+    // var name = isSelf ? localeData.self : id;
+    var name = isSelf ? localeData.self : user.name;
     var resizeEvent = isSelf ? null : resizeStream;
     var streamBox = new StreamBox(id, {
       resizeEvent: resizeEvent,
@@ -636,7 +638,8 @@
     var roomTitleDom = Dom.getByClass(ClassName.ROOM_TITLE);
     roomTitleDom.textContent = localeData.room + ': ' + params.roomId;
     var userTitleDom = Dom.getByClass(ClassName.USER_TITLE);
-    userTitleDom.textContent = localeData.user + ': ' + params.userId;
+    // userTitleDom.textContent = localeData.user + ': ' + params.userId;
+    userTitleDom.textContent = localeData.userName + ': ' + RongSeal.userInfo.userName;
 
     // 创建流列表 UI
     var rtcBoxDom = Dom.getByClass(ClassName.STREAM_BOX);
@@ -687,7 +690,17 @@
       addUserStream(user);
       return;
     }
-    addUserBox(user);
+    getRtcUserInfos().then(function(infos){
+      var userList = JSON.parse(infos[InfosKey]);
+      console.log(userList)
+      for(var i=0;i<userList.length;i++){
+        if(userList[i].userId == user.id) {
+          user.name = userList[i].userName;
+        }
+      }
+      addUserBox(user);
+    })
+   
   }
 
   function joinCancel() {
@@ -789,7 +802,7 @@
         resolve(infos)
       }).catch(function (err){
         // console.log(err)
-        reject(err);
+        reject('getRtcUserInfos',err);
       })
     });
   }
@@ -799,7 +812,7 @@
       var userList = JSON.parse(infos['rong-user-info']);
       common.UI.userListView(userList);
     }).catch(function (err){
-      console.log(err)
+      console.log('setRtcUserInfos',err)
     })
   }
   function removeRtcUserInfos(leftUserId,callback) {
@@ -828,7 +841,7 @@
       }
       
     }).catch(function(err){
-      console.log('remove set',err);
+      console.log('removeRtcUserInfos',err);
     })
   }
   function roomMessage(message) {

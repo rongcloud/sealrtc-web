@@ -8,6 +8,7 @@
       downloadTitle: '下载插件',
       room: '会议室 ID',
       user: '用户 ID',
+      userName: '用户名',
       self: '自己',
       roomIdEmpty: '会议室 ID 不能为空',
       userNameEmpty: '用户名称不能为空',
