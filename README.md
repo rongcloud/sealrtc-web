@@ -28,7 +28,7 @@
     │       ├── en.js  英文配置
     │       └── zh.js  中文配置
     ├── lib
-    │   ├── RongRTC.2.0.0.js  
+    │   ├── RongRTC.3.0.0.js  
     │   ├── frameImage.js  获取 stream 帧图片
     │   └── screenshare.js  屏幕共享
     └── plugin
