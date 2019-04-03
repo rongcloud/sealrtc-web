@@ -299,6 +299,12 @@ input[type="number"]{
   padding-left: 20px;
   color: red;
 }
+.rong-login-systemTips {
+  clear: both;
+  text-align: left;
+  color: #fff;
+  font-size: 14px;
+}
 .rong-rtc {
   display: none;
   overflow: hidden;
@@ -370,6 +376,10 @@ input[type="number"]{
 }
 .rong-rtc .rong-rtc-opt .rong-share-closeicon {
   display: none;
+}
+
+.rong-rtc .rong-rtc-opt .rong-opt-usericon {
+  background-image: url('./img/user-list.svg');
 }
 
 
@@ -669,6 +679,51 @@ input[type="number"]{
   display: block;
 }
 
+.rong-user-list {
+  display: none;
+  position: absolute;
+  background: #fffefe;
+  width: 200px;
+  height: 100%;
+  z-index: 12;
+  right: 0;
+  top: 53px;
+}
+.rong-user-list .user-list-main {
+  overflow-y: scroll;
+  height: 100%;
+}
+.rong-user-list .user-list-item {
+  border-bottom: 1px solid #ccc;
+  clear: both;
+}
+.rong-user-list .user-list-item .online-user {
+  width: 50%;
+  text-align: left;
+  padding-left: 10px;
+  float: left;
+}
+.rong-user-list .user-list-item .user-list-close {
+  text-align: center;
+  float: right;
+  height: 23px;
+}
+.rong-user-list .rong-user-list-title {
+  border-bottom: 1px solid #ccc;
+  height: 30px;
+  line-height: 30px;
+  background: #d1d8d6;
+}
+.rong-user-list .rong-user-list-title .online-user {
+  padding-left: 10px;
+  float: left;
+}
+.rong-user-list .rong-user-list-title .user-list-close {
+  float: right;
+  cursor: pointer;
+  padding-right: 10px;
+  color: #4d6caa;
+}
 .rong-alert-box {
   position: absolute;
   left: 0;

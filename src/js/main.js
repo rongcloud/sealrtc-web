@@ -21,7 +21,7 @@
   var EventName = RongSeal.EventName;
   // var casePreBtn = Dom.get('.rong-case-pre');
   // var caseNextBtn = Dom.get('.rong-case-next');
-
+  var InfosKey = RongSeal.StorageKeys.UserInfoKey;
   var ClassName = {
     LOGIN_PAGE: 'rong-login',
     RTC_PAGE: 'rong-rtc',
@@ -30,6 +30,8 @@
     HANGUP_BUTTON: 'rong-opt-hangup',
     WHITEBOARD_BUTTON: 'rong-opt-wb',
     SCREENSHARE_BUTTON: 'rong-opt-share',
+    USER_LIST_BUTTON: 'rong-opt-userlist',
+    USER_LIST_CLOSE_BUTTON: 'user-list-close',
     STREAM_BOX: 'rong-stream-wrap',
     CASE_PRE_BTN: 'rong-case-pre',
     CASE_NEXT_BTN: 'rong-case-next'
@@ -37,7 +39,7 @@
   var VideoPrefix = {
     STREAM: 'Rong-{id}'
   };
-  var loginUserId, rongRTC, rongRTCRoom, rongRTCStream;
+  var loginUserId, rongRTC, rongRTCRoom, rongRTCStream, rongRTCMessage, rongStorage;
   var rongRTCPage, streamList;
   var userStreams = {
     users: {},
@@ -289,7 +291,7 @@
 
   function addUserStream(user) {
     var isSelf = user.id === loginUserId;
-    console.log('addUserStream user:', JSON.stringify(user));
+    // console.log('addUserStream user:', JSON.stringify(user));
     var streamBox = StreamBox.get(user.id);
     if (isSelf) {
       var stream = user.stream;
@@ -522,7 +524,7 @@
     streamList.addBox(streamBox);
     if (isSelf) {
       utils.Dom.addClass(streamBox.dom, 'rong-is-self');
-      console.log(streamBox.dom);
+      // console.log(streamBox.dom);
       streamBox.zoom(user);
     } else {
       addUserStream(user);
@@ -547,8 +549,7 @@
     openVideoTimer();
     createToast();
     hideToast();
-    console.log('streamList:', JSON.stringify(streamList));
-
+    // console.log('streamList:', JSON.stringify(streamList));
   }
 
   function removeUserBox(user) {
@@ -578,6 +579,9 @@
     stopVideoTimer();
     hideToast();
     showToast();
+    removeRtcUserInfos(user.id,function(){
+      // to do
+    });
   }
 
   function publishSelfMediaStream(videoEnable, audioEnable, resolution, audioOnly) {
@@ -647,25 +651,33 @@
 
   function quit() {
     // win.location.reload();
-    common.UI.backLoginPage();
-    RongSeal.videoTimer.stop();
-    RongSeal.userStreams.clearUsers();
-    sealToast.destroy();
-    RongSeal.destroyRongRTCPage();
-    rongRTCRoom.leave().then(function () {
-      console.log('quit---')
-    }, function () {
-      // leave error
+    removeRtcUserInfos(loginUserId,function(){
+      rongRTCRoom.leave().then(function () {
+        console.log('quit---')
+      }, function () {
+        // leave error
+      });
+      common.UI.backLoginPage();
+      RongSeal.videoTimer.stop();
+      RongSeal.userStreams.clearUsers();
+      sealToast.destroy();
+      RongSeal.destroyRongRTCPage();
+      RongSeal.im.disconnect();
     });
-    RongSeal.im.disconnect();
+   
   }
 
   function bindRTCBtnEvent() {
     var hangupBtn = Dom.getByClass(ClassName.HANGUP_BUTTON),
       // whiteboardBtn = Dom.getByClass(ClassName.WHITEBOARD_BUTTON),
-      screenShareBtn = Dom.getByClass(ClassName.SCREENSHARE_BUTTON);
+      screenShareBtn = Dom.getByClass(ClassName.SCREENSHARE_BUTTON),
+      userListBtn = Dom.getByClass(ClassName.USER_LIST_BUTTON),
+      userListCloseBtn = Dom.getByClass(ClassName.USER_LIST_CLOSE_BUTTON);
     hangupBtn.onclick = quit;
     // whiteboardBtn.onclick = '';
+    console.log(userListCloseBtn);
+    userListBtn.onclick = common.UI.showUserList;
+    userListCloseBtn.onclick = common.UI.hideUserList;
     screenShareBtn.onclick = switchScreenShare;
     win.onbeforeunload = quit;
   }
@@ -751,6 +763,78 @@
     }
   }
 
+  function getRtcMode(peopleNum,params) {
+    var joinMode;
+    if(params.bystanderEnable == true){
+      //观察者
+      joinMode = 2
+    }else {
+      if(peopleNum < 9){
+        //音视频
+        joinMode = 0
+      }else if(peopleNum >= 9 && peopleNum < 30){
+        //音频
+        joinMode = 1;
+      }else {
+        //观察者
+        joinMode = 2;
+      }
+    }
+    return joinMode;
+  }
+
+  function getRtcUserInfos(){
+    return new Promise(function(resolve, reject){
+      RongSeal.rongStorage.get(InfosKey).then(function (infos){
+        resolve(infos)
+      }).catch(function (err){
+        // console.log(err)
+        reject(err);
+      })
+    });
+  }
+  function setRtcUserInfos() {
+    RongSeal.rongStorage.get(InfosKey).then(function (infos){
+      console.log(JSON.parse(infos['rong-user-info']));
+      var userList = JSON.parse(infos['rong-user-info']);
+      common.UI.userListView(userList);
+    }).catch(function (err){
+      console.log(err)
+    })
+  }
+  function removeRtcUserInfos(leftUserId,callback) {
+    // var leftUserId = user.id;
+    getRtcUserInfos().then(function(infos){
+      var userList = JSON.parse(infos[InfosKey]);
+      for(var i=0;i<userList.length;i++){
+        if(userList[i].userId == leftUserId){
+          console.log(i);
+          userList.splice(i,1);
+        }
+      }
+      common.UI.userListView(userList);
+      //再把删除退出后的用户组存入
+      if(userList.length !== 0){
+        var strInfo = JSON.stringify(userList);
+        RongSeal.rongStorage.set(InfosKey,strInfo).then(function(){
+          console.log('set success');
+          callback();
+        });
+      }else {
+        RongSeal.rongStorage.remove(InfosKey).then(function(){
+          console.log('set success');
+          callback();
+        });
+      }
+      
+    }).catch(function(err){
+      console.log('remove set',err);
+    })
+  }
+  function roomMessage(message) {
+    console.log(message);
+    setRtcUserInfos();
+  }
   /**
   * 开始实时音视频
   * @param {object} params
@@ -797,12 +881,39 @@
       muted: hideUserAudio,
       unmuted: showUserAudio
     });
+    rongRTCMessage = new rongRTC.Message({
+      received: roomMessage,
+    })
+    rongStorage = new rongRTC.Storage();
     joinRoom(params.roomId, params.token).then(function (roomUsers) {
       console.log(roomUsers.users.length)
       var peopleNum = roomUsers.users.length;
       // var peopleNum = 4;
       RTCNumberCheck(peopleNum, params);
-
+      getRtcUserInfos().then(function(infos){
+        //添加新用户信息并渲染
+        var mode = getRtcMode(peopleNum,params);
+        var userData = RongSeal.setUserInfoObj({joinMode: mode});
+        var userInfo = userData.userInfo;
+        var roomMsg = userData.message;
+        var val ,strInfo;
+        if(JSON.stringify(infos) == '{}'){
+          val = [userInfo];
+          strInfo = JSON.stringify(val);
+        } else {
+          var infosArr = JSON.parse(infos[InfosKey]);
+          infosArr.push(userInfo);
+          strInfo = JSON.stringify(infosArr);
+        }
+        RongSeal.rongStorage.set(InfosKey,strInfo,roomMsg).then(function(){
+          setRtcUserInfos();
+        }).catch(function(err){
+          console.log('set storage F:',err)
+        });
+        console.log('infos----',infos);
+      }).catch(function(err){
+        console.log('不渲染：err',err)
+      })
       // var videoEnable = params.videoEnable,
       //   audioEnable = params.audioEnable,
       //   resolution = params.resolution;
@@ -811,7 +922,8 @@
       //   addUserStream, publishStreamError);
     }, joinRoomError);
     RongSeal.rongRTCRoom = rongRTCRoom;
-
+    RongSeal.rongStorage = rongStorage;
+    RongSeal.rongRTCMessage = rongRTCMessage;
   };
 
   RongSeal.startRTC = startRTC;

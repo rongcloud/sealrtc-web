@@ -20,7 +20,8 @@
     // userDom = getDomById('userId'),
     startBtnDom = getDomById('start'),
     inputDomList = Dom.getList('.rong-login-input'),
-    roomTelNumDom = getDomById('roomTelNum');
+    roomTelNumDom = getDomById('roomTelNum'),
+    userNameDom = getDomById('userName');
   var telDom = getDomById('telNumber'),
     verifyCodeDom = getDomById('verifyCode'),
     verifyCodeBtnDom = getDomById('verifyCodeBtn'),
@@ -30,8 +31,15 @@
   var StorageKeys = {
     RoomId: 'rong-sealv2-roomid',
     Resolution: 'rong-sealv2-resolution',
-    IMToken: 'rong-im-token'
+    IMToken: 'rong-im-token',
+    UserInfoKey: 'rong-user-info'
   };
+
+  // var JoinMode = {
+  //   SRJoinModeAV: 0,
+  //   SRJoinModeAudioOnly: 1,
+  //   SRJoinModeObserver: 2
+  // }
   var sealToast = new common.SealToast();
   /**
    * 获取手机验证码 
@@ -162,24 +170,6 @@
     }).catch(function(){
       sealAlert(localeData.phoneNumberErr);
     })
-    // var telReg = /^[1][3,4,5,7,8][0-9]{9}$/;
-    // if (telReg.test(telDom.value)) {
-    //   console.log(telDom.value);
-    //   var params = {
-    //     tel: telDom.value,
-    //     region: 86
-    //   }
-    //   getSmsCode(params).then(function (data) {
-    //     console.log('data', data)
-    //   }).catch(function (err) {
-    //     console.log('getSMSCodeERR:', err)
-    //   })
-    //   var countDown = 60;
-    //   setCountDownTimer(countDown);
-    // } else {
-    //   sealAlert(localeData.phoneNumberErr);
-    // }
-
   }
   var verifyLogin = function () {
     var tel = telDom.value,
@@ -197,17 +187,17 @@
         };
         verifySmsCode(params).then(function (data) {
           //验证正确：
-          // var resData = data;
           if (data.code === 200) {
             rongIMToken = data.result.token;
             if (rongIMToken) {
-              Cache.set(imTokenKey, rongIMToken)
+              Cache.set(imTokenKey, rongIMToken);
+              startRTC(rongIMToken);
             } else {
-              console.log('IM token 为空----')
+              console.log('IM token 为空----');
+              //join room 页面
+              Dom.showByClass('rong-login-roomjoin')
+              Dom.hideByClass('rong-login-telverify')
             }
-            //join room 页面
-            Dom.showByClass('rong-login-roomjoin')
-            Dom.hideByClass('rong-login-telverify')
           } else if (data.code === 1000) {
             sealAlert(localeData.verifyCodeIncorrect)
           } else if (data.code === 2000) {
@@ -289,6 +279,7 @@
 
   var checkRTCValue = function () {
     var isRoomIdEmpty = !roomDom.value;
+    var isUserNameEmpty = !userNameDom.value;
     var isValid = true;
     var prompt = '';
     if (isRoomIdEmpty) {
@@ -297,6 +288,10 @@
     }
     if (!utils.isNumberAndLetter(roomDom.value)) {
       prompt = localeData.roomIdIllegal;
+      isValid = false;
+    }
+    if(isUserNameEmpty){
+      prompt = localeData.userNameEmpty;
       isValid = false;
     }
     return {
@@ -327,6 +322,29 @@
       bystanderEnable: bystanderEnable
     };
   };
+  //用户信息缓存
+  function setUserInfoObj(params) {
+    var currentTimestamp = new Date().getTime().toString();
+    var userInfo = {
+      userId: roomTelNumDom.value,
+      userName: userNameDom.value,
+      joinMode: params.joinMode,
+      joinTime: currentTimestamp
+    };
+    var forKey = roomTelNumDom.value;
+    var message = {
+      name: 'SealRTC:SetRoomInfo',
+      content: {
+        infoKey: roomTelNumDom.value,
+        infoValue: userInfo
+      }
+    };
+    return {
+      userInfo: userInfo,
+      forKey: forKey,
+      message: message
+    }
+  }
 
   var clear = function () {
     common.UI.backLoginPage();
@@ -395,7 +413,9 @@
         console.log('user', user);
         RongSeal.startRTC(option);
         Cache.set(StorageKeys.RoomId, option.roomId);
-        Cache.set(StorageKeys.Resolution, common.reFormatResolution(resolution))
+        Cache.set(StorageKeys.Resolution, common.reFormatResolution(resolution));
+        Dom.showByClass('rong-login-roomjoin')
+        Dom.hideByClass('rong-login-telverify')
       },
       backLoginPage: function () {
         reconnectionMechanism();
@@ -466,7 +486,6 @@
     var token = hasIMToken();
     if ((e.keyCode || e.which) == 13) {
       startRTC(token);
-      // verifyLogin();
     }
   };
   var pressVerifyLogin = function(e) {
@@ -490,6 +509,8 @@
     });
     common.setLocale();
   })();
+  RongSeal.setUserInfoObj = setUserInfoObj;
+  RongSeal.StorageKeys = StorageKeys;
 })({
   win: window,
   RongSeal: window.RongSeal,
