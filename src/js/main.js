@@ -523,6 +523,14 @@
       isSelf = id === loginUserId;
     // var userName =
     // var name = isSelf ? localeData.self : id;
+    if(!isSelf){
+      //删除多端挤掉的盒子
+      var box = StreamBox.get(id);
+      if(box){
+        streamList.removeBox(box);
+        console.log(StreamBox.get(id))
+      }
+    }
     var name = isSelf ? localeData.self : user.name;
     var resizeEvent = isSelf ? null : resizeStream;
     var streamBox = new StreamBox(id, {
@@ -685,7 +693,6 @@
       userListCloseBtn = Dom.getByClass(ClassName.USER_LIST_CLOSE_BUTTON);
     hangupBtn.onclick = quit;
     // whiteboardBtn.onclick = '';
-    console.log(userListCloseBtn);
     userListBtn.onclick = common.UI.showUserList;
     userListCloseBtn.onclick = common.UI.hideUserList;
     screenShareBtn.onclick = switchScreenShare;
@@ -717,7 +724,12 @@
     console.log(peopleNum, params);
     addUserBox({ id: loginUserId });
     var streamBox = StreamBox.get(loginUserId);
-    if (peopleNum >= 9 && peopleNum < 30) {
+    if(peopleNum < 9){
+      if(params.videoEnable == false){
+        unpublishedVideoUI();
+        streamBox.disabledVideoBySelf();
+      }
+    }else if (peopleNum >= 9 && peopleNum < 30) {
       streamBox.disabledVideoBySelf();
       var audioOnly = true;
       publishSelfMediaStream(false, true, params.resolution, audioOnly).then(
@@ -749,6 +761,11 @@
           audioEnable = params.audioEnable,
           resolution = params.resolution;
         addUserBox({ id: loginUserId });
+        // if(videoEnable == false){
+        //   unpublishedVideoUI();
+        //   streamBox.disabledVideoBySelf();
+        // }
+        RTCJoinConfirm(peopleNum, params)
         publishSelfMediaStream(videoEnable, audioEnable, resolution).then(
           addUserStream, publishStreamError);
       } else if (peopleNum >= 9 && peopleNum < 30) {
@@ -790,7 +807,11 @@
     }else {
       if(peopleNum < 9){
         //音视频
-        joinMode = JoinMode.SRJoinModeAV;
+        if(params.videoEnable == false) {
+          joinMode = JoinMode.SRJoinModeAudioOnly;
+        }else {
+          joinMode = JoinMode.SRJoinModeAV;
+        }
       }else if(peopleNum >= 9 && peopleNum < 30){
         //音频
         joinMode = JoinMode.SRJoinModeAudioOnly;
