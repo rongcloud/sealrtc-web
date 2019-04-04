@@ -682,7 +682,7 @@ input[type="number"]{
   display: none;
   position: absolute;
   background: #fffefe;
-  width: 245px;
+  width: 255px;
   height: 100%;
   z-index: 12;
   right: 0;

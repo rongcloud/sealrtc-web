@@ -523,14 +523,17 @@
       isSelf = id === loginUserId;
     // var userName =
     // var name = isSelf ? localeData.self : id;
-    if(!isSelf){
-      //删除多端挤掉的盒子
-      var box = StreamBox.get(id);
-      if(box){
-        streamList.removeBox(box);
-        console.log(StreamBox.get(id))
-      }
-    }
+    // if(!isSelf){
+    //   //删除多端挤掉的盒子
+    //   var box = StreamBox.get(id);
+    //   if(box){
+    //     streamList.removeBox(box);
+    //     console.log(StreamBox.get(id));
+    //     rongRTCStream.unsubscribe(user).then(function(){
+    //       console.log('unsub success');
+    //     });
+    //   }
+    // }
     var name = isSelf ? localeData.self : user.name;
     var resizeEvent = isSelf ? null : resizeStream;
     var streamBox = new StreamBox(id, {
