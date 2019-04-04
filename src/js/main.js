@@ -835,7 +835,8 @@
     }else {
       getRtcUserInfos([]).then(function(infos){
         var userList = [];
-        delete infos.leftUserId;
+        delete infos[leftUserId];
+        // delete infos.leftUserId;
         for(var key in infos){
           var userInfo = JSON.parse(infos[key]);
           userList.push(userInfo);
