@@ -8,8 +8,10 @@
       downloadTitle: '下载插件',
       room: '会议室 ID',
       user: '用户 ID',
+      userName: '用户名',
       self: '自己',
       roomIdEmpty: '会议室 ID 不能为空',
+      userNameEmpty: '用户名称不能为空',
       userIdEmpty: '用户 ID 不能为空',
       roomIdIllegal: '会议室 ID 只能包含大小写字母、阿拉伯数字、+、=、-、_ 且长度不能超过 64 个字符',
       networkError: '网络已断开',
@@ -41,13 +43,14 @@
     placeholder: {
       roomId: '请输入会议室 ID',
       userId: '请输入用户 ID',
+      userName: '请输入用户名称',
       phoneNumber: '手机号',
       verifyCode: '手机验证码'
     },
     textContent: {
       closeVideo: '加入时关闭摄像头',
       closeAudio: '加入时关闭麦克风',
-      bystanders: '只接收音视频流不发布流模式',
+      bystanders: '旁听者模式',
       setting: '通话设置',
       resolution: '分辨率',
       screenshareBusy: '正在分享屏幕',
@@ -55,6 +58,9 @@
       otherVideoClosed: '对方已关闭摄像头',
       alertTitle: '提示',
       phoneTips: '请输入手机号验证登录，目前只支持中国区',
+      btnLoading: '加载中...',
+      systemTips: '注：音视频核心引擎升级 SealRTC v3.0.0 及以上版本与老版本不兼容，请统一使用新版本体验',
+      userListClose: '关闭'
     },
     value: {
       startRTC: '开始会议',

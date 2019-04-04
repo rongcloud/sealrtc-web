@@ -299,6 +299,12 @@ input[type="number"]{
   padding-left: 20px;
   color: red;
 }
+.rong-login-systemTips {
+  clear: both;
+  text-align: left;
+  color: #fff;
+  font-size: 14px;
+}
 .rong-rtc {
   display: none;
   overflow: hidden;
@@ -370,6 +376,10 @@ input[type="number"]{
 }
 .rong-rtc .rong-rtc-opt .rong-share-closeicon {
   display: none;
+}
+
+.rong-rtc .rong-rtc-opt .rong-opt-usericon {
+  background-image: url('./img/user-list.svg');
 }
 
 
@@ -472,7 +482,6 @@ input[type="number"]{
   top: 0;
   width: 100%;
   height: 100%;
-  /* object-fit: fill; */
 }
 
 .rong-stream-wrap .rong-stream-box .rong-user-name {
@@ -566,7 +575,7 @@ input[type="number"]{
   background-image: url("./img/audio-disable.png");
 }
 .rong-stream-wrap .rong-stream-box:hover .rong-user-name {
-  /* display: inline-block; */
+  display: inline-block;
 }
 
 .rong-stream-wrap .rong-is-self .rong-video {
@@ -574,11 +583,11 @@ input[type="number"]{
 }
 
 .rong-stream-wrap .rong-is-self .rong-user-name {
-  /* display: inline-block; */
-}
-.rong-stream-wrap .rong-is-self:hover .rong-user-name {
   display: inline-block;
 }
+/* .rong-stream-wrap .rong-is-self:hover .rong-user-name {
+  display: inline-block;
+} */
 
 .rong-stream-wrap .rong-is-zoom {
   position: absolute;
@@ -669,6 +678,55 @@ input[type="number"]{
   display: block;
 }
 
+.rong-user-list {
+  display: none;
+  position: absolute;
+  background: #fffefe;
+  width: 255px;
+  height: 100%;
+  z-index: 12;
+  right: 0;
+  top: 53px;
+  box-shadow: 0 0 1px #ccc;
+}
+.rong-user-list .user-list-main {
+  overflow-y: scroll;
+  height: 100%;
+  font-size: 12px;
+}
+.rong-user-list .user-list-item {
+  border-bottom: 1px solid #ebeef5;
+  clear: both;
+}
+.rong-user-list .user-list-item .online-user {
+  width: 50%;
+  text-align: left;
+  padding-left: 10px;
+  float: left;
+}
+.rong-user-list .user-list-item .user-list-close {
+  text-align: center;
+  float: right;
+  height: 23px;
+}
+.rong-user-list .rong-user-list-title {
+  border-bottom: 1px solid #ebeef5;
+  height: 30px;
+  line-height: 30px;
+  background: #d1d8d6;
+  font-size: 13px;
+}
+.rong-user-list .rong-user-list-title .online-user {
+  padding-left: 10px;
+  float: left;
+  color: #333;
+}
+.rong-user-list .rong-user-list-title .user-list-close {
+  float: right;
+  cursor: pointer;
+  padding-right: 10px;
+  color: #0099FF;
+}
 .rong-alert-box {
   position: absolute;
   left: 0;

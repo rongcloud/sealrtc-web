@@ -569,7 +569,7 @@
     Dom.showByClass('rong-login');
     Dom.hideByClass('rong-btn-loading');
     Dom.showByClass('rong-btn-start');
-    Dom.getById('isCloseVideo').checked = false;
+    // Dom.getById('isCloseVideo').checked = false;
   }
 
   var WhiteBoard = (function () {
@@ -596,12 +596,42 @@
     };
   })();
 
+  function userListView(userList) {
+    var userListDom = Dom.getById('rongRoomUsers');
+    var userListNumDom = Dom.getById('userListNum');
+    var userJoinMode = '';
+    userListNumDom.innerText = '在线人数('+userList.length+'人)';
+    userListDom.innerHTML = '';
+    for(var i=0;i<userList.length;i++){
+      if(userList[i].joinMode == 0){
+        userJoinMode = '视频模式加入';
+      }else if(userList[i].joinMode == 1){
+        userJoinMode = '音频模式加入';
+      } else {
+        userJoinMode = '旁听者模式加入';
+      }
+      userListDom.innerHTML += '<div class="user-list-item">' +
+        '<div class="online-user" id=""> ' + userList[i].userName + '</div>' +
+        '<div calss="user-join-mode" id="">' + userJoinMode + '</div></div>';
+    }
+  }
+  function showUserList() {
+    // var userListDom = Dom.getByClass('rong-opt-userlist');
+    Dom.showByClass('rong-user-list')
+  }
+  function hideUserList() {
+    console.log(111)
+    Dom.hideByClass('rong-user-list')
+  }
   var UI = {
     RongRTCPage: RongRTCPage,
     StreamList: StreamList,
     StreamBox: StreamBox,
     WhiteBoard: WhiteBoard,
     backLoginPage: backLoginPage,
+    userListView: userListView,
+    showUserList: showUserList,
+    hideUserList: hideUserList
   };
 
   var common = {
