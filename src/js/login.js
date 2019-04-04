@@ -32,7 +32,9 @@
     RoomId: 'rong-sealv2-roomid',
     Resolution: 'rong-sealv2-resolution',
     IMToken: 'rong-im-token',
-    UserInfoKey: 'rong-user-info'
+    UserInfoKey: 'rong-user-info',
+    VideoEnable: 'video-enable',
+    BystanderEnable: 'bystander-enable'
   };
 
   // var JoinMode = {
@@ -413,6 +415,8 @@
         console.log('user', user);
         RongSeal.startRTC(option);
         Cache.set(StorageKeys.RoomId, option.roomId);
+        // Cache.set(StorageKeys.VideoEnable, option.videoEnable);
+        // Cache.set(StorageKeys.BystanderEnable, option.bystanderEnable);
         Cache.set(StorageKeys.Resolution, common.reFormatResolution(resolution));
         Dom.showByClass('rong-login-roomjoin')
         Dom.hideByClass('rong-login-telverify')
