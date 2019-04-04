@@ -604,7 +604,7 @@
     userListDom.innerHTML = '';
     for(var i=0;i<userList.length;i++){
       if(userList[i].joinMode == 0){
-        userJoinMode = '音视频模式';
+        userJoinMode = '视频模式';
       }else if(userList[i].joinMode == 1){
         userJoinMode = '音频模式';
       } else {

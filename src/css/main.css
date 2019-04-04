@@ -687,13 +687,15 @@ input[type="number"]{
   z-index: 12;
   right: 0;
   top: 53px;
+  box-shadow: 0 0 1px #ccc;
 }
 .rong-user-list .user-list-main {
   overflow-y: scroll;
   height: 100%;
+  font-size: 12px;
 }
 .rong-user-list .user-list-item {
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid #ebeef5;
   clear: both;
 }
 .rong-user-list .user-list-item .online-user {
@@ -708,20 +710,22 @@ input[type="number"]{
   height: 23px;
 }
 .rong-user-list .rong-user-list-title {
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid #ebeef5;
   height: 30px;
   line-height: 30px;
   background: #d1d8d6;
+  font-size: 13px;
 }
 .rong-user-list .rong-user-list-title .online-user {
   padding-left: 10px;
   float: left;
+  color: #333;
 }
 .rong-user-list .rong-user-list-title .user-list-close {
   float: right;
   cursor: pointer;
   padding-right: 10px;
-  color: #4d6caa;
+  color: #0099FF;
 }
 .rong-alert-box {
   position: absolute;
