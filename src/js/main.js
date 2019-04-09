@@ -80,6 +80,11 @@
     SRJoinModeAV: 0,
     SRJoinModeAudioOnly: 1,
     SRJoinModeObserver: 2
+  };
+
+  var LimitNum = {
+    SRJoinNumAV: 9999,
+    SRJoinNumAudioOnly: 30000
   }
 
   function streamBoxSroll(event) {
@@ -727,17 +732,17 @@
     console.log(peopleNum, params);
     addUserBox({ id: loginUserId });
     var streamBox = StreamBox.get(loginUserId);
-    if(peopleNum < 9){
+    if(peopleNum < LimitNum.SRJoinNumAV){
       if(params.videoEnable == false){
         unpublishedVideoUI();
         streamBox.disabledVideoBySelf();
       }
-    }else if (peopleNum >= 9 && peopleNum < 30) {
+    }else if (peopleNum >= LimitNum.SRJoinNumAV && peopleNum < LimitNum.SRJoinNumAudioOnly) {
       streamBox.disabledVideoBySelf();
       var audioOnly = true;
       publishSelfMediaStream(false, true, params.resolution, audioOnly).then(
         addUserStream, publishStreamError);
-    } else if (peopleNum >= 30) {
+    } else if (peopleNum >= LimitNum.SRJoinNumAudioOnly) {
       streamBox.closeVideoBySelf();
       streamBox.closeAudioBySelf();
       streamBox.disabledVideoBySelf();
@@ -756,7 +761,7 @@
     var tipStr1 = '会议室中视频通话人数已超过 9 人，您将以音频模式加入会议室。';
     var tipStr2 = '会议室中视频通话人数已超过 30 人，您将以旁听者模式加入会议室。';
     if(params.bystanderEnable == false) {
-      if (peopleNum < 9) {
+      if (peopleNum < LimitNum.SRJoinNumAV) {
         // 隐藏 login, 展示 rtc
         Dom.hideByClass(ClassName.LOGIN_PAGE);
         Dom.showByClass(ClassName.RTC_PAGE);
@@ -764,14 +769,10 @@
           audioEnable = params.audioEnable,
           resolution = params.resolution;
         addUserBox({ id: loginUserId });
-        // if(videoEnable == false){
-        //   unpublishedVideoUI();
-        //   streamBox.disabledVideoBySelf();
-        // }
         RTCJoinConfirm(peopleNum, params)
         publishSelfMediaStream(videoEnable, audioEnable, resolution).then(
           addUserStream, publishStreamError);
-      } else if (peopleNum >= 9 && peopleNum < 30) {
+      } else if (peopleNum >= LimitNum.SRJoinNumAV && peopleNum < LimitNum.SRJoinNumAudioOnly) {
         sealAlert(tipStr1, {
           isShowCancel: true,
           confirmCallback: function () {
@@ -780,7 +781,7 @@
           },
           cancelCallback: joinCancel
         })
-      } else if (peopleNum >= 30) {
+      } else if (peopleNum >= LimitNum.SRJoinNumAudioOnly) {
         sealAlert(tipStr2, {
           isShowCancel: true,
           confirmCallback: function () {
@@ -808,14 +809,14 @@
       //观察者
       joinMode = JoinMode.SRJoinModeObserver
     }else {
-      if(peopleNum < 9){
+      if(peopleNum < LimitNum.SRJoinNumAV){
         //音视频
         if(params.videoEnable == false) {
           joinMode = JoinMode.SRJoinModeAudioOnly;
         }else {
           joinMode = JoinMode.SRJoinModeAV;
         }
-      }else if(peopleNum >= 9 && peopleNum < 30){
+      }else if(peopleNum >= LimitNum.SRJoinNumAV && peopleNum < LimitNum.SRJoinNumAudioOnly){
         //音频
         joinMode = JoinMode.SRJoinModeAudioOnly;
       }else {
