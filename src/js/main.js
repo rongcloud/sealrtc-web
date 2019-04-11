@@ -522,23 +522,9 @@
     // }
   }
 
-  function addUserBox(user) {
-    console.log('join user', JSON.stringify(user))
+  function addUserBoxSetting(user) {
     var id = user.id,
       isSelf = id === loginUserId;
-    // var userName =
-    // var name = isSelf ? localeData.self : id;
-    // if(!isSelf){
-    //   //删除多端挤掉的盒子
-    //   var box = StreamBox.get(id);
-    //   if(box){
-    //     streamList.removeBox(box);
-    //     console.log(StreamBox.get(id));
-    //     rongRTCStream.unsubscribe(user).then(function(){
-    //       console.log('unsub success');
-    //     });
-    //   }
-    // }
     var name = isSelf ? localeData.self : user.name;
     var resizeEvent = isSelf ? null : resizeStream;
     var streamBox = new StreamBox(id, {
@@ -573,6 +559,30 @@
     openVideoTimer();
     createToast();
     hideToast();
+  }
+  
+  function addUserBox(user) {
+    console.log('join user', JSON.stringify(user))
+    var id = user.id,
+      isSelf = id === loginUserId;
+    // var userName =
+    // var name = isSelf ? localeData.self : id;
+    if(!isSelf){
+      //删除多端挤掉的盒子
+      var box = StreamBox.get(id);
+      if(box){
+        streamList.removeBox(box);
+        console.log(StreamBox.get(id));
+        rongRTCStream.unsubscribe(user).then(function(){
+          console.log('unsub success');
+          addUserBoxSetting(user);
+        });
+      }else {
+        addUserBoxSetting(user);
+      }
+    }else {
+      addUserBoxSetting(user);
+    }
     // console.log('streamList:', JSON.stringify(streamList));
   }
 
@@ -768,7 +778,7 @@
         var videoEnable = params.videoEnable,
           audioEnable = params.audioEnable,
           resolution = params.resolution;
-        addUserBox({ id: loginUserId });
+        // addUserBox({ id: loginUserId });
         RTCJoinConfirm(peopleNum, params)
         publishSelfMediaStream(videoEnable, audioEnable, resolution).then(
           addUserStream, publishStreamError);
@@ -826,7 +836,18 @@
     }
     return joinMode;
   }
-
+  function userListSortByDesc(list) {
+    for(var i=0;i<list.length;i++){
+      for(var j=0;j<list.length-1;j++){
+        if(list[j].joinTime < list[j+1].joinTime){
+          var temp = list[j+1]; //元素交换
+          list[j+1] = list[j];
+          list[j] = temp;
+        }
+      }
+    }
+    return list;
+  }
   function getRtcUserInfos(InfosKey){
     return new Promise(function(resolve, reject){
       RongSeal.rongStorage.get(InfosKey).then(function (infos){
@@ -845,7 +866,8 @@
         var userInfo = JSON.parse(infos[key]);
         userList.push(userInfo);
       }
-      common.UI.userListView(userList);
+      var list = userListSortByDesc(userList)
+      common.UI.userListView(list);
     }).catch(function (err){
       console.log('setRtcUserInfos',err)
     })
@@ -866,7 +888,8 @@
           var userInfo = JSON.parse(infos[key]);
           userList.push(userInfo);
         }
-        common.UI.userListView(userList);
+        var list = userListSortByDesc(userList)
+        common.UI.userListView(list);
       }).catch(function(err){
         console.log('removeRtcUserInfo-s',err);
       })

@@ -112,7 +112,7 @@
       <div class="rong-user-list">
         <div class="rong-user-list-title">
           <div id="userListNum" class="online-user"></div>
-          <div id="user-list-close" class="user-list-close" lang-textContent="userListClose">关闭</div>
+          <div id="user-list-close" class="user-list-close" ><span lang-textContent="userListClose"></span></div>
         </div>
         <div id="rongRoomUsers" class="user-list-main"> </div>
       </div> 
@@ -129,6 +129,11 @@
   <script id="RongStreamBox" type="text/x-template">
     <div class="rong-stream-box">
       <video class="rong-video" autoplay ></video>
+      
+      <div class="rong-stream-top">
+        <img src="./css/img/sound.gif" class="rong-sound">
+        <p class="rong-user-name">{name}</p>
+      </div>
       <div class="rong-share-cover rong-rtc-cover">
         <div class="rong-cover-content">
           <img src="./css/img/share-cover.png">
@@ -142,7 +147,6 @@
           <!-- <p class="rong-audiocover-title-other" lang-textContent="otherVideoClosed"></p> -->
         </div>
       </div>
-      <p class="rong-user-name">{name}</p>
       <div class="rong-stream-opt">
         <a class="rong-opt-btn rong-opt-video"></a>
         <a class="rong-opt-btn rong-opt-video-disabled"></a>
