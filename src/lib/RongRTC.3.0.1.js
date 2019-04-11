@@ -927,6 +927,11 @@
     return callback(event, user);
   };
 
+  var isSafari = function isSafari() {
+    return (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+    );
+  };
+
   function Logger() {
     var observer = new utils.Observer();
     var write = function write(level, tag, meta) {
@@ -9253,6 +9258,9 @@
       };
       if (utils.isObject(_option)) {
         utils.extend(option, _option);
+      }
+      if (isSafari()) {
+        return;
       }
       if (reportTimer) {
         clear();
