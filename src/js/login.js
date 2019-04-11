@@ -37,11 +37,6 @@
     BystanderEnable: 'bystander-enable'
   };
 
-  // var JoinMode = {
-  //   SRJoinModeAV: 0,
-  //   SRJoinModeAudioOnly: 1,
-  //   SRJoinModeObserver: 2
-  // }
   var sealToast = new common.SealToast();
   /**
    * 获取手机验证码 

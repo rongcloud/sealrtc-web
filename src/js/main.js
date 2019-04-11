@@ -83,8 +83,8 @@
   };
 
   var LimitNum = {
-    SRJoinNumAV: 9999,
-    SRJoinNumAudioOnly: 30000
+    SRJoinNumAV: 9,
+    SRJoinNumAudioOnly: 30
   }
 
   function streamBoxSroll(event) {
@@ -573,6 +573,7 @@
       if(box){
         streamList.removeBox(box);
         console.log(StreamBox.get(id));
+        stopVideoTimer();
         rongRTCStream.unsubscribe(user).then(function(){
           console.log('unsub success');
           addUserBoxSetting(user);
@@ -917,13 +918,15 @@
   }
   function addUserSoundImg(user) {
     // console.log(user);
-    var streamBox;
+    var streamBox = StreamBox.get(user.id);
     if(user.stream.audioLevel > 0){
-      streamBox = StreamBox.get(user.id);
-      streamBox.showSoundGif();
+      if(streamBox) {
+        streamBox.showSoundGif();
+      }
     }else {
-      streamBox = StreamBox.get(user.id);
-      streamBox.hideSoundGif();
+      if(streamBox) {
+        streamBox.hideSoundGif();
+      }
     }
   }
   /**
@@ -944,7 +947,7 @@
       appkey: RongSeal.Config.APP_ID,
       // debug: true,
       logger: (log) => {
-        // console.log(JSON.stringify(log));
+        console.log(JSON.stringify(log));
       },
       RongIMLib: win.RongIMLib,
       mode: RongRTC.RTC,
