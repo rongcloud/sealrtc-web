@@ -231,6 +231,23 @@ input[type="number"]{
   margin: 3px 45px 3px 5px;
   vertical-align: middle;
 }
+
+.rong-login .rong-copyright {
+  position: absolute;
+  bottom: 0;
+  color: #fff;
+  text-align: center;
+  width: 100%;
+  font-size: 13px;
+}
+.rong-login .rong-copyright p:nth-child(1){
+  display: inline-block;
+}
+.rong-login .rong-copyright p:nth-child(2){
+  display: inline-block;
+  margin-left: 50px;
+}
+
 /* .rong-login .rong-login-roomjoin {
   display: block;
 } */

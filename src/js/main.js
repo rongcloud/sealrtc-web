@@ -39,7 +39,7 @@
   var VideoPrefix = {
     STREAM: 'Rong-{id}'
   };
-  var loginUserId, rongRTC, rongRTCRoom, rongRTCStream, rongRTCMessage, rongStorage;
+  var loginUserId, rongRTC, rongRTCRoom, rongRTCStream, rongRTCMessage, rongStorage, rongReport;
   var rongRTCPage, streamList;
   var userStreams = {
     users: {},
@@ -915,6 +915,17 @@
     console.log('roommsg:',message);
     setRtcUserInfos();
   }
+  function addUserSoundImg(user) {
+    // console.log(user);
+    var streamBox;
+    if(user.stream.audioLevel > 0){
+      streamBox = StreamBox.get(user.id);
+      streamBox.showSoundGif();
+    }else {
+      streamBox = StreamBox.get(user.id);
+      streamBox.hideSoundGif();
+    }
+  }
   /**
   * 开始实时音视频
   * @param {object} params
@@ -933,7 +944,7 @@
       appkey: RongSeal.Config.APP_ID,
       // debug: true,
       logger: (log) => {
-        console.log(JSON.stringify(log));
+        // console.log(JSON.stringify(log));
       },
       RongIMLib: win.RongIMLib,
       mode: RongRTC.RTC,
@@ -965,11 +976,17 @@
       received: receivedRoomMsg,
     })
     rongStorage = new rongRTC.Storage();
+    rongReport = new rongRTC.Report({
+      spoke: addUserSoundImg
+    })
     joinRoom(params.roomId, params.token).then(function (roomUsers) {
       console.log(roomUsers.users.length)
       var peopleNum = roomUsers.users.length;
       // var peopleNum = 4;
       RTCNumberCheck(peopleNum, params);
+      rongReport.start({
+        frequency: 500
+      });
       //获取 room 下所有 key val,传空[]
       var mode = getRtcMode(peopleNum,params);
       var userData = RongSeal.setUserInfoObj({joinMode: mode});

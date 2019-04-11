@@ -59,8 +59,10 @@
       alertTitle: '提示',
       phoneTips: '请输入手机号验证登录，目前只支持中国区',
       btnLoading: '加载中...',
-      systemTips: '注：音视频核心引擎升级 SealRTC v3.0.0 及以上版本与老版本不兼容，请统一使用新版本体验',
-      userListClose: '关闭'
+      systemTips: '注：SealRTC v3.0.0 及以上版本与老版本不兼容，请使用新版本体验，Web 端推荐使用 Google Chrome 浏览器',
+      userListClose: '关闭',
+      copyright: 'Copyright 2019 RongCloud',
+      copyrightRecord: '京 ICP 备 15042119 号-1',
     },
     value: {
       startRTC: '开始会议',

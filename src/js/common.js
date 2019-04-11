@@ -435,7 +435,7 @@
     }
     function showSoundGif() {
       var soundDom = this.dom.childNodes[3].childNodes[1];
-      console.log('sound--',soundDom)
+      // console.log('sound--',soundDom)
       soundDom.style.display = 'inline-block';
     }
     function hideSoundGif() {
