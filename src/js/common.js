@@ -433,6 +433,15 @@
       }
       // self.dom.childNodes[1].style.objectFit='contain';
     }
+    function showSoundGif() {
+      var soundDom = this.dom.childNodes[3].childNodes[1];
+      // console.log('sound--',soundDom)
+      soundDom.style.display = 'inline-block';
+    }
+    function hideSoundGif() {
+      var soundDom = this.dom.childNodes[3].childNodes[1];
+      soundDom.style.display = 'none';
+    }
     function closeVideoBySelf() {
       setClass(this.dom, OptClassName.CLOSE_VIDEO_BY_SELF, true);
       this.isVideoOpenedBySelf = false;
@@ -549,6 +558,8 @@
       self.closeFlibScreenShare = closeFlibScreenShare;
       self.disabledVideoBySelf = disabledVideoBySelf;
       self.disabledAudioBySelf = disabledAudioBySelf;
+      self.showSoundGif = showSoundGif;
+      self.hideSoundGif = hideSoundGif;
 
       StreamBoxList[id] = self;
 
@@ -600,7 +611,7 @@
     var userListDom = Dom.getById('rongRoomUsers');
     var userListNumDom = Dom.getById('userListNum');
     var userJoinMode = '';
-    userListNumDom.innerText = '在线人数('+userList.length+'人)';
+    userListNumDom.innerHTML = '<span>在线人数（'+userList.length+'人）</span>';
     userListDom.innerHTML = '';
     for(var i=0;i<userList.length;i++){
       if(userList[i].joinMode == 0){
@@ -612,12 +623,12 @@
       }
       userListDom.innerHTML += '<div class="user-list-item">' +
         '<div class="online-user" id=""> ' + userList[i].userName + '</div>' +
-        '<div calss="user-join-mode" id="">' + userJoinMode + '</div></div>';
+        '<div class="user-join-mode" id="">' + userJoinMode + '</div></div>';
     }
   }
   function showUserList() {
     // var userListDom = Dom.getByClass('rong-opt-userlist');
-    Dom.showByClass('rong-user-list')
+    Dom.showByClass('rong-user-list');
   }
   function hideUserList() {
     console.log(111)
