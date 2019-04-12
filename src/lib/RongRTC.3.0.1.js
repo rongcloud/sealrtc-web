@@ -1337,7 +1337,6 @@
     LEFT: 'common_left',
     ERROR: 'common_error',
     CONSUME: 'common_consume',
-    CONSUME_FINISHED: 'common_consume_finished',
     REQUEST_CONSUME: 'common_request_consume',
     CONNECTED: 'common_connected',
     PEERCONN_CREATED: 'common_peerconn_created',
@@ -3058,52 +3057,6 @@
       User.set(User.SET_USERINFO, uris, isInner, message);
       return PubResourceCache.set(user.id, uris);
     };
-    eventEmitter.on(CommonEvent.CONSUME, function () {
-      var user = im.getUser();
-      var roomId = im.getRoomId();
-      prosumer.consume(function (_ref9, next) {
-        var offer = _ref9.sdp,
-            body = _ref9.body,
-            inputUser = _ref9.user;
-
-        Logger$1.log(LogTag.STREAM_HANDLER, {
-          msg: 'subscribe:request',
-          roomId: roomId,
-          options: body
-        });
-        request$2.post(body).then(function (response) {
-          pc.setOffer(offer);
-          var sdp = response.sdp;
-
-          pc.setAnwser(sdp);
-          Logger$1.log(LogTag.STREAM_HANDLER, {
-            msg: 'CONSUME set sdp'
-          });
-          Logger$1.log(LogTag.STREAM_HANDLER, {
-            msg: 'subscribe:response',
-            roomId: roomId,
-            user: user,
-            response: response
-          });
-          next();
-        }, function (error) {
-          Logger$1.log(LogTag.STREAM_HANDLER, {
-            msg: 'subscribe:response',
-            roomId: roomId,
-            user: user,
-            error: error
-          });
-          var uid = getSubPromiseUId(inputUser);
-          var promise = SubPromiseCache.get(uid);
-          if (!utils.isUndefined(promise)) {
-            promise.reject(error);
-          }
-          next();
-        });
-      }, function () {
-        eventEmitter.emit(CommonEvent.CONSUME_FINISHED);
-      });
-    });
     var getUId = function getUId(user, tpl) {
       tpl = tpl || '{userId}_{tag}_{type}';
       var userId = user.id,
@@ -3200,8 +3153,8 @@
         roomId: roomId,
         user: user
       });
-      utils.forEach(streams, function (_ref10) {
-        var mediaStream = _ref10.mediaStream;
+      utils.forEach(streams, function (_ref9) {
+        var mediaStream = _ref9.mediaStream;
 
         var tracks = mediaStream.getTracks();
         utils.forEach(tracks, function (track) {
@@ -3369,9 +3322,6 @@
 
       var usersHandler = function usersHandler() {
         DataCache.set(DataCacheName.USERS, users);
-        if (utils.isEmpty(users)) {
-          DataCache.set(DataCacheName.IS_NOTIFY_READY, true);
-        }
 
         var _im$getUser3 = im.getUser(),
             currentUserId = _im$getUser3.id;
@@ -3434,8 +3384,8 @@
           utils.forEach(streams, function (stream) {
             var tag = stream.tag;
 
-            var msUris = utils.filter(uris, function (_ref11) {
-              var msid = _ref11.msid;
+            var msUris = utils.filter(uris, function (_ref10) {
+              var msid = _ref10.msid;
 
               return utils.isInclude(msid, tag);
             });
@@ -3450,7 +3400,6 @@
             });
           });
         });
-        DataCache.set(DataCacheName.IS_NOTIFY_READY, true);
       };
       usersHandler();
     });
@@ -3460,15 +3409,24 @@
 
       return utils.isEqual(user.id, id);
     };
-    var publishTempStreams = [];
-    var publishInvoke = function publishInvoke(users) {
-      if (!utils.isArray(users)) {
-        users = [users];
-      }
-      utils.forEach(users, function (user) {
-        pc.addStream(user);
-        var mediaStream = user.stream.mediaStream;
+    var publish = function publish(user) {
+      var streams = user.stream;
 
+      if (!utils.isArray(streams)) {
+        streams = [streams];
+      }
+      var id = user.id;
+
+      utils.forEach(streams, function (stream) {
+        var mediaStream = stream.mediaStream,
+            size = stream.size;
+
+        var streamId = pc.getStreamId({
+          id: id,
+          stream: stream
+        }, size);
+        StreamCache.set(streamId, mediaStream);
+        PublishStreamCache.set(streamId, mediaStream);
         if (!utils.isUndefined(mediaStream)) {
           im.emit(CommonEvent.PUBLISHED_STREAM, {
             mediaStream: mediaStream,
@@ -3476,17 +3434,8 @@
           });
         }
       });
-
-      var _users = users,
-          _users2 = slicedToArray(_users, 1),
-          user = _users2[0];
-
+      pc.addStream(user);
       var roomId = im.getRoomId();
-      Logger$1.log(LogTag.STREAM_HANDLER, {
-        msg: 'publish:start',
-        roomId: roomId,
-        user: user
-      });
       return utils.deferred(function (resolve, reject) {
         pc.createOffer(user).then(function (desc) {
           return getBody(desc).then(function (body) {
@@ -3511,7 +3460,6 @@
                 user: user,
                 response: response
               });
-              publishTempStreams.length = 0;
               exchangeHandler(response, user, Message.PUBLISH, desc);
               resolve();
             }, function (error) {
@@ -3526,37 +3474,6 @@
           });
         });
       });
-    };
-    eventEmitter.on(CommonEvent.CONSUME_FINISHED, function () {
-      if (!utils.isEmpty(publishTempStreams)) {
-        publishInvoke(publishTempStreams);
-      }
-    });
-    var publish = function publish(user) {
-      var streams = user.stream;
-
-      if (!utils.isArray(streams)) {
-        streams = [streams];
-      }
-      var id = user.id;
-
-      utils.forEach(streams, function (stream) {
-        var mediaStream = stream.mediaStream,
-            size = stream.size;
-
-        var streamId = pc.getStreamId({
-          id: id,
-          stream: stream
-        }, size);
-        StreamCache.set(streamId, mediaStream);
-        PublishStreamCache.set(streamId, mediaStream);
-      });
-
-      if (prosumer.isExeuting()) {
-        publishTempStreams.push(user);
-        return utils.Defer.resolve();
-      }
-      return publishInvoke(user);
     };
 
     var isTrackExist = function isTrackExist(user, types) {
@@ -3574,8 +3491,8 @@
         };
         var key = getUId(tUser);
 
-        var _ref12 = DataCache.get(key) || {},
-            uri = _ref12.uri;
+        var _ref11 = DataCache.get(key) || {},
+            uri = _ref11.uri;
 
         if (utils.isUndefined(uri)) {
           isError = true;
@@ -3634,47 +3551,54 @@
       });
       SubscribeCache.set(userId, subs);
       var roomId = im.getRoomId();
-      Logger$1.log(LogTag.STREAM_HANDLER, {
-        msg: 'subscribe:start',
-        roomId: roomId,
-        user: user
-      });
       return utils.deferred(function (resolve, reject) {
-        var isNotifyReady = DataCache.get(DataCacheName.IS_NOTIFY_READY);
-        // 首次加入分发未完成，只添加缓存，最后，一次性处理
-        Logger$1.log(LogTag.STREAM_HANDLER, {
-          msg: 'isNotifyReady: ' + isNotifyReady,
-          userId: user.id,
-          roomId: roomId
-        });
-        if (isNotifyReady) {
-          getBody().then(function (body) {
-            var _body = body,
-                sdp = _body.sdp;
-
-            var url = utils.tplEngine(Path.SUBSCRIBE, {
-              roomId: roomId
-            });
-            var headers = getHeaders();
-            body = {
-              path: url,
-              body: body,
-              headers: headers
-            };
-            prosumer.produce({
-              sdp: sdp,
-              body: body,
-              headers: headers,
-              user: user
-            });
-            eventEmitter.emit(CommonEvent.CONSUME);
-          });
-        }
         var uid = getSubPromiseUId(user);
         SubPromiseCache.set(uid, {
           resolve: resolve,
           reject: reject,
           type: type
+        });
+        getBody().then(function (body) {
+          var offer = body.sdp;
+
+          var url = utils.tplEngine(Path.SUBSCRIBE, {
+            roomId: roomId
+          });
+          var headers = getHeaders();
+          var option = {
+            path: url,
+            body: body,
+            headers: headers
+          };
+          Logger$1.log(LogTag.STREAM_HANDLER, {
+            msg: 'subscribe:request',
+            roomId: roomId,
+            option: option
+          });
+          request$2.post(option).then(function (response) {
+            pc.setOffer(offer);
+            var answer = response.sdp;
+
+            pc.setAnwser(answer);
+            Logger$1.log(LogTag.STREAM_HANDLER, {
+              msg: 'subscribe:response',
+              roomId: roomId,
+              user: user,
+              response: response
+            });
+          }, function (error) {
+            Logger$1.log(LogTag.STREAM_HANDLER, {
+              msg: 'subscribe:response:error',
+              roomId: roomId,
+              user: user,
+              error: error
+            });
+            var uid = getSubPromiseUId(user);
+            var promise = SubPromiseCache.get(uid);
+            if (!utils.isUndefined(promise)) {
+              promise.reject(error);
+            }
+          });
         });
       });
     };
@@ -3926,10 +3850,10 @@
       var subs = SubscribeCache.get(id);
       var streams = {},
           msTypes = {};
-      utils.forEach(subs, function (_ref13) {
-        var msid = _ref13.msid,
-            tag = _ref13.tag,
-            type = _ref13.type;
+      utils.forEach(subs, function (_ref12) {
+        var msid = _ref12.msid,
+            tag = _ref12.tag,
+            type = _ref12.type;
 
         streams[msid] = tag;
         var types = msTypes[msid] || [];
@@ -3969,34 +3893,107 @@
       });
       unsubscribe(user);
     });
+    eventEmitter.on(CommonEvent.CONSUME, function () {
+      prosumer.consume(function (_ref13, next) {
+        var event = _ref13.event,
+            args = _ref13.args,
+            resolve = _ref13.resolve,
+            reject = _ref13.reject;
+
+        switch (event) {
+          case UpEvent.STREAM_PUBLISH:
+            return publish.apply(undefined, toConsumableArray(args)).then(function (result) {
+              next();
+              resolve(result);
+            }).catch(function (error) {
+              next();
+              reject(error);
+            });
+          case UpEvent.STREAM_UNPUBLISH:
+            return unpublish.apply(undefined, toConsumableArray(args)).then(function (result) {
+              next();
+              resolve(result);
+            }).catch(function (error) {
+              next();
+              reject(error);
+            });
+          case UpEvent.STREAM_SUBSCRIBE:
+            return subscribe.apply(undefined, toConsumableArray(args)).then(function (result) {
+              next();
+              resolve(result);
+            }).catch(function (error) {
+              next();
+              reject(error);
+            });
+          case UpEvent.STREAM_UNSUBSCRIBE:
+            return unsubscribe.apply(undefined, toConsumableArray(args)).then(function (result) {
+              next();
+              resolve(result);
+            }).catch(function (error) {
+              next();
+              reject(error);
+            });
+          case UpEvent.STREAM_RESIZE:
+            return resize.apply(undefined, toConsumableArray(args)).then(function (result) {
+              next();
+              resolve(result);
+            }).catch(function (error) {
+              next();
+              reject(error);
+            });
+          case UpEvent.STREAM_GET:
+            return get$$1.apply(undefined, toConsumableArray(args)).then(function (result) {
+              next();
+              resolve(result);
+            }).catch(function (error) {
+              next();
+              reject(error);
+            });
+          case UpEvent.AUDIO_MUTE:
+            return mute.apply(undefined, toConsumableArray(args)).then(function (result) {
+              next();
+              resolve(result);
+            }).catch(function (error) {
+              next();
+              reject(error);
+            });
+          case UpEvent.AUDIO_UNMUTE:
+            return unmute.apply(undefined, toConsumableArray(args)).then(function (result) {
+              next();
+              resolve(result);
+            }).catch(function (error) {
+              next();
+              reject(error);
+            });
+          case UpEvent.VIDEO_DISABLE:
+            return disable.apply(undefined, toConsumableArray(args)).then(function (result) {
+              next();
+              resolve(result);
+            }).catch(function (error) {
+              next();
+              reject(error);
+            });
+          case UpEvent.VIDEO_ENABLE:
+            return enable.apply(undefined, toConsumableArray(args)).then(function (result) {
+              next();
+              resolve(result);
+            }).catch(function (error) {
+              next();
+              reject(error);
+            });
+          default:
+            Logger$1.warn(LogTag.STREAM_HANDLER, {
+              event: event,
+              msg: 'unkown event'
+            });
+        }
+      });
+    });
     var dispatch = function dispatch(event, args) {
-      switch (event) {
-        case UpEvent.STREAM_PUBLISH:
-          return publish.apply(undefined, toConsumableArray(args));
-        case UpEvent.STREAM_UNPUBLISH:
-          return unpublish.apply(undefined, toConsumableArray(args));
-        case UpEvent.STREAM_SUBSCRIBE:
-          return subscribe.apply(undefined, toConsumableArray(args));
-        case UpEvent.STREAM_UNSUBSCRIBE:
-          return unsubscribe.apply(undefined, toConsumableArray(args));
-        case UpEvent.STREAM_RESIZE:
-          return resize.apply(undefined, toConsumableArray(args));
-        case UpEvent.STREAM_GET:
-          return get$$1.apply(undefined, toConsumableArray(args));
-        case UpEvent.AUDIO_MUTE:
-          return mute.apply(undefined, toConsumableArray(args));
-        case UpEvent.AUDIO_UNMUTE:
-          return unmute.apply(undefined, toConsumableArray(args));
-        case UpEvent.VIDEO_DISABLE:
-          return disable.apply(undefined, toConsumableArray(args));
-        case UpEvent.VIDEO_ENABLE:
-          return enable.apply(undefined, toConsumableArray(args));
-        default:
-          Logger$1.warn(LogTag.STREAM_HANDLER, {
-            event: event,
-            msg: 'unkown event'
-          });
-      }
+      return utils.deferred(function (resolve, reject) {
+        prosumer.produce({ event: event, args: args, resolve: resolve, reject: reject });
+        eventEmitter.emit(CommonEvent.CONSUME);
+      });
     };
     return {
       dispatch: dispatch
