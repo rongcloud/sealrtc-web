@@ -74,7 +74,8 @@
     title: {
       hangup: '挂断',
       screenshare: '屏幕共享',
-      whiteboard: '白板'
+      whiteboard: '白板',
+      userlist: '在线成员'
     }
   };
 })(window);

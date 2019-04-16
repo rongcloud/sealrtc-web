@@ -99,6 +99,10 @@ input[type="number"]{
   display: none;
 }
 
+.rong-login .rong-opt-checkbox input[type="radio"] {
+  height: 14px;
+}
+
 .rong-login .rong-opt-checkbox input[type="checkbox"]:checked + label::after {
   content: '\2714';
   position: absolute;
