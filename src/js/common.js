@@ -384,8 +384,6 @@
    */
   /* TODO 去掉该变量的使用, 应使用 streamList 实例进行 box 操作 */
   var StreamBoxList = {}; // streamBox 集合
-  console.log('StreamBoxList: ', StreamBoxList);
-
   var StreamBox = (function () {
     var setClass = function (dom, className, isOpen) {
       isOpen ? addClass(dom, className) : removeClass(dom, className);
@@ -580,7 +578,6 @@
     Dom.showByClass('rong-login');
     Dom.hideByClass('rong-btn-loading');
     Dom.showByClass('rong-btn-start');
-    // Dom.getById('isCloseVideo').checked = false;
   }
 
   var WhiteBoard = (function () {
@@ -627,11 +624,9 @@
     }
   }
   function showUserList() {
-    // var userListDom = Dom.getByClass('rong-opt-userlist');
     Dom.showByClass('rong-user-list');
   }
   function hideUserList() {
-    console.log(111)
     Dom.hideByClass('rong-user-list')
   }
   var UI = {

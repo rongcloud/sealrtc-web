@@ -19,9 +19,6 @@
   var videoTimer = new common.SealTimer();
   var sealToast = new common.SealToast();
   var EventName = RongSeal.EventName;
-  // var casePreBtn = Dom.get('.rong-case-pre');
-  // var caseNextBtn = Dom.get('.rong-case-next');
-  // var InfosKey = RongSeal.StorageKeys.UserInfoKey;
   var ClassName = {
     LOGIN_PAGE: 'rong-login',
     RTC_PAGE: 'rong-rtc',
@@ -339,7 +336,6 @@
         sealAlert(localeData.subscriptError + JSON.stringify(error));
       });
     }
-    // showResolution(user.id);
   }
 
   function removeUserStream(user) {
@@ -362,7 +358,6 @@
   //切换浏览器 tab 关闭屏幕分享选项弹窗
   function browserTabChange() {
     document.addEventListener('visibilitychange', function () {
-      // console.log(document.visibilityState);
       RongScreenShare.clearChooseBox();
       screenShareBtnOpen();
     });
@@ -565,8 +560,6 @@
     console.log('join user', JSON.stringify(user))
     var id = user.id,
       isSelf = id === loginUserId;
-    // var userName =
-    // var name = isSelf ? localeData.self : id;
     if(!isSelf){
       //删除多端挤掉的盒子
       var box = StreamBox.get(id);
@@ -584,7 +577,6 @@
     }else {
       addUserBoxSetting(user);
     }
-    // console.log('streamList:', JSON.stringify(streamList));
   }
 
   function removeUserBox(user) {
@@ -596,7 +588,6 @@
       streamList.removeBox(streamBox);
       StreamBox.clearQuitUser(id);
     }
-    // var streamBoxList = common.StreamBoxList;
     var streamBoxList = streamList.streamBoxList;
     if (isRemoveBoxZoom) {
       for (var key in streamBoxList) {
@@ -621,16 +612,6 @@
 
   function publishSelfMediaStream(videoEnable, audioEnable, resolution, audioOnly) {
     return new Promise(function (resolve, reject) {
-      // if(!videoEnable){
-      //   videoEnable= true;
-      //   getSelfMediaStream(videoEnable, audioEnable, resolution).then(function (user) {
-      //     rongRTCStream.publish(user).then(function () {
-      //       closeVideo(user);
-      //       resolve(user);
-      //     }, reject);
-      //   }, getSelfMediaStreamError);
-      // }
-
       getSelfMediaStream(videoEnable, audioEnable, resolution, audioOnly).then(function (user) {
         rongRTCStream.publish(user).then(function () {
           if (!videoEnable) {
@@ -874,7 +855,6 @@
     })
   }
   function removeRtcUserInfos(leftUserId,roomMsg,callback) {
-    // var leftUserId = user.id;
     if(leftUserId == loginUserId){
       RongSeal.rongStorage.remove(leftUserId,roomMsg).then(function(){
         console.log('set success');
@@ -895,22 +875,6 @@
         console.log('removeRtcUserInfo-s',err);
       })
     }
-    // getRtcUserInfos([]).then(function(infos){
-    //   var userList = [];
-    //   delete infos.leftUserId;
-    //   for(var key in infos){
-    //     var userInfo = JSON.parse(infos[key]);
-    //     userList.push(userInfo);
-    //   }
-    //   common.UI.userListView(userList);
-    //   //再把删除退出后的用户组存入
-    //   RongSeal.rongStorage.remove(leftUserId,roomMsg).then(function(){
-    //     console.log('set success');
-    //     callback();
-    //   });
-    // }).catch(function(err){
-    //   console.log('removeRtcUserInfo-s',err);
-    // })
   }
   function receivedRoomMsg(message) {
     console.log('roommsg:',message);
@@ -1004,12 +968,6 @@
       }).catch(function(err){
         console.log('set storage F:',err)
       });
-      // var videoEnable = params.videoEnable,
-      //   audioEnable = params.audioEnable,
-      //   resolution = params.resolution;
-      // addUserBox({ id: loginUserId });
-      // publishSelfMediaStream(videoEnable, audioEnable, resolution).then(
-      //   addUserStream, publishStreamError);
     }, joinRoomError);
     RongSeal.rongRTCRoom = rongRTCRoom;
     RongSeal.rongStorage = rongStorage;
