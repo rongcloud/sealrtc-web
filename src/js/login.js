@@ -47,7 +47,7 @@
    */
   function getSmsCode(params, callback) {
     callback = callback || utils.noop;
-    var url = RongSeal.Config.GET_SMS_CODE_URL;
+    var url = RongSeal.Config.URL+'/user/send_code';
     return new Promise(function (resolve, reject) {
       utils.ajax({
         url: url,
@@ -82,7 +82,7 @@
    */
   function verifySmsCode(params, callback) {
     callback = callback || utils.noop;
-    var url = RongSeal.Config.VERIFY_SMS_CODE_URL;
+    var url = RongSeal.Config.URL+'/user/verify_code';
     return new Promise(function (resolve, reject) {
       utils.ajax({
         url: url,
@@ -422,7 +422,7 @@
 
   var connect = function (user) {
     user.navi = Config.NAVI;
-    user.appKey = Config.APP_ID;
+    user.appKey = Config.APPKEY;
     var goVerifyPage = function () {
       common.UI.backLoginPage();
       telDom.value = roomTelNumDom.value;

@@ -119,7 +119,7 @@
     }
     return ret.join('');
   };
-  // 暂时支持 String
+  // æš‚æ—¶æ”¯æŒ String
   var isContain = function isContain(str, keyword) {
     return str.indexOf(keyword) > -1;
   };
@@ -469,115 +469,115 @@
     var errors = [{
       code: 10000,
       name: 'INSTANCE_IS_DESTROYED',
-      msg: 'RongRTC 实例已销毁，请重新创建实例'
+      msg: 'RongRTC å®žä¾‹å·²é”€æ¯ï¼Œè¯·é‡æ–°åˆ›å»ºå®žä¾‹'
     }, {
       code: 50000,
       name: 'IM_NOT_CONNECTED',
-      msg: '请在 IM 连接成功后开始音频业务'
+      msg: 'è¯·åœ¨ IM è¿žæŽ¥æˆåŠŸåŽå¼€å§‹éŸ³é¢‘ä¸šåŠ¡'
     }, {
       code: 50001,
       name: 'ROOM_ID_IS_ILLEGAL',
-      msg: '房间号不合法，只能包含大小写字母、阿拉伯数字、+、=、-、_ 且长度不能超过 64 个字符'
+      msg: 'æˆ¿é—´å·ä¸åˆæ³•ï¼Œåªèƒ½åŒ…å«å¤§å°å†™å­—æ¯ã€é˜¿æ‹‰ä¼¯æ•°å­—ã€+ã€=ã€-ã€_ ä¸”é•¿åº¦ä¸èƒ½è¶…è¿‡ 64 ä¸ªå­—ç¬¦'
     }, {
       code: 50002,
       name: 'ROOM_REPEAT_JOIN',
-      msg: '重复加入房间'
+      msg: 'é‡å¤åŠ å…¥æˆ¿é—´'
     }, {
       code: 50010,
       name: '',
-      msg: 'http 请求超时'
+      msg: 'http è¯·æ±‚è¶…æ—¶'
     }, {
       code: 50011,
       name: '',
-      msg: 'http response 异常（404、500）'
+      msg: 'http response å¼‚å¸¸ï¼ˆ404ã€500ï¼‰'
     }, {
       code: 50012,
       name: '',
-      msg: '请求未发出去、断网'
+      msg: 'è¯·æ±‚æœªå‘å‡ºåŽ»ã€æ–­ç½‘'
     }, {
       code: 50020,
       name: '',
-      msg: '资源已发布'
+      msg: 'èµ„æºå·²å‘å¸ƒ'
     }, {
       code: 50021,
       name: 'SET_OFFER_ERROR',
-      msg: '设置 Offer 错误'
+      msg: 'è®¾ç½® Offer é”™è¯¯'
     }, {
       code: 50021,
       name: 'SET_ANSWER_ERROR',
-      msg: '设置 Answer 错误'
+      msg: 'è®¾ç½® Answer é”™è¯¯'
     }, {
       code: 50023,
       name: 'PUBLISH_STREAM_EXCEED_LIMIT',
-      msg: '发布资源个数已经到达上限'
+      msg: 'å‘å¸ƒèµ„æºä¸ªæ•°å·²ç»åˆ°è¾¾ä¸Šé™'
     }, {
       code: 50024,
       name: 'STREAM_NOT_EXIST',
-      msg: 'stream 不存在，请检查传入参数, id、stream.type、stream.tag 是否正确'
+      msg: 'stream ä¸å­˜åœ¨ï¼Œè¯·æ£€æŸ¥ä¼ å…¥å‚æ•°, idã€stream.typeã€stream.tag æ˜¯å¦æ­£ç¡®'
     }, {
       code: 50030,
       name: 'SUBSCRIBE_STREAM_NOT_EXIST',
-      msg: '订阅不存在的资源'
+      msg: 'è®¢é˜…ä¸å­˜åœ¨çš„èµ„æº'
     }, {
       code: 50030,
       name: 'STREAM_TRACK_NOT_EXIST',
-      msg: 'Track 不存在，请检查传入参数 stream.type 是否正确'
+      msg: 'Track ä¸å­˜åœ¨ï¼Œè¯·æ£€æŸ¥ä¼ å…¥å‚æ•° stream.type æ˜¯å¦æ­£ç¡®'
     }, {
       code: 50031,
       name: 'STREAM_SUBSCRIBED',
-      msg: '资源已订阅'
+      msg: 'èµ„æºå·²è®¢é˜…'
     }, {
       code: 50032,
       name: 'UNSUBSCRIBE_STREAM_NOT_EXIST',
-      msg: '取消订阅不存在资源'
+      msg: 'å–æ¶ˆè®¢é˜…ä¸å­˜åœ¨èµ„æº'
     }, {
       code: 50050,
       name: 'RTC_NOT_JOIN_ROOM',
-      msg: '未加入房间，加入成功后方可调用业务方法'
+      msg: 'æœªåŠ å…¥æˆ¿é—´ï¼ŒåŠ å…¥æˆåŠŸåŽæ–¹å¯è°ƒç”¨ä¸šåŠ¡æ–¹æ³•'
     }, {
       code: 50051,
       name: 'SOCKET_UNAVAILABLE',
-      msg: 'IM Socket 连接不可用'
+      msg: 'IM Socket è¿žæŽ¥ä¸å¯ç”¨'
     }, {
       code: 50052,
       name: 'NETWORK_UNAVAILABLE',
-      msg: '网络不可用'
+      msg: 'ç½‘ç»œä¸å¯ç”¨'
     }, {
       code: 50053,
       name: 'IM_SDK_VER_NOT_MATCH',
-      msg: 'IM SDK 版本过低，最低版本 2.4.0，详细请参考: https://www.rongcloud.cn/docs/web_rtclib.html'
+      msg: 'IM SDK ç‰ˆæœ¬è¿‡ä½Žï¼Œæœ€ä½Žç‰ˆæœ¬ 2.4.0ï¼Œè¯¦ç»†è¯·å‚è€ƒ: https://www.rongcloud.cn/docs/web_rtclib.html'
     }, {
       code: 50054,
       name: 'STREAM_DESKTOPID_ILLEGAL',
-      msg: '获取屏幕共享流失败，desktopStreamId 非法'
+      msg: 'èŽ·å–å±å¹•å…±äº«æµå¤±è´¥ï¼ŒdesktopStreamId éžæ³•'
     }, {
       code: 50055,
       name: 'PARAMTER_ILLEGAL',
-      msg: '请检查参数，{name} 参数为必传入项'
+      msg: 'è¯·æ£€æŸ¥å‚æ•°ï¼Œ{name} å‚æ•°ä¸ºå¿…ä¼ å…¥é¡¹'
     }, {
       code: 50056,
       name: 'ENGINE_ERROR',
-      msg: '音视频引擎不正确'
+      msg: 'éŸ³è§†é¢‘å¼•æ“Žä¸æ­£ç¡®'
     }, {
       code: 40001,
       name: 'NOT_IN_ROOM',
-      msg: '当前用户不在房间内'
+      msg: 'å½“å‰ç”¨æˆ·ä¸åœ¨æˆ¿é—´å†…'
     }, {
       code: 40002,
       name: 'INTERNAL_ERROR',
-      msg: 'IM Server 内部错误'
+      msg: 'IM Server å†…éƒ¨é”™è¯¯'
     }, {
       code: 40003,
       name: 'HAS_NO_ROOM',
-      msg: 'IM Server 房间信息不存在'
+      msg: 'IM Server æˆ¿é—´ä¿¡æ¯ä¸å­˜åœ¨'
     }, {
       code: 40004,
       name: 'INVALID_USERID',
-      msg: 'userId 不合法'
+      msg: 'userId ä¸åˆæ³•'
     }, {
       code: 40005,
       name: 'REPEAT_JOIN_ROOM',
-      msg: '重复加入房间'
+      msg: 'é‡å¤åŠ å…¥æˆ¿é—´'
     }];
 
     var errorMap = {
@@ -775,8 +775,8 @@
   };
 
   /* 
-    data： 任意对象
-    rules: 校验规则，数组
+    dataï¼š ä»»æ„å¯¹è±¡
+    rules: æ ¡éªŒè§„åˆ™ï¼Œæ•°ç»„
     let user = {
       id: '',
       stream: {
@@ -784,7 +784,7 @@
         tag: 2
       }
     };
-    // 校验必传入参数, 暂时支持 2 级
+    // æ ¡éªŒå¿…ä¼ å…¥å‚æ•°, æš‚æ—¶æ”¯æŒ 2 çº§
     check(user, ['id', 'stream.type', 'stream.tag', 'stream.mediaStream']);
   */
   var check = function check(data, rules) {
@@ -887,25 +887,25 @@
     var getModifyEvents = function getModifyEvents() {
       var events = {},
           tpl = '{type}_{state}';
-      // 禁用视频
+      // ç¦ç”¨è§†é¢‘
       var name = utils.tplEngine(tpl, {
         type: StreamType.VIDEO,
         state: StreamState.DISBALE
       });
       events[name] = DownEvent.STREAM_DISABLED;
-      // 启用视频
+      // å¯ç”¨è§†é¢‘
       name = utils.tplEngine(tpl, {
         type: StreamType.VIDEO,
         state: StreamState.ENABLE
       });
       events[name] = DownEvent.STREAM_ENABLED;
-      // 音频静音
+      // éŸ³é¢‘é™éŸ³
       name = utils.tplEngine(tpl, {
         type: StreamType.AUDIO,
         state: StreamState.DISBALE
       });
       events[name] = DownEvent.STREAM_MUTED;
-      // 音频取消静音
+      // éŸ³é¢‘å–æ¶ˆé™éŸ³
       name = utils.tplEngine(tpl, {
         type: StreamType.AUDIO,
         state: StreamState.ENABLE
@@ -1434,7 +1434,7 @@
           context.emit(PeerConnectionEvent.REMOVED, stream);
         },
         ondatachannel: function ondatachannel(event) {
-          //TODO: 具体返回参数
+          //TODO: å…·ä½“è¿”å›žå‚æ•°
           context.emit(PeerConnectionEvent.RECEIVED, event);
         },
         oniceconnectionstatechange: function oniceconnectionstatechange() {
@@ -1683,10 +1683,10 @@
           codecs.length = len;
           return codecs;
         };
-        // 获取 m=video 编码表的前三位
+        // èŽ·å– m=video ç¼–ç è¡¨çš„å‰ä¸‰ä½
         var videoCodecs = getVideoCodecs(3);
 
-        // 得到 Video 描述信息列表
+        // å¾—åˆ° Video æè¿°ä¿¡æ¯åˆ—è¡¨
         var videoTotalIndex = sdp.indexOf('m=video');
         var ssrcIndex = sdp.indexOf('a=ssrc-group');
         if (utils.isEqual(ssrcIndex, -1)) {
@@ -1713,14 +1713,14 @@
           sdpBody += value + separator;
           videoCodecs.push(code, rtx);
         });
-        // 新 SDP = m=video + 所有 a=rtpmap + sdpFooter
+        // æ–° SDP = m=video + æ‰€æœ‰ a=rtpmap + sdpFooter
         videoBody = videoBody.split(separator);
         videoBody.shift();
         videoBody = videoBody.join(separator);
         var headerIndex = videoBody.indexOf('a=rtpmap');
         var sdpHeader = sdp.substring(0, videoTotalIndex);
         var videoHeader = videoBody.substring(0, headerIndex);
-        // 包含 ssrc 信息
+        // åŒ…å« ssrc ä¿¡æ¯
         var sdpFooter = sdp.substring(ssrcIndex, sdp.length);
         sdp = sdpHeader + videoCodecs.join(' ') + '\r\n' + videoHeader + sdpBody + sdpFooter;
         utils.extend(offer, {
@@ -1731,7 +1731,7 @@
       /* 
         let ratio = {
           msid: {
-            // 1大流    2小流 
+            // 1å¤§æµ    2å°æµ 
             simulcast: 1,
             resolution: "0x0"
           }
@@ -1928,7 +1928,7 @@
         im: im,
         RongIMLib: RongIMLib
       });
-      // 如果实例化 RongRTC 时，IM 已连接成功，主动触发内部 init
+      // å¦‚æžœå®žä¾‹åŒ– RongRTC æ—¶ï¼ŒIM å·²è¿žæŽ¥æˆåŠŸï¼Œä¸»åŠ¨è§¦å‘å†…éƒ¨ init
       if (utils.isEqual(connectState, CONNECTED)) {
         init();
       }
@@ -1967,8 +1967,8 @@
         });
       };
       /**
-       * 收到 UnkownMessage 自动转为 ObjectName + "Message" 做为 MessageType
-       * 免去注册自定义消息逻辑
+       * æ”¶åˆ° UnkownMessage è‡ªåŠ¨è½¬ä¸º ObjectName + "Message" åšä¸º MessageType
+       * å…åŽ»æ³¨å†Œè‡ªå®šä¹‰æ¶ˆæ¯é€»è¾‘
        */
       var renameMessage = function renameMessage(message) {
         var messageType = message.messageType;
@@ -2116,7 +2116,7 @@
 
               utils.forEach(users, function (user, userId) {
                 user = user || {};
-                // 过滤自己和为空的用户
+                // è¿‡æ»¤è‡ªå·±å’Œä¸ºç©ºçš„ç”¨æˆ·
                 if (utils.isEmpty(user) || utils.isEqual(currentUserId, user.id)) {
                   delete users[userId];
                 }
@@ -2532,7 +2532,7 @@
             context.emit(CommonEvent.LEFT);
             return context.emit(CommonEvent.ERROR, Inner.SOCKET_UNAVAILABLE);
           }
-          // 如果上次 Ping 没有结束，累计 Ping 次数
+          // å¦‚æžœä¸Šæ¬¡ Ping æ²¡æœ‰ç»“æŸï¼Œç´¯è®¡ Ping æ¬¡æ•°
           if (isPinging) {
             Status.sum();
           }
@@ -2622,21 +2622,21 @@
     var DataCache = utils.Cache();
     var DataCacheName = {
       USERS: 'room_users',
-      // 全部通知后一次性交换 SDP
+      // å…¨éƒ¨é€šçŸ¥åŽä¸€æ¬¡æ€§äº¤æ¢ SDP
       IS_NOTIFY_READY: 'is_notify_ready'
     };
     var SubPromiseCache = utils.Cache();
     var PubResourceCache = utils.Cache();
-    // 缓存自己发布的视频流
+    // ç¼“å­˜è‡ªå·±å‘å¸ƒçš„è§†é¢‘æµ
     var PublishStreamCache = utils.Cache();
     /* 
-      缓存已订阅 MediaStream
+      ç¼“å­˜å·²è®¢é˜… MediaStream
       userId_type: mediaStream
-      方便视频流操作
+      æ–¹ä¾¿è§†é¢‘æµæ“ä½œ
     */
     var StreamCache = utils.Cache();
     /* 
-      缓存订阅关系，每次修改需同步全量数据
+      ç¼“å­˜è®¢é˜…å…³ç³»ï¼Œæ¯æ¬¡ä¿®æ”¹éœ€åŒæ­¥å…¨é‡æ•°æ®
       userId: [{ streamId: '', uri: '', type: 1, tag: ''}]
     */
     var subCache = utils.Cache();
@@ -2758,13 +2758,13 @@
       });
     };
     /* 
-    人员比较:
-      1、clone 本地数据
-      2、遍历服务端数据，在本地获取，本地没有认为是新增，本地有认为人员无变化
-      3、本地有同时删掉 clone 数据，最终剩下的数据认为已离开房间
-    资源比较:
-      1、本地数据、远端数据转换为 {msid: [uri1, uri2]}
-    最后更新本地数据
+    äººå‘˜æ¯”è¾ƒ:
+      1ã€clone æœ¬åœ°æ•°æ®
+      2ã€éåŽ†æœåŠ¡ç«¯æ•°æ®ï¼Œåœ¨æœ¬åœ°èŽ·å–ï¼Œæœ¬åœ°æ²¡æœ‰è®¤ä¸ºæ˜¯æ–°å¢žï¼Œæœ¬åœ°æœ‰è®¤ä¸ºäººå‘˜æ— å˜åŒ–
+      3ã€æœ¬åœ°æœ‰åŒæ—¶åˆ æŽ‰ clone æ•°æ®ï¼Œæœ€ç»ˆå‰©ä¸‹çš„æ•°æ®è®¤ä¸ºå·²ç¦»å¼€æˆ¿é—´
+    èµ„æºæ¯”è¾ƒ:
+      1ã€æœ¬åœ°æ•°æ®ã€è¿œç«¯æ•°æ®è½¬æ¢ä¸º {msid: [uri1, uri2]}
+    æœ€åŽæ›´æ–°æœ¬åœ°æ•°æ®
     */
     var compare = function compare() {
       var format = function format(users) {
@@ -2790,16 +2790,16 @@
           im.emit(event, user);
         });
       };
-      // 发布、取消发布、视频操作、音频操作
+      // å‘å¸ƒã€å–æ¶ˆå‘å¸ƒã€è§†é¢‘æ“ä½œã€éŸ³é¢‘æ“ä½œ
       var compareStreams = function compareStreams(localUsers, remoteUsers) {
         localUsers = format(localUsers);
         remoteUsers = format(remoteUsers);
         var tempLocalUsers = utils.clone(localUsers);
         utils.forEach(remoteUsers, function (remoteUris, remoteMSId) {
           /** 
-           * 包含本地资源说明流没有变化，删除 tempLocalUsers，且需比对 track 变化，state 有差异，以 remoteUsers 为准
-           * 未包含说明是新发布资源，触发 published 事件 
-           * 遍历后 tempLocalUsers 还有数据认为是取消发布
+           * åŒ…å«æœ¬åœ°èµ„æºè¯´æ˜Žæµæ²¡æœ‰å˜åŒ–ï¼Œåˆ é™¤ tempLocalUsersï¼Œä¸”éœ€æ¯”å¯¹ track å˜åŒ–ï¼Œstate æœ‰å·®å¼‚ï¼Œä»¥ remoteUsers ä¸ºå‡†
+           * æœªåŒ…å«è¯´æ˜Žæ˜¯æ–°å‘å¸ƒèµ„æºï¼Œè§¦å‘ published äº‹ä»¶ 
+           * éåŽ†åŽ tempLocalUsers è¿˜æœ‰æ•°æ®è®¤ä¸ºæ˜¯å–æ¶ˆå‘å¸ƒ
            */
           var isInclude = remoteMSId in localUsers;
 
@@ -2837,7 +2837,7 @@
           dispatch(DownEvent.STREAM_UNPUBLISHED, userId, localUris);
         });
       };
-      // 成员加入、退出
+      // æˆå‘˜åŠ å…¥ã€é€€å‡º
       var compareUser = function compareUser(localUsers, remoteUsers) {
         var tempLocalUsers = utils.clone(localUsers);
         var tempRemoteUsers = utils.toArray(remoteUsers);
@@ -3044,7 +3044,7 @@
         var tempUris = utils.filter(cacheUris, function (stream) {
           return getCondition(stream);
         });
-        // 第一次 publish 过滤后 tempUris 为空，使用默认值
+        // ç¬¬ä¸€æ¬¡ publish è¿‡æ»¤åŽ tempUris ä¸ºç©ºï¼Œä½¿ç”¨é»˜è®¤å€¼
         return utils.isEmpty(tempUris) ? uris : tempUris;
       };
       var sendUris = getTempUris(type);
@@ -3082,7 +3082,7 @@
         callback(key, uri);
       });
     };
-    /* 已在房间，再有新人发布资源触发此事件 */
+    /* å·²åœ¨æˆ¿é—´ï¼Œå†æœ‰æ–°äººå‘å¸ƒèµ„æºè§¦å‘æ­¤äº‹ä»¶ */
     im.on(DownEvent.STREAM_PUBLISHED, function (error, user) {
       if (error) {
         throw error;
@@ -3200,7 +3200,7 @@
         });
       });
     };
-    /* 加入房间成功后，主动获取已发布资源的人员列表，通知应用层 */
+    /* åŠ å…¥æˆ¿é—´æˆåŠŸåŽï¼Œä¸»åŠ¨èŽ·å–å·²å‘å¸ƒèµ„æºçš„äººå‘˜åˆ—è¡¨ï¼Œé€šçŸ¥åº”ç”¨å±‚ */
     im.on(CommonEvent.JOINED, function (error, room) {
       if (error) {
         throw error;
@@ -3795,7 +3795,7 @@
         var isSameStream = utils.isEqual(targetId, msid),
             isSameType = utils.isEqual(mediaType, type);
         var isFit = isSameStream && isSameType;
-        // state 默认为 StreamState.ENABLE，为 DISABLE 未发布资源
+        // state é»˜è®¤ä¸º StreamState.ENABLEï¼Œä¸º DISABLE æœªå‘å¸ƒèµ„æº
         if (isFit) {
           utils.extend(stream, {
             state: state
@@ -3807,7 +3807,7 @@
     };
     var saveModify = function saveModify(user, type, state) {
       var uris = getFitUris(user, type, state);
-      // uris 为空表示没有发布资源，不需要修改
+      // uris ä¸ºç©ºè¡¨ç¤ºæ²¡æœ‰å‘å¸ƒèµ„æºï¼Œä¸éœ€è¦ä¿®æ”¹
       if (!utils.isEmpty(uris)) {
         var id = user.id;
 
@@ -4198,7 +4198,7 @@
   }
 
   /* 
-      版本更新须知: 原版 adapter.js 不支持 es6 引入，将原始文件 factory 定义 Adapter 方法，通过模块引用初始化
+      ç‰ˆæœ¬æ›´æ–°é¡»çŸ¥: åŽŸç‰ˆ adapter.js ä¸æ”¯æŒ es6 å¼•å…¥ï¼Œå°†åŽŸå§‹æ–‡ä»¶ factory å®šä¹‰ Adapter æ–¹æ³•ï¼Œé€šè¿‡æ¨¡å—å¼•ç”¨åˆå§‹åŒ–
   */
   function Adapter() {
   return function () {
@@ -6978,7 +6978,7 @@
 
         function maybeAddCandidate(iceTransport, candidate) {
           // Edge's internal representation adds some fields therefore
-          // not all fieldѕ are taken into account.
+          // not all fieldÑ• are taken into account.
           var alreadyAdded = iceTransport.getRemoteCandidates().find(function (remoteCandidate) {
             return candidate.foundation === remoteCandidate.foundation && candidate.ip === remoteCandidate.ip && candidate.port === remoteCandidate.port && candidate.priority === remoteCandidate.priority && candidate.protocol === remoteCandidate.protocol && candidate.type === remoteCandidate.type;
           });
@@ -7353,7 +7353,7 @@
             iceGatherer.onlocalcandidate = function (evt) {
               if (pc.usingBundle && sdpMLineIndex > 0) {
                 // if we know that we use bundle we can drop candidates with
-                // ѕdpMLineIndex > 0. If we don't do this then our state gets
+                // Ñ•dpMLineIndex > 0. If we don't do this then our state gets
                 // confused since we dispose the extra ice gatherer.
                 return;
               }
@@ -7361,7 +7361,7 @@
               event.candidate = { sdpMid: mid, sdpMLineIndex: sdpMLineIndex };
 
               var cand = evt.candidate;
-              // Edge emits an empty object for RTCIceCandidateComplete‥
+              // Edge emits an empty object for RTCIceCandidateCompleteâ€¥
               var end = !cand || Object.keys(cand).length === 0;
               if (end) {
                 // polyfill since RTCIceGatherer.state is not implemented in
@@ -8987,7 +8987,7 @@
           rtcpParameters.reducedSize = rsize.length > 0;
           rtcpParameters.compound = rsize.length === 0;
 
-          // parses the rtcp-mux attrіbute.
+          // parses the rtcp-mux attrÑ–bute.
           // Note that Edge does not support unmuxed RTCP.
           var mux = SDPUtils.matchPrefix(mediaSection, 'a=rtcp-mux');
           rtcpParameters.mux = mux.length > 0;
@@ -9202,7 +9202,7 @@
           mediaType = stat.mediaType;
 
       if (utils.isEqual(mediaType, 'audio')) {
-        // 不区分 Input、Output 最终对应用层按 user 暴露
+        // ä¸åŒºåˆ† Inputã€Output æœ€ç»ˆå¯¹åº”ç”¨å±‚æŒ‰ user æš´éœ²
         var audioLevel = stat['audioOutputLevel'] || stat['audioInputLevel'];
         audioLevel = getAudioLevel(audioLevel);
         var latestLevel = TrackStateCache.get(trackId);
@@ -9366,7 +9366,7 @@
             var mediaType = _ref.mediaType;
 
             // return utils.isEqual(msType, mediaType) && utils.isEqual(state, StreamState.ENABLE);
-            // 只区分 track 不区分
+            // åªåŒºåˆ† track ä¸åŒºåˆ†
             return utils.isEqual(msType, mediaType);
           });
         };

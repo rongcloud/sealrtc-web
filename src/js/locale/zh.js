@@ -48,7 +48,7 @@
       verifyCode: '手机验证码'
     },
     textContent: {
-      closeVideo: '加入时关闭摄像头',
+      closeVideo: '音频模式',
       closeAudio: '加入时关闭麦克风',
       bystanders: '旁听者模式',
       setting: '通话设置',

@@ -38,6 +38,7 @@
   };
   var loginUserId, rongRTC, rongRTCRoom, rongRTCStream, rongRTCMessage, rongStorage, rongReport;
   var rongRTCPage, streamList;
+  var currentUserAudioEnable = true ;
   var userStreams = {
     users: {},
     getList: function (id) {
@@ -477,6 +478,7 @@
       // showUserStream(user);
       var streamBox = StreamBox.get(user.id);
       streamBox.openAudioBySelf();
+      currentUserAudioEnable = true;
     }, function () {
       sealAlert(localeData.openAudioError);
     });
@@ -492,6 +494,7 @@
       // showUserStream(user);
       var streamBox = StreamBox.get(user.id);
       streamBox.closeAudioBySelf();
+      currentUserAudioEnable = false;
     }, function () {
       sealAlert(localeData.closeAudioError);
     });
@@ -881,18 +884,21 @@
     setRtcUserInfos();
   }
   function addUserSoundImg(user) {
-    // console.log(user);
-    var streamBox = StreamBox.get(user.id);
-    if(user.stream.audioLevel > 0){
-      if(streamBox) {
-        streamBox.showSoundGif();
-      }
-    }else {
-      if(streamBox) {
-        streamBox.hideSoundGif();
+    if(currentUserAudioEnable) {
+      console.log(user);
+      var streamBox = StreamBox.get(user.id);
+      if(user.stream.audioLevel > 0){
+        if(streamBox) {
+          streamBox.showSoundGif();
+        }
+      }else {
+        if(streamBox) {
+          streamBox.hideSoundGif();
+        }
       }
     }
   }
+    
   /**
   * 开始实时音视频
   * @param {object} params
