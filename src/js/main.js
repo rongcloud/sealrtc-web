@@ -300,7 +300,6 @@
 
   function addUserStream(user) {
     var isSelf = user.id === loginUserId;
-    // console.log('addUserStream user:', JSON.stringify(user));
     var streamBox = StreamBox.get(user.id);
     if (isSelf) {
       var stream = user.stream;
@@ -320,7 +319,6 @@
       streamBox.closeFlibScreenShare();
     } else {
       console.log('有人订阅了----')
-      // user.stream.type = rongRTC.StreamType.AUDIO_AND_VIDEO;
       console.log(JSON.stringify(user.stream))
       user.stream.size = rongRTC.StreamSize.MIN;
       rongRTCStream.subscribe(user).then(function (user) {
@@ -490,10 +488,7 @@
     var audio = rongRTCStream.audio;
     var streamList = userStreams.getList(user.id);
     user = streamList[streamList.length - 1];
-    // var streamList = userStreams.getList(user.id);
-    // user = streamList ? streamList[streamList.length - 1] : user;
     audio.mute(user).then(function () {
-      // showUserStream(user);
       var streamBox = StreamBox.get(user.id);
       streamBox.closeAudioBySelf();
       if(user.id === loginUserId) {
@@ -513,7 +508,6 @@
       return;
     }
     user.stream.size = size;
-    // if(isZoom == true) {
     rongRTCStream.resize(user).then(function () {
       console.log('resize success')
     }, function (err) {
@@ -521,7 +515,6 @@
       console.log('resize err:', err)
       sealAlert(localeData.switchStreamError);
     });
-    // }
   }
 
   function addUserBoxSetting(user) {
@@ -536,7 +529,6 @@
     streamList.addBox(streamBox);
     if (isSelf) {
       utils.Dom.addClass(streamBox.dom, 'rong-is-self');
-      // console.log(streamBox.dom);
       streamBox.zoom(user);
     } else {
       addUserStream(user);
@@ -674,7 +666,6 @@
   }
 
   function quit() {
-    // win.location.reload();
     removeRtcUserInfos(loginUserId,RongSeal.roomMsg,function(){
       rongRTCRoom.leave().then(function () {
         console.log('quit---')
@@ -724,11 +715,9 @@
   }
 
   function joinCancel() {
-    // window.location.reload();
     quit();
   }
   function RTCJoinConfirm(peopleNum, params) {
-    console.log(peopleNum, params);
     addUserBox({ id: loginUserId });
     var streamBox = StreamBox.get(loginUserId);
     if(peopleNum < LimitNum.SRJoinNumAV){
@@ -849,7 +838,6 @@
   }
   function setRtcUserInfos() {
     RongSeal.rongStorage.get([]).then(function (infos){
-      // console.log(JSON.parse(infos['rong-user-info']));
       var userList = [];
       for(var key in infos){
         var userInfo = JSON.parse(infos[key]);
@@ -871,7 +859,6 @@
       getRtcUserInfos([]).then(function(infos){
         var userList = [];
         delete infos[leftUserId];
-        // delete infos.leftUserId;
         for(var key in infos){
           var userInfo = JSON.parse(infos[key]);
           userList.push(userInfo);
@@ -889,7 +876,7 @@
   }
 
   function addUserSoundImg(user) {
-    console.log(user);
+    // console.log(user);
     var streamBox = StreamBox.get(user.id);
     if(user.stream.audioLevel > 0){
       if(streamBox) {
