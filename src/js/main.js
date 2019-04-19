@@ -38,7 +38,6 @@
   };
   var loginUserId, rongRTC, rongRTCRoom, rongRTCStream, rongRTCMessage, rongStorage, rongReport;
   var rongRTCPage, streamList;
-  var currentUserAudioEnable = true ;
   var userStreams = {
     users: {},
     getList: function (id) {
@@ -292,6 +291,7 @@
     var isSelf = id === loginUserId;
     if (isSelf) {
       streamBox.childDom.video.muted = true;
+
     }
     streamBox.showStream(mediaStream);
 
@@ -478,7 +478,9 @@
       // showUserStream(user);
       var streamBox = StreamBox.get(user.id);
       streamBox.openAudioBySelf();
-      currentUserAudioEnable = true;
+      if(user.id === loginUserId) {
+        streamBox.dom.childNodes[3].childNodes[1].style.display = 'inline-block';
+      }
     }, function () {
       sealAlert(localeData.openAudioError);
     });
@@ -494,7 +496,9 @@
       // showUserStream(user);
       var streamBox = StreamBox.get(user.id);
       streamBox.closeAudioBySelf();
-      currentUserAudioEnable = false;
+      if(user.id === loginUserId) {
+        streamBox.dom.childNodes[3].childNodes[1].style.display = 'none';
+      }
     }, function () {
       sealAlert(localeData.closeAudioError);
     });
@@ -883,18 +887,17 @@
     console.log('roommsg:',message);
     setRtcUserInfos();
   }
+
   function addUserSoundImg(user) {
-    if(currentUserAudioEnable) {
-      console.log(user);
-      var streamBox = StreamBox.get(user.id);
-      if(user.stream.audioLevel > 0){
-        if(streamBox) {
-          streamBox.showSoundGif();
-        }
-      }else {
-        if(streamBox) {
-          streamBox.hideSoundGif();
-        }
+    console.log(user);
+    var streamBox = StreamBox.get(user.id);
+    if(user.stream.audioLevel > 0){
+      if(streamBox) {
+        streamBox.showSoundGif();
+      }
+    }else {
+      if(streamBox) {
+        streamBox.hideSoundGif();
       }
     }
   }

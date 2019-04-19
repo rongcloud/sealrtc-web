@@ -432,13 +432,15 @@
       // self.dom.childNodes[1].style.objectFit='contain';
     }
     function showSoundGif() {
-      var soundDom = this.dom.childNodes[3].childNodes[1];
+      var soundDom = this.dom.childNodes[3].childNodes[1].childNodes[0];
       // console.log('sound--',soundDom)
-      soundDom.style.display = 'inline-block';
+      addClass(soundDom,'rong-sound-show')
+      // soundDom.style.display = 'inline-block';
     }
     function hideSoundGif() {
-      var soundDom = this.dom.childNodes[3].childNodes[1];
-      soundDom.style.display = 'none';
+      var soundDom = this.dom.childNodes[3].childNodes[1].childNodes[0];
+      removeClass(soundDom,'rong-sound-show')
+      // soundDom.style.display = 'none';
     }
     function closeVideoBySelf() {
       setClass(this.dom, OptClassName.CLOSE_VIDEO_BY_SELF, true);

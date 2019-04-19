@@ -39,6 +39,7 @@ input[type="number"]{
   background-size: cover;
   background-color: #4a5267;
   min-width: 1000px;
+  min-height: 760px;
   z-index: 10;
 }
 
@@ -519,9 +520,12 @@ input[type="number"]{
   background: #00000047;
   border-radius: 4px;
 }
-/* .rong-stream-wrap .rong-stream-box .rong-sound {
+.rong-stream-wrap .rong-stream-box .rong-sound-show {
   display: inline-block;
-} */
+}
+.rong-stream-wrap .rong-stream-box .rong-sound-hide {
+  display: none;
+}
 
 .rong-stream-wrap .rong-stream-box .rong-user-name {
   /* display: none; */
