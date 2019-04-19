@@ -2749,13 +2749,11 @@
         return body;
       });
     };
-    var negotiate = function negotiate(response) {
-      pc.getOffer().then(function (offer) {
-        pc.setOffer(offer);
-        var sdp = response.sdp;
+    var negotiate = function negotiate(offer, response) {
+      pc.setOffer(offer);
+      var sdp = response.sdp;
 
-        pc.setAnwser(sdp);
-      });
+      pc.setAnwser(sdp);
     };
     /* 
     人员比较:
@@ -2851,6 +2849,13 @@
 
           var isInclude = remoteUserId in localUsers;
           var isCurrent = utils.isEqual(currentUserId, remoteUserId);
+          Logger$1.log(LogTag.STREAM_HANDLER, {
+            msg: 'stream:compareuser',
+            currentUserId: currentUserId,
+            remoteUserId: remoteUserId,
+            isInclude: isInclude,
+            localUsers: localUsers
+          });
           if (isInclude) {
             delete tempLocalUsers[remoteUserId];
           } else {
@@ -2900,6 +2905,8 @@
           body: body
         });
         var headers = getHeaders();
+        var offer = body.sdp;
+
         return request$2.post({
           path: url,
           body: body,
@@ -2910,7 +2917,7 @@
             roomId: roomId,
             response: response
           });
-          negotiate(response);
+          negotiate(offer, response);
         }, function (error) {
           Logger$1.log(LogTag.STREAM_HANDLER, {
             msg: 'publish:reconnect:response',
@@ -3621,6 +3628,8 @@
           body: body
         });
         var headers = getHeaders();
+        var offer = body.sdp;
+
         return request$2.post({
           path: url,
           body: body,
@@ -3632,10 +3641,17 @@
             user: user,
             response: response
           });
-          negotiate(response);
+          negotiate(offer, response);
         }, function (error) {
-          Logger$1.log(LogTag.STREAM_HANDLER, {
-            msg: 'unsubscribe:response',
+          Logger$1.error(LogTag.STREAM_HANDLER, {
+            msg: 'unsubscribe:response:error',
+            roomId: roomId,
+            user: user,
+            error: error
+          });
+        }).catch(function (error) {
+          Logger$1.error(LogTag.STREAM_HANDLER, {
+            msg: 'unsubscribe:response:error',
             roomId: roomId,
             user: user,
             error: error
@@ -9208,11 +9224,13 @@
         var latestLevel = TrackStateCache.get(trackId);
         if (!utils.isEqual(latestLevel, audioLevel)) {
           var user = TrackCache.get(trackId);
-          utils.extend(user.stream, {
-            audioLevel: audioLevel
-          });
-          TrackStateCache.set(trackId, audioLevel);
-          im.emit(DownEvent.REPORT_SPOKE, user);
+          if (utils.isObject(user)) {
+            utils.extend(user.stream, {
+              audioLevel: audioLevel
+            });
+            TrackStateCache.set(trackId, audioLevel);
+            im.emit(DownEvent.REPORT_SPOKE, user);
+          }
         }
       }
     };
