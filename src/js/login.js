@@ -37,11 +37,6 @@
     BystanderEnable: 'bystander-enable'
   };
 
-  // var JoinMode = {
-  //   SRJoinModeAV: 0,
-  //   SRJoinModeAudioOnly: 1,
-  //   SRJoinModeObserver: 2
-  // }
   var sealToast = new common.SealToast();
   /**
    * 获取手机验证码 
@@ -52,7 +47,7 @@
    */
   function getSmsCode(params, callback) {
     callback = callback || utils.noop;
-    var url = RongSeal.Config.GET_SMS_CODE_URL;
+    var url = RongSeal.Config.URL+'/user/send_code';
     return new Promise(function (resolve, reject) {
       utils.ajax({
         url: url,
@@ -87,7 +82,7 @@
    */
   function verifySmsCode(params, callback) {
     callback = callback || utils.noop;
-    var url = RongSeal.Config.VERIFY_SMS_CODE_URL;
+    var url = RongSeal.Config.URL+'/user/verify_code';
     return new Promise(function (resolve, reject) {
       utils.ajax({
         url: url,
@@ -112,6 +107,20 @@
         }
       });
     });
+  }
+  function setRadioCancel() {
+    var selectID = null;
+    var radios = document.querySelectorAll('[name=userOption]')
+    for (var el of radios) {
+      el.addEventListener('click', function() {
+        if (selectID == this.id && selectID) {
+          this.checked = '';
+          selectID = null;
+        } else {
+          selectID = this.id;
+        }
+      })
+    }
   }
   function verifyTelNum(telNum) {
     if (telNum.length === 11) {
@@ -301,18 +310,39 @@
       prompt: prompt
     };
   };
-
+  function GetRadioValue(radioName) {
+    var radios = document.getElementsByName(radioName);
+    for (var i = 0; i < radios.length; i++) {
+      var radio = radios.item(i);
+      if (radio.checked) {
+        return radio.value;
+      }
+    }
+  }
   var getRTCOption = function () {
-    var resolutionDom = getSelectedByName('resolution'),
-      closeVideoDom = getSelectedByName('isCloseVideo'),
-      bystanderDom = getSelectedByName('isBystander');
+    var resolutionDom = getSelectedByName('resolution');
+    // closeVideoDom = getSelectedByName('isCloseVideo'),
+    // bystanderDom = getSelectedByName('isBystander');
     // closeAudioDom = getSelectedByName('isCloseAudio');
+    var modeOption = GetRadioValue('userOption');
+    var videoEnable, bystanderEnable;
+    if(modeOption){
+      if(modeOption == 'closeVideo') {
+        videoEnable = false;
+        bystanderEnable = false;
+      }
+      if(modeOption == 'bystander'){
+        videoEnable = true;
+        bystanderEnable = true;
+      }
+    }else {
+      videoEnable = true;
+      bystanderEnable = false;
+    }
     var roomId = roomDom.value,
       userId = roomTelNumDom.value,
       // userId = randomUserId,
-      resolution = common.formatResolution(resolutionDom.value), // 格式如: { width: 640, height: 320 }
-      videoEnable = !closeVideoDom;
-    var bystanderEnable = bystanderDom ? true : false;
+      resolution = common.formatResolution(resolutionDom.value);// 格式如: { width: 640, height: 320 }
     // console.log(resolutionDom);
     // audioEnable = !closeAudioDom;
     return {
@@ -392,7 +422,7 @@
 
   var connect = function (user) {
     user.navi = Config.NAVI;
-    user.appKey = Config.APP_ID;
+    user.appKey = Config.APPKEY;
     var goVerifyPage = function () {
       common.UI.backLoginPage();
       telDom.value = roomTelNumDom.value;
@@ -502,6 +532,7 @@
   };
 
   (function init() {
+    setRadioCancel();
     setDefaultRTCInfo();
     checkRoomTelValue();
     bindCodeFn();

@@ -384,8 +384,6 @@
    */
   /* TODO 去掉该变量的使用, 应使用 streamList 实例进行 box 操作 */
   var StreamBoxList = {}; // streamBox 集合
-  console.log('StreamBoxList: ', StreamBoxList);
-
   var StreamBox = (function () {
     var setClass = function (dom, className, isOpen) {
       isOpen ? addClass(dom, className) : removeClass(dom, className);
@@ -432,6 +430,17 @@
         addClass(this.dom, OptClassName.IS_ZOOM)
       }
       // self.dom.childNodes[1].style.objectFit='contain';
+    }
+    function showSoundGif() {
+      var soundDom = this.dom.childNodes[3].childNodes[1].childNodes[0];
+      // console.log('sound--',soundDom)
+      addClass(soundDom,'rong-sound-show')
+      // soundDom.style.display = 'inline-block';
+    }
+    function hideSoundGif() {
+      var soundDom = this.dom.childNodes[3].childNodes[1].childNodes[0];
+      removeClass(soundDom,'rong-sound-show')
+      // soundDom.style.display = 'none';
     }
     function closeVideoBySelf() {
       setClass(this.dom, OptClassName.CLOSE_VIDEO_BY_SELF, true);
@@ -549,6 +558,8 @@
       self.closeFlibScreenShare = closeFlibScreenShare;
       self.disabledVideoBySelf = disabledVideoBySelf;
       self.disabledAudioBySelf = disabledAudioBySelf;
+      self.showSoundGif = showSoundGif;
+      self.hideSoundGif = hideSoundGif;
 
       StreamBoxList[id] = self;
 
@@ -569,7 +580,6 @@
     Dom.showByClass('rong-login');
     Dom.hideByClass('rong-btn-loading');
     Dom.showByClass('rong-btn-start');
-    // Dom.getById('isCloseVideo').checked = false;
   }
 
   var WhiteBoard = (function () {
@@ -600,7 +610,7 @@
     var userListDom = Dom.getById('rongRoomUsers');
     var userListNumDom = Dom.getById('userListNum');
     var userJoinMode = '';
-    userListNumDom.innerText = '在线人数('+userList.length+'人)';
+    userListNumDom.innerHTML = '<span>在线人数（'+userList.length+'人）</span>';
     userListDom.innerHTML = '';
     for(var i=0;i<userList.length;i++){
       if(userList[i].joinMode == 0){
@@ -612,15 +622,13 @@
       }
       userListDom.innerHTML += '<div class="user-list-item">' +
         '<div class="online-user" id=""> ' + userList[i].userName + '</div>' +
-        '<div calss="user-join-mode" id="">' + userJoinMode + '</div></div>';
+        '<div class="user-join-mode" id="">' + userJoinMode + '</div></div>';
     }
   }
   function showUserList() {
-    // var userListDom = Dom.getByClass('rong-opt-userlist');
-    Dom.showByClass('rong-user-list')
+    Dom.showByClass('rong-user-list');
   }
   function hideUserList() {
-    console.log(111)
     Dom.hideByClass('rong-user-list')
   }
   var UI = {

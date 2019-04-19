@@ -4469,7 +4469,7 @@ var RongIMLib;
         Client.prototype.resumeTimer = function () {
             var me = this;
             this.timeout_ = setTimeout(function () {
-                me.channel.disconnect();
+                me.channel.disconnect(3);
             }, this.timeoutMillis);
         };
         Client.prototype.pauseTimer = function () {

@@ -48,7 +48,7 @@
       verifyCode: '手机验证码'
     },
     textContent: {
-      closeVideo: '加入时关闭摄像头',
+      closeVideo: '音频模式',
       closeAudio: '加入时关闭麦克风',
       bystanders: '旁听者模式',
       setting: '通话设置',
@@ -59,8 +59,10 @@
       alertTitle: '提示',
       phoneTips: '请输入手机号验证登录，目前只支持中国区',
       btnLoading: '加载中...',
-      systemTips: '注：音视频核心引擎升级 SealRTC v3.0.0 及以上版本与老版本不兼容，请统一使用新版本体验',
-      userListClose: '关闭'
+      systemTips: '注：SealRTC v3.0.0 及以上版本与老版本不兼容，请使用新版本体验，Web 端推荐使用 Google Chrome 浏览器',
+      userListClose: '关闭',
+      copyright: 'Copyright 2019 RongCloud',
+      copyrightRecord: '京 ICP 备 15042119 号-1',
     },
     value: {
       startRTC: '开始会议',
@@ -72,7 +74,8 @@
     title: {
       hangup: '挂断',
       screenshare: '屏幕共享',
-      whiteboard: '白板'
+      whiteboard: '白板',
+      userlist: '在线成员'
     }
   };
 })(window);
