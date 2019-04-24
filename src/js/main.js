@@ -593,7 +593,7 @@
       targetBox = StreamBox.get(user.id);
       name = user.name;
     }
-    var streamBox = new StreamBox(user.id, {
+    var streamBox = new StreamBox(user.id+'custom', {
       resizeEvent: resizeStream,
       name: name
     });
@@ -636,7 +636,7 @@
   }
     
   function removeCustomVideoBox(user) {
-    var streamBox = StreamBox.get(user.id);
+    var streamBox = StreamBox.get(user.id+'custom');
     streamList.removeBox(streamBox);
     var isSelf = user.id === loginUserId;
     if(isSelf){
