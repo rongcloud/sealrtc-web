@@ -798,22 +798,29 @@
     Dom.getById('rong-customVideo2').onclick = switchLocalVideo;
   }
 
+  function getJoinUserName(user,callback) {
+    getRtcUserInfos([]).then(function(infos){
+      for(var key in infos){
+        var userInfo = JSON.parse(infos[key]);
+        if(user.id == userInfo.userId){
+          user.name = userInfo.userName;
+          callback();
+        }
+      }
+    })
+  }
   function addVideoViewBox(user) {
     if (user.stream.tag == 'screenshare') {
       addUserStream(user);
       return;
     }
     if(user.stream.tag == 'customvideo') {
-      addCustomVideoBox(user);
+      getJoinUserName(user,function(){
+        addCustomVideoBox(user);
+      })
       return ;
     }
-    getRtcUserInfos([]).then(function(infos){
-      for(var key in infos){
-        var userInfo = JSON.parse(infos[key]);
-        if(user.id == userInfo.userId){
-          user.name = userInfo.userName;
-        }
-      }
+    getJoinUserName(user,function(){
       addUserBox(user);
     })
   }
@@ -860,7 +867,6 @@
         var videoEnable = params.videoEnable,
           audioEnable = params.audioEnable,
           resolution = params.resolution;
-        // addUserBox({ id: loginUserId });
         RTCJoinConfirm(peopleNum, params)
         publishSelfMediaStream(videoEnable, audioEnable, resolution).then(
           addUserStream, publishStreamError);
