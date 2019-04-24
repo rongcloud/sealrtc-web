@@ -1019,7 +1019,6 @@
       error: function (err) {
         if (rongRTC.ErrorType.NETWORK_UNAVAILABLE == err.code) {
           RongSeal.eventEmitter.emit(EventName.NETWORK_ERROR);
-          console.log('rtc err:', err)
         }
         // backLoginPage();
         sealToast.destroy();
