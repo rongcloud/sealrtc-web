@@ -75,7 +75,8 @@
       hangup: '挂断',
       screenshare: '屏幕共享',
       whiteboard: '白板',
-      userlist: '在线成员'
+      userlist: '在线成员',
+      customvideo: '自定义视频流'
     }
   };
 })(window);

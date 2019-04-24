@@ -15,6 +15,7 @@
   var StreamBox = common.UI.StreamBox;
   var StreamList = common.UI.StreamList;
   var RongRTCPage = common.UI.RongRTCPage;
+  var CustomVideoOpt = common.UI.customVideoOpt;
 
   var videoTimer = new common.SealTimer();
   var sealToast = new common.SealToast();
@@ -29,6 +30,8 @@
     SCREENSHARE_BUTTON: 'rong-opt-share',
     USER_LIST_BUTTON: 'rong-opt-userlist',
     USER_LIST_CLOSE_BUTTON: 'user-list-close',
+    USER_CUSTOM_VIDEO_OPEN_BUTTON: 'rong-opt-custom-video',
+    USER_CUSTOM_VIDEO_CLOSE_BUTTON: 'rong-opt-custom-video-close',
     STREAM_BOX: 'rong-stream-wrap',
     CASE_PRE_BTN: 'rong-case-pre',
     CASE_NEXT_BTN: 'rong-case-next'
@@ -70,7 +73,8 @@
 
   var CustomizeTag = {
     NORMAL: 'normal',
-    SCREENSHARE: 'screenshare'
+    SCREENSHARE: 'screenshare',
+    PROMOTIONAL_VIDEO: 'customvideo'
   };
 
   var JoinMode = {
@@ -291,7 +295,6 @@
     var isSelf = id === loginUserId;
     if (isSelf) {
       streamBox.childDom.video.muted = true;
-
     }
     streamBox.showStream(mediaStream);
 
@@ -319,7 +322,6 @@
       streamBox.closeFlibScreenShare();
     } else {
       console.log('有人订阅了----')
-      console.log(JSON.stringify(user.stream))
       user.stream.size = rongRTC.StreamSize.MIN;
       rongRTCStream.subscribe(user).then(function (user) {
         showUserStream(user);
@@ -577,6 +579,81 @@
       addUserBoxSetting(user);
     }
   }
+  function getCurrentUserName() {
+    var userNameStr = Dom.getById('rongUserName').innerText;
+    return userNameStr.substring(5,userNameStr.length);
+  }
+  function addCustomVideoBox(user,videoId) {
+    var isSelf = user.id === loginUserId;
+    var targetBox,name;
+    if(isSelf){
+      targetBox = StreamBox.get(loginUserId);
+      name = getCurrentUserName();
+    }else {
+      targetBox = StreamBox.get(user.id);
+      name = user.name;
+    }
+    var streamBox = new StreamBox(user.id, {
+      resizeEvent: resizeStream,
+      name: name
+    });
+    streamList.insertBox(streamBox,targetBox);
+    streamBox.setCustomVideoUI(name);
+    var videoDom = streamBox.dom.children[0];
+    videoDom.loop = true;
+    if(isSelf) {
+      if(videoId === 1){
+        videoDom.src = './videos/video_demo1.mp4';
+      }else {
+        videoDom.src = './videos/video_demo2.mp4';
+      }
+      //publish
+      videoDom.oncanplay = function(){
+        var ms = videoDom.captureStream();
+        user = {
+          id: loginUserId,
+          stream: {
+            tag: CustomizeTag.PROMOTIONAL_VIDEO,
+            type: 2,
+            mediaStream: ms
+          }
+        }
+        rongRTCStream.publish(user).then(function () {
+          console.log('pub success');
+          CustomVideoOpt.showCustomVideoCloseBtn();
+        },function (err) {
+          console.log('custom video pub err',err)
+        })
+      }
+    }else {
+      //subscribe
+      rongRTCStream.subscribe(user).then(function (user) {
+        videoDom.srcObject = user.stream.mediaStream;
+      }, function (error) {
+        sealAlert(localeData.subscriptError + JSON.stringify(error));
+      });
+    }
+  }
+    
+  function removeCustomVideoBox(user) {
+    var streamBox = StreamBox.get(user.id);
+    streamList.removeBox(streamBox);
+    var isSelf = user.id === loginUserId;
+    if(isSelf){
+      user = {
+        id: loginUserId,
+        stream: {
+          tag: CustomizeTag.PROMOTIONAL_VIDEO,
+          type: 2
+        }
+      }
+      rongRTCStream.unpublish(user).then(function () {
+        CustomVideoOpt.showCustomVideoOpenBtn();
+      }).catch(function (err) {
+        console.log(err)
+      });
+    }
+  }
 
   function removeUserBox(user) {
     console.log('left user:', user)
@@ -609,6 +686,13 @@
     });
   }
 
+  function removeUnpublishUser(user) {
+    if(user.stream.tag === CustomizeTag.PROMOTIONAL_VIDEO){
+      removeCustomVideoBox(user)
+    }else {
+      removeUserStream(user)
+    }
+  }
   function publishSelfMediaStream(videoEnable, audioEnable, resolution, audioOnly) {
     return new Promise(function (resolve, reject) {
       getSelfMediaStream(videoEnable, audioEnable, resolution, audioOnly).then(function (user) {
@@ -679,22 +763,39 @@
       RongSeal.userStreams.clearUsers();
       sealToast.destroy();
       RongSeal.destroyRongRTCPage();
+      removeCustomVideoBox({id: loginUserId})
     });
-   
   }
-
+  function switchLocalVideo(e) {
+    var currentTargetVideo = e.target.id;
+    if(currentTargetVideo === 'rong-customVideo1') {
+      //创建标签 添加标签
+      addCustomVideoBox({id: loginUserId},1);
+    }else {
+      addCustomVideoBox({id: loginUserId},2);
+    }
+  }
+  
   function bindRTCBtnEvent() {
     var hangupBtn = Dom.getByClass(ClassName.HANGUP_BUTTON),
       // whiteboardBtn = Dom.getByClass(ClassName.WHITEBOARD_BUTTON),
       screenShareBtn = Dom.getByClass(ClassName.SCREENSHARE_BUTTON),
       userListBtn = Dom.getByClass(ClassName.USER_LIST_BUTTON),
-      userListCloseBtn = Dom.getByClass(ClassName.USER_LIST_CLOSE_BUTTON);
+      userListCloseBtn = Dom.getByClass(ClassName.USER_LIST_CLOSE_BUTTON),
+      userCustomVideoBtn = Dom.getByClass(ClassName.USER_CUSTOM_VIDEO_OPEN_BUTTON),
+      userCustomVideoCloseBtn = Dom.getByClass(ClassName.USER_CUSTOM_VIDEO_CLOSE_BUTTON);
     hangupBtn.onclick = quit;
     // whiteboardBtn.onclick = '';
     userListBtn.onclick = common.UI.showUserList;
     userListCloseBtn.onclick = common.UI.hideUserList;
+    userCustomVideoBtn.onclick = CustomVideoOpt.switchCustomVideo;
+    userCustomVideoCloseBtn.onclick = function(){
+      removeCustomVideoBox({id: loginUserId})
+    };
     screenShareBtn.onclick = switchScreenShare;
     win.onbeforeunload = quit;
+    Dom.getById('rong-customVideo1').onclick = switchLocalVideo;
+    Dom.getById('rong-customVideo2').onclick = switchLocalVideo;
   }
 
   function addVideoViewBox(user) {
@@ -702,7 +803,10 @@
       addUserStream(user);
       return;
     }
-   
+    if(user.stream.tag == 'customvideo') {
+      addCustomVideoBox(user);
+      return ;
+    }
     getRtcUserInfos([]).then(function(infos){
       for(var key in infos){
         var userInfo = JSON.parse(infos[key]);
@@ -929,7 +1033,7 @@
     rongRTCStream = new rongRTC.Stream({
       // published: addUserStream,
       published: addVideoViewBox,
-      unpublished: removeUserStream,
+      unpublished: removeUnpublishUser,
       disabled: hideUserVideo,
       enabled: showUserVideo,
       muted: hideUserAudio,

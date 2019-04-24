@@ -338,6 +338,14 @@
       }
     }
 
+    function insertBox(streamBox,targetEl) {
+      var self = this;
+      if (!self.hasBox(streamBox)) {
+        self.streamBoxList.push(streamBox);
+        Dom.insertAfter(streamBox.dom,targetEl.dom);
+      }
+    }
+
     function removeBox(streamBox) {
       var self = this;
       if (self.hasBox(streamBox)) {
@@ -366,6 +374,7 @@
       self.dom = createLocaleDom(temp);
 
       self.addBox = addBox;
+      self.insertBox = insertBox;
       self.removeBox = removeBox;
       self.hasBox = hasBox;
       self.clearBox = clear;
@@ -429,33 +438,26 @@
         self.isZoom = true;
         addClass(this.dom, OptClassName.IS_ZOOM)
       }
-      // self.dom.childNodes[1].style.objectFit='contain';
     }
     function showSoundGif() {
       var soundDom = this.dom.childNodes[3].childNodes[1].childNodes[0];
-      // console.log('sound--',soundDom)
       addClass(soundDom,'rong-sound-show')
-      // soundDom.style.display = 'inline-block';
     }
     function hideSoundGif() {
       var soundDom = this.dom.childNodes[3].childNodes[1].childNodes[0];
       removeClass(soundDom,'rong-sound-show')
-      // soundDom.style.display = 'none';
     }
     function closeVideoBySelf() {
       setClass(this.dom, OptClassName.CLOSE_VIDEO_BY_SELF, true);
       this.isVideoOpenedBySelf = false;
-      console.log('close my video')
     }
     function openVideoBySelf() {
       setClass(this.dom, OptClassName.CLOSE_VIDEO_BY_SELF, false);
       this.isVideoOpenedBySelf = true;
-      console.log('open my video')
     }
     function closeAudioBySelf() {
       setClass(this.dom, OptClassName.CLOSE_AUDIO_BY_SELF, true);
       this.isAudioOpenedBySelf = false;
-      console.log('close my audio')
     }
     function openAudioBySelf() {
       setClass(this.dom, OptClassName.CLOSE_AUDIO_BY_SELF, false);
@@ -490,7 +492,6 @@
       this.dom.childNodes[1].style.transform = 'rotateY(180deg)';
     }
     function disabledVideoBySelf() {
-      console.log(this.dom.childNodes[9].childNodes[1])
       var selfOptDom = this.dom.childNodes[9]
       selfOptDom.childNodes[1].style.display = 'none';
       selfOptDom.childNodes[3].style.display = 'inline-block';
@@ -499,6 +500,13 @@
       var selfOptDom = this.dom.childNodes[9]
       selfOptDom.childNodes[5].style.display = 'none';
       selfOptDom.childNodes[7].style.display = 'inline-block';
+    }
+    function setCustomVideoUI(videoTitle) {
+      var videoBoxChild = this.dom.children;
+      videoBoxChild[1].style.display = 'none';
+      videoBoxChild[4].style.display = 'none';
+      videoBoxChild[5].style.display = 'block';
+      videoBoxChild[5].innerText = videoTitle;
     }
     return function (id, params, temp) {
       params = params || {};
@@ -560,6 +568,7 @@
       self.disabledAudioBySelf = disabledAudioBySelf;
       self.showSoundGif = showSoundGif;
       self.hideSoundGif = hideSoundGif;
+      self.setCustomVideoUI = setCustomVideoUI;
 
       StreamBoxList[id] = self;
 
@@ -629,7 +638,30 @@
     Dom.showByClass('rong-user-list');
   }
   function hideUserList() {
-    Dom.hideByClass('rong-user-list')
+    Dom.hideByClass('rong-user-list');
+  }
+  function showCustomVideoList() {
+    Dom.showByClass('rong-user-customvideo');
+  }
+  function hideCustomVideoList() {
+    Dom.hideByClass('rong-user-customvideo');
+  }
+  function showCustomVideoOpenBtn() {
+    Dom.showByClass('rong-opt-videoicon-open');
+    Dom.hideByClass('rong-opt-videoicon-close');
+  }
+  function showCustomVideoCloseBtn() {
+    Dom.hideByClass('rong-user-customvideo');
+    Dom.hideByClass('rong-opt-videoicon-open');
+    Dom.showByClass('rong-opt-videoicon-close');
+  }
+  function switchCustomVideo() {
+    var isOpen = Dom.getByClass('rong-user-customvideo').style.display === 'block';
+    if(isOpen) {
+      hideCustomVideoList();
+    }else {
+      showCustomVideoList();
+    }
   }
   var UI = {
     RongRTCPage: RongRTCPage,
@@ -639,7 +671,14 @@
     backLoginPage: backLoginPage,
     userListView: userListView,
     showUserList: showUserList,
-    hideUserList: hideUserList
+    hideUserList: hideUserList,
+    customVideoOpt: {
+      switchCustomVideo: switchCustomVideo,
+      showCustomVideoList: showCustomVideoList,
+      hideCustomVideoList: hideCustomVideoList,
+      showCustomVideoOpenBtn: showCustomVideoOpenBtn,
+      showCustomVideoCloseBtn: showCustomVideoCloseBtn
+    }
   };
 
   var common = {

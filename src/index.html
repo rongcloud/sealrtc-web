@@ -8,7 +8,7 @@
   <link rel="icon" href="./css/img/icon.png" type="image/x-icon" />
   <script src="./lib/protobuf-2.3.4.min.js"></script>
   <script src="./lib/RongIMLib-2.4.0.js"></script>
-  <script src="./lib/RongRTC.3.0.1.js?d=201904111600"></script>
+  <script src="./lib/RongRTC.3.0.2.js?d=201904231830"></script>
   <script src="./lib/frameImage.js"></script>
   <script src="./lib/screenshare.js"></script>
   <script src="./lib/media.js"></script>
@@ -90,13 +90,15 @@
   <script id="RongRTC" type="text/x-template">
     <div id="RongRTC" class="rong-wrap rong-rtc">
       <div class="rong-rtc-opt">
-        <span class="rong-rtc-title rong-user-title"></span>
+        <span class="rong-rtc-title rong-user-title" id="rongUserName"></span>
         <span class="rong-rtc-title rong-user-timer"></span>
         <span class="rong-rtc-title rong-room-title"></span>
         <button class="rong-rtc-btn rong-opt-hangup" lang-title="hangup"></button>
         <a class="rong-rtc-btn rong-opt-share rong-share-openicon" lang-title="screenshare"></a>
         <a class="rong-rtc-btn rong-opt-share-close rong-share-closeicon" ></a>
         <a class="rong-rtc-btn rong-opt-userlist rong-opt-usericon" lang-title="userlist"></a>
+        <a class="rong-rtc-btn rong-opt-custom-video rong-opt-videoicon-open" lang-title="customvideo"></a>
+        <a class="rong-rtc-btn rong-opt-custom-video-close rong-opt-videoicon-close" lang-title="customvideo"></a>
       </div>
       <div id="RongWB" class="rong-wb-box">
         <a class="rong-wb-close"></a>
@@ -110,6 +112,13 @@
         </div>
         <div id="rongRoomUsers" class="user-list-main"> </div>
       </div> 
+      <div class="rong-user-customvideo">
+        <div class="customvideo-triangle"></div>
+        <ul class="customvideo-list">
+          <li id="rong-customVideo1">视频文件1.mp4</li>
+          <li id="rong-customVideo2">视频文件2.mp4</li>
+        </ul>
+      </div>
     </div>
   </script>
 
@@ -123,7 +132,6 @@
   <script id="RongStreamBox" type="text/x-template">
     <div class="rong-stream-box">
       <video class="rong-video" autoplay ></video>
-      
       <div class="rong-stream-top">
         <span id="soundGif"><img src="./css/img/sound.gif" class="rong-sound" ></span>
         <p class="rong-user-name">{name}</p>
@@ -146,6 +154,7 @@
         <a class="rong-opt-btn rong-opt-audio"></a>
         <a class="rong-opt-btn rong-opt-audio-disabled"></a>
       </div>
+      <div class="rong-custom-video"></div>
     </div>
   </script>
 
