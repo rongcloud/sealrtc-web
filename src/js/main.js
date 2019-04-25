@@ -623,7 +623,6 @@
     if(isSelf) {
       if(videoId === 1){
         videoDom.src = './videos/video_demo1.mp4';
-        // videoDom.src = './videos/testv.mp4';
         videoFileName = 'video1';
       }else {
         videoDom.src = './videos/video_demo2.mp4';
