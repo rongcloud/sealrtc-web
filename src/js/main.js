@@ -597,6 +597,7 @@
     return hasCustomVideoTag;
   }
   function addCustomVideoBox(user,videoId) {
+    console.log(user,videoId,'addCustomVideoBox');
     var isSelf = user.id === loginUserId;
     var targetBox,currentUserName,videoFileName;
     // if(isSelf){
@@ -618,17 +619,24 @@
     streamBox.setCustomVideoUI(currentUserName);
     var videoDom = streamBox.dom.children[0];
     videoDom.loop = true;
+    videoDom.muted = true;
     if(isSelf) {
       if(videoId === 1){
         videoDom.src = './videos/video_demo1.mp4';
+        // videoDom.src = './videos/testv.mp4';
         videoFileName = 'video1';
       }else {
         videoDom.src = './videos/video_demo2.mp4';
         videoFileName = 'video2';
       }
+      var count = 0;
       streamBox.setCustomVideoUI(currentUserName+'-'+videoFileName);
       CustomVideoTagName = getCustomVideoName(currentUserName,videoFileName);
       videoDom.oncanplay = function(){
+        if(count > 0){
+          return;
+        }
+        count+=1;
         var ms = videoDom.captureStream();
         user = {
           id: loginUserId,
@@ -660,6 +668,16 @@
     var streamBox = StreamBox.get(user.id+'custom');
     streamList.removeBox(streamBox);
     hasCustomVideoTag = false;
+    var isRemoveBoxZoom = streamBox.isZoom;
+    var streamBoxList = streamList.streamBoxList;
+    if (isRemoveBoxZoom) {
+      for (var key in streamBoxList) {
+        streamBox = streamBoxList[key];
+        if (streamBox.id === loginUserId) {
+          streamBox.zoom();
+        }
+      }
+    }
     var isSelf = user.id === loginUserId;
     if(isSelf){
       user = {
@@ -851,7 +869,7 @@
     })
   }
   function addVideoViewBox(user) {
-    console.log(user,new Date().getTime(),'published')
+    console.log(user,new Date().getTime(),'published-addVideoViewBox')
     if (user.stream.tag === 'screenshare') {
       addUserStream(user);
       return;
