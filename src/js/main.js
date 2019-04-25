@@ -656,7 +656,7 @@
     }
   }
     
-  function removeCustomVideoBox(user) {
+  function removeCustomVideoBox(user,callback) {
     var streamBox = StreamBox.get(user.id+'custom');
     streamList.removeBox(streamBox);
     hasCustomVideoTag = false;
@@ -671,6 +671,7 @@
       }
       rongRTCStream.unpublish(user).then(function () {
         CustomVideoOpt.showCustomVideoOpenBtn();
+        callback();
       }).catch(function (err) {
         console.log(err)
       });
@@ -681,6 +682,10 @@
     console.log('left user:', user)
     var id = user.id;
     var streamBox = StreamBox.get(id);
+    var customVideoBox = StreamBox.get(id+'custom');
+    if(customVideoBox) {
+      streamList.removeBox(customVideoBox);
+    }
     if (streamBox) {
       var isRemoveBoxZoom = streamBox.isZoom;
       streamList.removeBox(streamBox);
@@ -770,14 +775,12 @@
     var streamBox = StreamBox.get(loginUserId);
     streamBox.isScreenShareOpened ? closeScreenShare() : openScreenshare();
   }
-
   function quit() {
     removeRtcUserInfos(loginUserId,RongSeal.roomMsg,function(){
       rongRTCRoom.leave().then(function () {
         console.log('quit---')
         RongSeal.im.disconnect();
       }, function () {
-        // leave error
         RongSeal.im.disconnect();
       });
       common.UI.backLoginPage();
@@ -785,8 +788,17 @@
       RongSeal.userStreams.clearUsers();
       sealToast.destroy();
       RongSeal.destroyRongRTCPage();
-      removeCustomVideoBox({id: loginUserId})
     });
+  }
+  function cancelPublishedStream() {
+    var streamBox = StreamBox.get(loginUserId+'custom');
+    if(streamBox) {
+      removeCustomVideoBox({id: loginUserId},function(){
+        quit();
+      })
+    }else {
+      quit();
+    }
   }
   function switchLocalVideo(e) {
     var currentTargetVideo = e.target.id;
@@ -806,7 +818,7 @@
       userListCloseBtn = Dom.getByClass(ClassName.USER_LIST_CLOSE_BUTTON),
       userCustomVideoBtn = Dom.getByClass(ClassName.USER_CUSTOM_VIDEO_OPEN_BUTTON),
       userCustomVideoCloseBtn = Dom.getByClass(ClassName.USER_CUSTOM_VIDEO_CLOSE_BUTTON);
-    hangupBtn.onclick = quit;
+    hangupBtn.onclick = cancelPublishedStream;
     // whiteboardBtn.onclick = '';
     userListBtn.onclick = common.UI.showUserList;
     userListCloseBtn.onclick = common.UI.hideUserList;
@@ -821,7 +833,7 @@
       removeCustomVideoBox({id: loginUserId})
     };
     screenShareBtn.onclick = switchScreenShare;
-    win.onbeforeunload = quit;
+    win.onbeforeunload = cancelPublishedStream;
     Dom.getById('rong-customVideo1').onclick = switchLocalVideo;
     Dom.getById('rong-customVideo2').onclick = switchLocalVideo;
   }
@@ -844,9 +856,7 @@
       return;
     }
     if(user.stream.tag.substring(0,17) === CustomizeTag.PROMOTIONAL_VIDEO) {
-      getJoinUserName(user,function(){
-        addCustomVideoBox(user);
-      })
+      addCustomVideoBox(user);
       return ;
     }
     getJoinUserName(user,function(){
@@ -855,7 +865,7 @@
   }
 
   function joinCancel() {
-    quit();
+    cancelPublishedStream();
   }
   function RTCJoinConfirm(peopleNum, params) {
     addUserBox({ id: loginUserId });
