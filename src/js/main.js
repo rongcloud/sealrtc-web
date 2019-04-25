@@ -599,16 +599,16 @@
   function addCustomVideoBox(user,videoId) {
     var isSelf = user.id === loginUserId;
     var targetBox,currentUserName,videoFileName;
-    if(isSelf){
-      targetBox = StreamBox.get(loginUserId);
-      currentUserName = getCurrentUserName();
-    }else {
-      targetBox = StreamBox.get(user.id);
-      currentUserName = user.name;
-      if(!targetBox){
-        targetBox = StreamBox.get(loginUserId);
-      }
-    }
+    // if(isSelf){
+    targetBox = StreamBox.get(loginUserId);
+    currentUserName = getCurrentUserName();
+    // }else {
+    //   targetBox = StreamBox.get(user.id);
+    //   currentUserName = user.name;
+    //   if(!targetBox){
+    //     targetBox = StreamBox.get(loginUserId);
+    //   }
+    // }
     var streamBox = new StreamBox(user.id+'custom', {
       resizeEvent: resizeStream,
       name: currentUserName,
@@ -685,6 +685,7 @@
     var customVideoBox = StreamBox.get(id+'custom');
     if(customVideoBox) {
       streamList.removeBox(customVideoBox);
+      StreamBox.clearQuitUser(id+'custom');
     }
     if (streamBox) {
       var isRemoveBoxZoom = streamBox.isZoom;
