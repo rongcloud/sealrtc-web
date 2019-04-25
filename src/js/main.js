@@ -40,7 +40,7 @@
     STREAM: 'Rong-{id}'
   };
   var loginUserId, rongRTC, rongRTCRoom, rongRTCStream, rongRTCMessage, rongStorage, rongReport;
-  var rongRTCPage, streamList;
+  var rongRTCPage, streamList, CustomVideoTagName, hasCustomVideoTag;
   var userStreams = {
     users: {},
     getList: function (id) {
@@ -74,7 +74,7 @@
   var CustomizeTag = {
     NORMAL: 'normal',
     SCREENSHARE: 'screenshare',
-    PROMOTIONAL_VIDEO: 'customvideo'
+    PROMOTIONAL_VIDEO: 'RongRTCFileVideo-'
   };
 
   var JoinMode = {
@@ -566,7 +566,6 @@
       var box = StreamBox.get(id);
       if(box){
         streamList.removeBox(box);
-        console.log(StreamBox.get(id));
         stopVideoTimer();
         rongRTCStream.unsubscribe(user).then(function(){
           console.log('unsub success');
@@ -583,50 +582,72 @@
     var userNameStr = Dom.getById('rongUserName').innerText;
     return userNameStr.substring(5,userNameStr.length);
   }
+  function getCustomVideoName(currentUserName,videoFileName) {
+    return CustomizeTag.PROMOTIONAL_VIDEO+currentUserName+'-'+videoFileName;
+  }
+  function hasCustomFileVideo() {
+    var userBoxList = streamList.streamBoxList;
+    hasCustomVideoTag = false
+    for(var key in userBoxList){
+      if(userBoxList[key].tag){
+        hasCustomVideoTag = true;
+        // var userName = userBoxList[key].userName;
+      }
+    }
+    return hasCustomVideoTag;
+  }
   function addCustomVideoBox(user,videoId) {
     var isSelf = user.id === loginUserId;
-    var targetBox,name;
+    var targetBox,currentUserName,videoFileName;
     if(isSelf){
       targetBox = StreamBox.get(loginUserId);
-      name = getCurrentUserName();
+      currentUserName = getCurrentUserName();
     }else {
       targetBox = StreamBox.get(user.id);
-      name = user.name;
+      currentUserName = user.name;
+      if(!targetBox){
+        targetBox = StreamBox.get(loginUserId);
+      }
     }
     var streamBox = new StreamBox(user.id+'custom', {
       resizeEvent: resizeStream,
-      name: name
+      name: currentUserName,
+      tag: CustomizeTag.PROMOTIONAL_VIDEO
     });
     streamList.insertBox(streamBox,targetBox);
-    streamBox.setCustomVideoUI(name);
+    streamBox.setCustomVideoUI(currentUserName);
     var videoDom = streamBox.dom.children[0];
     videoDom.loop = true;
     if(isSelf) {
       if(videoId === 1){
         videoDom.src = './videos/video_demo1.mp4';
+        videoFileName = 'video1';
       }else {
         videoDom.src = './videos/video_demo2.mp4';
+        videoFileName = 'video2';
       }
-      //publish
+      streamBox.setCustomVideoUI(currentUserName+'-'+videoFileName);
+      CustomVideoTagName = getCustomVideoName(currentUserName,videoFileName);
       videoDom.oncanplay = function(){
         var ms = videoDom.captureStream();
         user = {
           id: loginUserId,
           stream: {
-            tag: CustomizeTag.PROMOTIONAL_VIDEO,
+            tag: CustomVideoTagName,
             type: 2,
             mediaStream: ms
           }
         }
         rongRTCStream.publish(user).then(function () {
-          console.log('pub success');
+          console.log('pub success,customvideo');
           CustomVideoOpt.showCustomVideoCloseBtn();
         },function (err) {
           console.log('custom video pub err',err)
         })
       }
     }else {
-      //subscribe
+      var streamInfo = user.stream.tag.split('-');
+      streamBox.setCustomVideoUI(streamInfo[1]+'-'+streamInfo[2]);
       rongRTCStream.subscribe(user).then(function (user) {
         videoDom.srcObject = user.stream.mediaStream;
       }, function (error) {
@@ -638,12 +659,13 @@
   function removeCustomVideoBox(user) {
     var streamBox = StreamBox.get(user.id+'custom');
     streamList.removeBox(streamBox);
+    hasCustomVideoTag = false;
     var isSelf = user.id === loginUserId;
     if(isSelf){
       user = {
         id: loginUserId,
         stream: {
-          tag: CustomizeTag.PROMOTIONAL_VIDEO,
+          tag: CustomVideoTagName,
           type: 2
         }
       }
@@ -687,7 +709,7 @@
   }
 
   function removeUnpublishUser(user) {
-    if(user.stream.tag === CustomizeTag.PROMOTIONAL_VIDEO){
+    if(user.stream.tag.substring(0,17) === CustomizeTag.PROMOTIONAL_VIDEO){
       removeCustomVideoBox(user)
     }else {
       removeUserStream(user)
@@ -788,7 +810,13 @@
     // whiteboardBtn.onclick = '';
     userListBtn.onclick = common.UI.showUserList;
     userListCloseBtn.onclick = common.UI.hideUserList;
-    userCustomVideoBtn.onclick = CustomVideoOpt.switchCustomVideo;
+    userCustomVideoBtn.onclick = function(){
+      if(!hasCustomFileVideo()){
+        CustomVideoOpt.switchCustomVideo();
+      }else {
+        sealAlert(localeData.publishedCustomVideo);
+      }
+    };
     userCustomVideoCloseBtn.onclick = function(){
       removeCustomVideoBox({id: loginUserId})
     };
@@ -810,11 +838,12 @@
     })
   }
   function addVideoViewBox(user) {
-    if (user.stream.tag == 'screenshare') {
+    console.log(user,new Date().getTime(),'published')
+    if (user.stream.tag === 'screenshare') {
       addUserStream(user);
       return;
     }
-    if(user.stream.tag == 'customvideo') {
+    if(user.stream.tag.substring(0,17) === CustomizeTag.PROMOTIONAL_VIDEO) {
       getJoinUserName(user,function(){
         addCustomVideoBox(user);
       })

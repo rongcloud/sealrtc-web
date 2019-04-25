@@ -538,6 +538,8 @@
       self.id = id;
       self.resizeEvent = params.resizeEvent || utils.noop;
       self.dom = dom;
+      self.tag = params.tag;
+      self.userName = params.name;
       self.childDom = {
         video: videoDom,
         videoBtn: videoBtnDom,
@@ -622,9 +624,9 @@
     userListNumDom.innerHTML = '<span>在线人数（'+userList.length+'人）</span>';
     userListDom.innerHTML = '';
     for(var i=0;i<userList.length;i++){
-      if(userList[i].joinMode == 0){
+      if(userList[i].joinMode === 0){
         userJoinMode = '视频模式加入';
-      }else if(userList[i].joinMode == 1){
+      }else if(userList[i].joinMode === 1){
         userJoinMode = '音频模式加入';
       } else {
         userJoinMode = '旁听者模式加入';
