@@ -328,6 +328,14 @@
     return reg.test(val)
   };
 
+  var insertAfter = function(newEl, targetEl) {
+    var parentEl = targetEl.parentNode;
+    if(parentEl.lastChild == targetEl){
+      parentEl.appendChild(newEl);
+    }else{
+      parentEl.insertBefore(newEl,targetEl.nextSibling);
+    }     
+  }
   var Dom = {
     create: create,
     get: getDom,
@@ -344,7 +352,8 @@
     getChild: getChildDom,
     addClass: addClass,
     removeClass: removeClass,
-    hasClass: hasClass
+    hasClass: hasClass,
+    insertAfter: insertAfter
   };
   //暂时支持 on 单次
   function EventEmitter() {

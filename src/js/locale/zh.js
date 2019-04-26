@@ -22,6 +22,7 @@
       tokenExpired: 'token 已失效，请重新获取',
       kickedByOtherTips: '此用户已被其他端登录！',
       verifyCodeTips: '您还未验证过手机号，请先验证',
+      publishedCustomVideo: '已发布自定义视频信息',
 
       getTokenError: '获取 token 失败',
       rtcError: '初始化 RTC 失败',
@@ -48,7 +49,7 @@
       verifyCode: '手机验证码'
     },
     textContent: {
-      closeVideo: '加入时关闭摄像头',
+      closeVideo: '音频模式',
       closeAudio: '加入时关闭麦克风',
       bystanders: '旁听者模式',
       setting: '通话设置',
@@ -74,7 +75,9 @@
     title: {
       hangup: '挂断',
       screenshare: '屏幕共享',
-      whiteboard: '白板'
+      whiteboard: '白板',
+      userlist: '在线成员',
+      customvideo: '自定义视频流'
     }
   };
 })(window);

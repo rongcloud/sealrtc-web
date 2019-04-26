@@ -39,6 +39,7 @@ input[type="number"]{
   background-size: cover;
   background-color: #4a5267;
   min-width: 1000px;
+  min-height: 760px;
   z-index: 10;
 }
 
@@ -97,6 +98,10 @@ input[type="number"]{
 
 .rong-login .rong-opt-checkbox input[type="checkbox"] {
   display: none;
+}
+
+.rong-login .rong-opt-checkbox input[type="radio"] {
+  height: 14px;
 }
 
 .rong-login .rong-opt-checkbox input[type="checkbox"]:checked + label::after {
@@ -399,7 +404,14 @@ input[type="number"]{
   background-image: url('./img/user-list.svg');
 }
 
+.rong-rtc .rong-rtc-opt .rong-opt-videoicon-open {
+  background-image: url('./img/custom_video_open.svg');
+}
 
+.rong-rtc .rong-rtc-opt .rong-opt-videoicon-close {
+  background-image: url('./img/custom_video_close.svg');
+  display: none;
+}
 .rong-rtc .rong-wb-box {
   display: none;
   position: absolute;
@@ -515,9 +527,12 @@ input[type="number"]{
   background: #00000047;
   border-radius: 4px;
 }
-/* .rong-stream-wrap .rong-stream-box .rong-sound {
+.rong-stream-wrap .rong-stream-box .rong-sound-show {
   display: inline-block;
-} */
+}
+.rong-stream-wrap .rong-stream-box .rong-sound-hide {
+  display: none;
+}
 
 .rong-stream-wrap .rong-stream-box .rong-user-name {
   /* display: none; */
@@ -583,6 +598,21 @@ input[type="number"]{
   box-sizing: border-box;
 }
 
+.rong-stream-wrap .rong-stream-box .rong-custom-video {
+  display: none;
+  position: absolute;
+  width: 100%;
+  height: 30px;
+  z-index: 16;
+  background: #0e0e0ea8;
+  bottom: 0px;
+  text-align: center;
+  color: #fff;
+  font-size: 13px;
+  line-height: 30px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .rong-stream-wrap .rong-stream-box .rong-opt-btn {
   width: 24px;
   height: 28px;
@@ -721,7 +751,7 @@ input[type="number"]{
   background: #fffefe;
   width: 255px;
   height: 100%;
-  z-index: 12;
+  z-index: 15;
   right: 0;
   top: 53px;
   box-shadow: 0 0 1px #ccc;
@@ -770,6 +800,40 @@ input[type="number"]{
   cursor: pointer;
   padding-right: 10px;
   color: #3A91F3;
+}
+
+.rong-user-customvideo {
+  display: none;
+  position: absolute;
+  width: 238px;
+  height: 108px;
+  top: 53px;
+  right: 105px;
+  z-index: 15;
+  text-align: center;
+  padding: 0 10px;
+}
+.rong-user-customvideo .customvideo-triangle {
+  width: 238px;
+  height: 9px;
+  background-image: url("./img/triangle.svg");
+  background-repeat: no-repeat;
+  background-position-x: 112px;
+}
+.rong-user-customvideo .customvideo-list {
+  width: 238px;
+  height: 98px;
+  background: #fff;
+  border-radius: 9.8px;
+  color: #333;
+}
+.rong-user-customvideo .customvideo-list li {
+  height: 48px;
+  line-height: 48px;
+  cursor: pointer;
+}
+.rong-user-customvideo .customvideo-list li:nth-child(1) {
+  border-bottom: .8px solid #eaeaea;
 }
 .rong-alert-box {
   position: absolute;

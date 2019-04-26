@@ -338,6 +338,14 @@
       }
     }
 
+    function insertBox(streamBox,targetEl) {
+      var self = this;
+      if (!self.hasBox(streamBox)) {
+        self.streamBoxList.push(streamBox);
+        Dom.insertAfter(streamBox.dom,targetEl.dom);
+      }
+    }
+
     function removeBox(streamBox) {
       var self = this;
       if (self.hasBox(streamBox)) {
@@ -366,6 +374,7 @@
       self.dom = createLocaleDom(temp);
 
       self.addBox = addBox;
+      self.insertBox = insertBox;
       self.removeBox = removeBox;
       self.hasBox = hasBox;
       self.clearBox = clear;
@@ -384,8 +393,6 @@
    */
   /* TODO 去掉该变量的使用, 应使用 streamList 实例进行 box 操作 */
   var StreamBoxList = {}; // streamBox 集合
-  console.log('StreamBoxList: ', StreamBoxList);
-
   var StreamBox = (function () {
     var setClass = function (dom, className, isOpen) {
       isOpen ? addClass(dom, className) : removeClass(dom, className);
@@ -431,31 +438,26 @@
         self.isZoom = true;
         addClass(this.dom, OptClassName.IS_ZOOM)
       }
-      // self.dom.childNodes[1].style.objectFit='contain';
     }
     function showSoundGif() {
-      var soundDom = this.dom.childNodes[3].childNodes[1];
-      // console.log('sound--',soundDom)
-      soundDom.style.display = 'inline-block';
+      var soundDom = this.dom.childNodes[3].childNodes[1].childNodes[0];
+      addClass(soundDom,'rong-sound-show')
     }
     function hideSoundGif() {
-      var soundDom = this.dom.childNodes[3].childNodes[1];
-      soundDom.style.display = 'none';
+      var soundDom = this.dom.childNodes[3].childNodes[1].childNodes[0];
+      removeClass(soundDom,'rong-sound-show')
     }
     function closeVideoBySelf() {
       setClass(this.dom, OptClassName.CLOSE_VIDEO_BY_SELF, true);
       this.isVideoOpenedBySelf = false;
-      console.log('close my video')
     }
     function openVideoBySelf() {
       setClass(this.dom, OptClassName.CLOSE_VIDEO_BY_SELF, false);
       this.isVideoOpenedBySelf = true;
-      console.log('open my video')
     }
     function closeAudioBySelf() {
       setClass(this.dom, OptClassName.CLOSE_AUDIO_BY_SELF, true);
       this.isAudioOpenedBySelf = false;
-      console.log('close my audio')
     }
     function openAudioBySelf() {
       setClass(this.dom, OptClassName.CLOSE_AUDIO_BY_SELF, false);
@@ -490,7 +492,6 @@
       this.dom.childNodes[1].style.transform = 'rotateY(180deg)';
     }
     function disabledVideoBySelf() {
-      console.log(this.dom.childNodes[9].childNodes[1])
       var selfOptDom = this.dom.childNodes[9]
       selfOptDom.childNodes[1].style.display = 'none';
       selfOptDom.childNodes[3].style.display = 'inline-block';
@@ -499,6 +500,13 @@
       var selfOptDom = this.dom.childNodes[9]
       selfOptDom.childNodes[5].style.display = 'none';
       selfOptDom.childNodes[7].style.display = 'inline-block';
+    }
+    function setCustomVideoUI(videoTitle) {
+      var videoBoxChild = this.dom.children;
+      videoBoxChild[1].style.display = 'none';
+      videoBoxChild[4].style.display = 'none';
+      videoBoxChild[5].style.display = 'block';
+      videoBoxChild[5].innerText = videoTitle;
     }
     return function (id, params, temp) {
       params = params || {};
@@ -530,6 +538,8 @@
       self.id = id;
       self.resizeEvent = params.resizeEvent || utils.noop;
       self.dom = dom;
+      self.tag = params.tag;
+      self.userName = params.name;
       self.childDom = {
         video: videoDom,
         videoBtn: videoBtnDom,
@@ -560,6 +570,7 @@
       self.disabledAudioBySelf = disabledAudioBySelf;
       self.showSoundGif = showSoundGif;
       self.hideSoundGif = hideSoundGif;
+      self.setCustomVideoUI = setCustomVideoUI;
 
       StreamBoxList[id] = self;
 
@@ -580,7 +591,6 @@
     Dom.showByClass('rong-login');
     Dom.hideByClass('rong-btn-loading');
     Dom.showByClass('rong-btn-start');
-    // Dom.getById('isCloseVideo').checked = false;
   }
 
   var WhiteBoard = (function () {
@@ -614,9 +624,9 @@
     userListNumDom.innerHTML = '<span>在线人数（'+userList.length+'人）</span>';
     userListDom.innerHTML = '';
     for(var i=0;i<userList.length;i++){
-      if(userList[i].joinMode == 0){
+      if(userList[i].joinMode === 0){
         userJoinMode = '视频模式加入';
-      }else if(userList[i].joinMode == 1){
+      }else if(userList[i].joinMode === 1){
         userJoinMode = '音频模式加入';
       } else {
         userJoinMode = '旁听者模式加入';
@@ -627,12 +637,36 @@
     }
   }
   function showUserList() {
-    // var userListDom = Dom.getByClass('rong-opt-userlist');
     Dom.showByClass('rong-user-list');
   }
   function hideUserList() {
-    console.log(111)
-    Dom.hideByClass('rong-user-list')
+    Dom.hideByClass('rong-user-list');
+  }
+  function showCustomVideoList() {
+    Dom.showByClass('rong-user-customvideo');
+  }
+  function hideCustomVideoList() {
+    Dom.hideByClass('rong-user-customvideo');
+  }
+  function showCustomVideoOpenBtn() {
+    Dom.showByClass('rong-opt-videoicon-open');
+    Dom.hideByClass('rong-opt-videoicon-close');
+  }
+  function hideCustomVideoOpenBtn() {
+    Dom.hideByClass('rong-opt-videoicon-open');
+  }
+  function showCustomVideoCloseBtn() {
+    Dom.hideByClass('rong-user-customvideo');
+    Dom.hideByClass('rong-opt-videoicon-open');
+    Dom.showByClass('rong-opt-videoicon-close');
+  }
+  function switchCustomVideo() {
+    var isOpen = Dom.getByClass('rong-user-customvideo').style.display === 'block';
+    if(isOpen) {
+      hideCustomVideoList();
+    }else {
+      showCustomVideoList();
+    }
   }
   var UI = {
     RongRTCPage: RongRTCPage,
@@ -642,7 +676,15 @@
     backLoginPage: backLoginPage,
     userListView: userListView,
     showUserList: showUserList,
-    hideUserList: hideUserList
+    hideUserList: hideUserList,
+    customVideoOpt: {
+      switchCustomVideo: switchCustomVideo,
+      showCustomVideoList: showCustomVideoList,
+      hideCustomVideoList: hideCustomVideoList,
+      showCustomVideoOpenBtn: showCustomVideoOpenBtn,
+      showCustomVideoCloseBtn: showCustomVideoCloseBtn,
+      hideCustomVideoOpenBtn: hideCustomVideoOpenBtn
+    }
   };
 
   var common = {
