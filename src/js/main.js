@@ -72,7 +72,7 @@
   };
 
   var CustomizeTag = {
-    NORMAL: 'normal',
+    NORMAL: 'RongCloudRTC',
     SCREENSHARE: 'screenshare',
     PROMOTIONAL_VIDEO: 'RongRTCFileVideo-'
   };
@@ -325,7 +325,7 @@
       user.stream.size = rongRTC.StreamSize.MIN;
       rongRTCStream.subscribe(user).then(function (user) {
         showUserStream(user);
-        setStreamBox(user.id, user.stream.mediaStream);
+        setStreamBox(user.id, user.stream.type);
         userStreams.add(user);
         if (user.stream.enable.video == false) {
           streamBox.closeVideoByOther();
@@ -619,14 +619,13 @@
     streamBox.setCustomVideoUI(currentUserName);
     var videoDom = streamBox.dom.children[0];
     videoDom.loop = true;
-    videoDom.muted = true;
     if(isSelf) {
       if(videoId === 1){
         videoDom.src = './videos/video_demo1.mp4';
-        videoFileName = 'video1';
+        videoFileName = '自定义视频';
       }else {
         videoDom.src = './videos/video_demo2.mp4';
-        videoFileName = 'video2';
+        videoFileName = '自定义视频';
       }
       var count = 0;
       streamBox.setCustomVideoUI(currentUserName+'-'+videoFileName);
@@ -950,6 +949,7 @@
     }else {
       addUserBox({ id: loginUserId });
       unpublishedVideoUI();
+      CustomVideoOpt.hideCustomVideoOpenBtn();
       var streamBox = StreamBox.get(loginUserId);
       streamBox.closeVideoBySelf();
       streamBox.closeAudioBySelf();
@@ -1111,7 +1111,6 @@
     joinRoom(params.roomId, params.token).then(function (roomUsers) {
       console.log(roomUsers.users.length)
       var peopleNum = roomUsers.users.length;
-      // var peopleNum = 4;
       RTCNumberCheck(peopleNum, params);
       rongReport.start({
         frequency: 500

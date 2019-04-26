@@ -610,6 +610,8 @@ input[type="number"]{
   color: #fff;
   font-size: 13px;
   line-height: 30px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .rong-stream-wrap .rong-stream-box .rong-opt-btn {
   width: 24px;

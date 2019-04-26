@@ -652,6 +652,9 @@
     Dom.showByClass('rong-opt-videoicon-open');
     Dom.hideByClass('rong-opt-videoicon-close');
   }
+  function hideCustomVideoOpenBtn() {
+    Dom.hideByClass('rong-opt-videoicon-open');
+  }
   function showCustomVideoCloseBtn() {
     Dom.hideByClass('rong-user-customvideo');
     Dom.hideByClass('rong-opt-videoicon-open');
@@ -679,7 +682,8 @@
       showCustomVideoList: showCustomVideoList,
       hideCustomVideoList: hideCustomVideoList,
       showCustomVideoOpenBtn: showCustomVideoOpenBtn,
-      showCustomVideoCloseBtn: showCustomVideoCloseBtn
+      showCustomVideoCloseBtn: showCustomVideoCloseBtn,
+      hideCustomVideoOpenBtn: hideCustomVideoOpenBtn
     }
   };
 
