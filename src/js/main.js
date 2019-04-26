@@ -840,6 +840,12 @@
     userListBtn.onclick = common.UI.showUserList;
     userListCloseBtn.onclick = common.UI.hideUserList;
     userCustomVideoBtn.onclick = function(){
+      // var explorer =navigator.userAgent ;
+      var isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+      if(isSafari) {
+        sealAlert('请使用 Chrome 浏览器体验此功能');
+        return;
+      }
       if(!hasCustomFileVideo()){
         CustomVideoOpt.switchCustomVideo();
       }else {
