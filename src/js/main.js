@@ -72,6 +72,7 @@
   };
 
   var CustomizeTag = {
+    // NORMAL: 'normal',
     NORMAL: 'RongCloudRTC',
     SCREENSHARE: 'screenshare',
     PROMOTIONAL_VIDEO: 'RongRTCFileVideo-'
@@ -122,6 +123,12 @@
     var stramBoxList = streamList.streamBoxList;
     if (stramBoxList.length < 2) {
       sealToast.show();
+    }else if(stramBoxList.length === 2) {
+      stramBoxList.forEach(function(item) {
+        if(item.tag){
+          sealToast.show();
+        }
+      })
     }
   }
 
@@ -600,16 +607,8 @@
     console.log(user,videoId,'addCustomVideoBox');
     var isSelf = user.id === loginUserId;
     var targetBox,currentUserName,videoFileName;
-    // if(isSelf){
     targetBox = StreamBox.get(loginUserId);
     currentUserName = getCurrentUserName();
-    // }else {
-    //   targetBox = StreamBox.get(user.id);
-    //   currentUserName = user.name;
-    //   if(!targetBox){
-    //     targetBox = StreamBox.get(loginUserId);
-    //   }
-    // }
     var streamBox = new StreamBox(user.id+'custom', {
       resizeEvent: resizeStream,
       name: currentUserName,
@@ -622,13 +621,13 @@
     if(isSelf) {
       if(videoId === 1){
         videoDom.src = './videos/video_demo1.mp4';
-        videoFileName = '自定义视频';
+        videoFileName = 'video1';
       }else {
         videoDom.src = './videos/video_demo2.mp4';
-        videoFileName = '自定义视频';
+        videoFileName = 'video2';
       }
       var count = 0;
-      streamBox.setCustomVideoUI(currentUserName+'-'+videoFileName);
+      streamBox.setCustomVideoUI(currentUserName+'-'+'自定义视频');
       CustomVideoTagName = getCustomVideoName(currentUserName,videoFileName);
       videoDom.oncanplay = function(){
         if(count > 0){
@@ -648,12 +647,13 @@
           console.log('pub success,customvideo');
           CustomVideoOpt.showCustomVideoCloseBtn();
         },function (err) {
-          console.log('custom video pub err',err)
+          console.log('custom video pub err',err);
+          removeCustomVideoBox({id: loginUserId},null);
         })
       }
     }else {
       var streamInfo = user.stream.tag.split('-');
-      streamBox.setCustomVideoUI(streamInfo[1]+'-'+streamInfo[2]);
+      streamBox.setCustomVideoUI(streamInfo[1]+'-'+'自定义视频');
       rongRTCStream.subscribe(user).then(function (user) {
         videoDom.srcObject = user.stream.mediaStream;
       }, function (error) {
