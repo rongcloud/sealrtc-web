@@ -290,7 +290,8 @@
 
   var checkRTCValue = function () {
     var isRoomIdEmpty = !roomDom.value;
-    var isUserNameEmpty = !userNameDom.value;
+    var userNameVal = utils.trim(userNameDom.value);
+    var isUserNameEmpty = !userNameVal;
     var isValid = true;
     var prompt = '';
     if (isRoomIdEmpty) {
@@ -303,6 +304,10 @@
     }
     if(isUserNameEmpty){
       prompt = localeData.userNameEmpty;
+      isValid = false;
+    }
+    if(userNameVal.indexOf(' ') !== -1){
+      prompt = localeData.userNameIllegal;
       isValid = false;
     }
     return {
@@ -415,6 +420,8 @@
           }
           reconnect();
         }
+      },{
+        rate: [5000,2000]
       })
     };
     reconnect();

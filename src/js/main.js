@@ -20,6 +20,7 @@
   var videoTimer = new common.SealTimer();
   var sealToast = new common.SealToast();
   var EventName = RongSeal.EventName;
+  var isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
   var ClassName = {
     LOGIN_PAGE: 'rong-login',
     RTC_PAGE: 'rong-rtc',
@@ -88,6 +89,15 @@
     SRJoinNumAV: 9,
     SRJoinNumAudioOnly: 30
   }
+  function getSecretOption() {
+    var peopleNumOpt = location.href.split('?');
+    if(peopleNumOpt[1]){
+      var limitNumArr = peopleNumOpt[1].split('&&');
+      LimitNum.SRJoinNumAV = limitNumArr[0];
+      LimitNum.SRJoinNumAudioOnly = limitNumArr[1];
+    }
+  }
+  getSecretOption();
 
   function streamBoxSroll(event) {
     var direction = event.target.className;
@@ -840,8 +850,6 @@
     userListBtn.onclick = common.UI.showUserList;
     userListCloseBtn.onclick = common.UI.hideUserList;
     userCustomVideoBtn.onclick = function(){
-      // var explorer =navigator.userAgent ;
-      var isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
       if(isSafari) {
         sealAlert('请使用 Chrome 浏览器体验此功能');
         return;
@@ -862,14 +870,29 @@
   }
 
   function getJoinUserName(user,callback) {
+    var getPhone = function(userId){
+      var nums = userId.split('');
+      nums.length = 11;
+      return nums.join('');
+    }
     getRtcUserInfos([]).then(function(infos){
+      var username = 'Martian'
       for(var key in infos){
         var userInfo = JSON.parse(infos[key]);
-        if(user.id == userInfo.userId){
-          user.name = userInfo.userName;
-          callback();
+        var userId = userInfo.userId;
+        if(user.id.length == 15 && userId.length == 15){
+          if(getPhone(user.id) == getPhone(userId)){
+            username = userInfo.userName;
+            break;
+          }
+        }
+        if(user.id == userId){
+          username = userInfo.userName;
+          break;
         }
       }
+      user.name = username;
+      callback();
     })
   }
   function addVideoViewBox(user) {
@@ -1118,9 +1141,11 @@
       console.log(roomUsers.users.length)
       var peopleNum = roomUsers.users.length;
       RTCNumberCheck(peopleNum, params);
-      rongReport.start({
-        frequency: 500
-      });
+      if(!isSafari){
+        rongReport.start({
+          frequency: 500
+        });
+      }
       //获取 room 下所有 key val,传空[]
       var mode = getRtcMode(peopleNum,params);
       var userData = RongSeal.setUserInfoObj({joinMode: mode});
@@ -1130,8 +1155,8 @@
       var strInfo = JSON.stringify(userInfo);
       RongSeal.roomMsg = roomMsg;
       RongSeal.rongStorage.set(key,strInfo,roomMsg).then(function(){
-        setRtcUserInfos();
         console.log('set store S')
+        setRtcUserInfos();
       }).catch(function(err){
         console.log('set storage F:',err)
       });

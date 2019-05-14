@@ -14,6 +14,7 @@
       userNameEmpty: '用户名称不能为空',
       userIdEmpty: '用户 ID 不能为空',
       roomIdIllegal: '会议室 ID 只能包含大小写字母、阿拉伯数字、+、=、-、_ 且长度不能超过 64 个字符',
+      userNameIllegal: '用户名不能包含空格',
       networkError: '网络已断开',
       phoneNumberErr: '手机号格式非法',
       verifyCodeErr: '请输入手机验证码',
@@ -77,7 +78,8 @@
       screenshare: '屏幕共享',
       whiteboard: '白板',
       userlist: '在线成员',
-      customvideo: '自定义视频流'
+      customvideo: '自定义视频流',
+      closecustomvideo: '关闭自定义视频流'
     }
   };
 })(window);

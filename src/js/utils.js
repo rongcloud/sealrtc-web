@@ -158,7 +158,6 @@
 
     var onLoad = function () {
       var result = xhr.responseText;
-      console.log('result: ', result);
       if (isSuccess(xhr)) {
         success(result);
       } else {
@@ -366,7 +365,10 @@
       events[name] = event;
     };
   }
-
+  //去字符串前后空格
+  function trim(str) {
+    return str.replace(/(^\s*)|(\s*$)/g, '');
+  }
   utils = {
     noop: noop,
     forEach: forEach,
@@ -378,7 +380,8 @@
     download: download,
     Dom: Dom,
     isNumberAndLetter: isNumberAndLetter,
-    EventEmitter
+    EventEmitter,
+    trim: trim
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.utils = utils;
