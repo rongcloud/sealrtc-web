@@ -41,7 +41,7 @@
     STREAM: 'Rong-{id}'
   };
   var loginUserId, rongRTC, rongRTCRoom, rongRTCStream, rongRTCMessage, rongStorage, rongReport;
-  var rongRTCPage, streamList, CustomVideoTagName, hasCustomVideoTag;
+  var rongRTCPage, streamList, hasCustomVideoTag, userJoinMode;
   var userStreams = {
     users: {},
     getList: function (id) {
@@ -76,7 +76,7 @@
     // NORMAL: 'normal',
     NORMAL: 'RongCloudRTC',
     SCREENSHARE: 'screenshare',
-    PROMOTIONAL_VIDEO: 'RongRTCFileVideo-'
+    PROMOTIONAL_VIDEO: 'RongRTCFileVideo'
   };
 
   var JoinMode = {
@@ -599,9 +599,6 @@
     var userNameStr = Dom.getById('rongUserName').innerText;
     return userNameStr.substring(5,userNameStr.length);
   }
-  function getCustomVideoName(currentUserName,videoFileName) {
-    return CustomizeTag.PROMOTIONAL_VIDEO+currentUserName+'-'+videoFileName;
-  }
   function hasCustomFileVideo() {
     var userBoxList = streamList.streamBoxList;
     hasCustomVideoTag = false
@@ -616,7 +613,7 @@
   function addCustomVideoBox(user,videoId) {
     console.log(user,videoId,'addCustomVideoBox');
     var isSelf = user.id === loginUserId;
-    var targetBox,currentUserName,videoFileName;
+    var targetBox,currentUserName;
     targetBox = StreamBox.get(loginUserId);
     currentUserName = getCurrentUserName();
     var streamBox = new StreamBox(user.id+'custom', {
@@ -631,14 +628,11 @@
     if(isSelf) {
       if(videoId === 1){
         videoDom.src = './videos/video_demo1.mp4';
-        videoFileName = 'video1';
       }else {
         videoDom.src = './videos/video_demo2.mp4';
-        videoFileName = 'video2';
       }
       var count = 0;
       streamBox.setCustomVideoUI(currentUserName+'-'+'自定义视频');
-      CustomVideoTagName = getCustomVideoName(currentUserName,videoFileName);
       videoDom.oncanplay = function(){
         if(count > 0){
           return;
@@ -648,7 +642,7 @@
         user = {
           id: loginUserId,
           stream: {
-            tag: CustomVideoTagName,
+            tag: CustomizeTag.PROMOTIONAL_VIDEO,
             type: 2,
             mediaStream: ms
           }
@@ -662,13 +656,14 @@
         })
       }
     }else {
-      var streamInfo = user.stream.tag.split('-');
-      streamBox.setCustomVideoUI(streamInfo[1]+'-'+'自定义视频');
-      rongRTCStream.subscribe(user).then(function (user) {
-        videoDom.srcObject = user.stream.mediaStream;
-      }, function (error) {
-        sealAlert(localeData.subscriptError + JSON.stringify(error));
-      });
+      getJoinUserName(user,function() {
+        streamBox.setCustomVideoUI(user.name+'-'+'自定义视频');
+        rongRTCStream.subscribe(user).then(function (user) {
+          videoDom.srcObject = user.stream.mediaStream;
+        }, function (error) {
+          sealAlert(localeData.subscriptError + JSON.stringify(error));
+        });
+      })
     }
   }
     
@@ -691,7 +686,7 @@
       user = {
         id: loginUserId,
         stream: {
-          tag: CustomVideoTagName,
+          tag: CustomizeTag.PROMOTIONAL_VIDEO,
           type: 2
         }
       }
@@ -741,7 +736,7 @@
   }
 
   function removeUnpublishUser(user) {
-    if(user.stream.tag.substring(0,17) === CustomizeTag.PROMOTIONAL_VIDEO){
+    if(user.stream.tag === CustomizeTag.PROMOTIONAL_VIDEO){
       removeCustomVideoBox(user)
     }else {
       removeUserStream(user)
@@ -803,18 +798,20 @@
     streamBox.isScreenShareOpened ? closeScreenShare() : openScreenshare();
   }
   function quit() {
-    removeRtcUserInfos(loginUserId,RongSeal.roomMsg,function(){
-      rongRTCRoom.leave().then(function () {
-        console.log('quit---')
-        RongSeal.im.disconnect();
-      }, function () {
-        RongSeal.im.disconnect();
+    RongSeal.whiteBoard.destroyWBRoom(function(){
+      removeRtcUserInfos(loginUserId,RongSeal.roomMsg,function(){
+        rongRTCRoom.leave().then(function () {
+          console.log('quit---')
+          RongSeal.im.disconnect();
+        }, function () {
+          RongSeal.im.disconnect();
+        });
+        common.UI.backLoginPage();
+        RongSeal.videoTimer.stop();
+        RongSeal.userStreams.clearUsers();
+        sealToast.destroy();
+        RongSeal.destroyRongRTCPage();
       });
-      common.UI.backLoginPage();
-      RongSeal.videoTimer.stop();
-      RongSeal.userStreams.clearUsers();
-      sealToast.destroy();
-      RongSeal.destroyRongRTCPage();
     });
   }
   function cancelPublishedStream() {
@@ -839,14 +836,16 @@
   
   function bindRTCBtnEvent() {
     var hangupBtn = Dom.getByClass(ClassName.HANGUP_BUTTON),
-      // whiteboardBtn = Dom.getByClass(ClassName.WHITEBOARD_BUTTON),
+      whiteboardBtn = Dom.getByClass(ClassName.WHITEBOARD_BUTTON),
       screenShareBtn = Dom.getByClass(ClassName.SCREENSHARE_BUTTON),
       userListBtn = Dom.getByClass(ClassName.USER_LIST_BUTTON),
       userListCloseBtn = Dom.getByClass(ClassName.USER_LIST_CLOSE_BUTTON),
       userCustomVideoBtn = Dom.getByClass(ClassName.USER_CUSTOM_VIDEO_OPEN_BUTTON),
       userCustomVideoCloseBtn = Dom.getByClass(ClassName.USER_CUSTOM_VIDEO_CLOSE_BUTTON);
     hangupBtn.onclick = cancelPublishedStream;
-    // whiteboardBtn.onclick = '';
+    whiteboardBtn.onclick = function() {
+      RongSeal.whiteBoard.whiteBoardLogic(userJoinMode);
+    };
     userListBtn.onclick = common.UI.showUserList;
     userListCloseBtn.onclick = common.UI.hideUserList;
     userCustomVideoBtn.onclick = function(){
@@ -901,7 +900,7 @@
       addUserStream(user);
       return;
     }
-    if(user.stream.tag.substring(0,17) === CustomizeTag.PROMOTIONAL_VIDEO) {
+    if(user.stream.tag === CustomizeTag.PROMOTIONAL_VIDEO) {
       addCustomVideoBox(user);
       return ;
     }
@@ -984,6 +983,7 @@
       streamBox.closeAudioBySelf();
       streamBox.disabledVideoBySelf();
       streamBox.disabledAudioBySelf();
+      // common.UI.hideWhiteBoardBtn();
     }
   }
 
@@ -992,6 +992,7 @@
     if(params.bystanderEnable == true){
       //观察者
       joinMode = JoinMode.SRJoinModeObserver
+      userJoinMode = 'bystander';
     }else {
       if(peopleNum < LimitNum.SRJoinNumAV){
         //音视频
@@ -1025,6 +1026,7 @@
   function getRtcUserInfos(InfosKey){
     return new Promise(function(resolve, reject){
       RongSeal.rongStorage.get(InfosKey).then(function (infos){
+        delete infos.rongRTCWhite;
         resolve(infos)
       }).catch(function (err){
         // console.log(err)
@@ -1034,6 +1036,7 @@
   }
   function setRtcUserInfos() {
     RongSeal.rongStorage.get([]).then(function (infos){
+      delete infos.rongRTCWhite;
       var userList = [];
       for(var key in infos){
         var userInfo = JSON.parse(infos[key]);

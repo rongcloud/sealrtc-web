@@ -609,9 +609,13 @@
         iframeDom.src = url;
         Dom.show(self.dom);
       };
-      self.hide = function () {
+      self.hide = function (callback) {
+        callback = callback || utils.noop;
         iframeDom.src = '';
+        iframeDom.contentWindow.RongWB.leaveWBRoom();
+        // iframeDom.close()
         Dom.hide(self.dom);
+        callback();
       };
       return self;
     };
@@ -668,6 +672,10 @@
       showCustomVideoList();
     }
   }
+  function hideWhiteBoardBtn() {
+    var whiteBoardBtn = Dom.getByClass('rong-opt-wb')
+    Dom.hide(whiteBoardBtn);
+  }
   var UI = {
     RongRTCPage: RongRTCPage,
     StreamList: StreamList,
@@ -684,7 +692,8 @@
       showCustomVideoOpenBtn: showCustomVideoOpenBtn,
       showCustomVideoCloseBtn: showCustomVideoCloseBtn,
       hideCustomVideoOpenBtn: hideCustomVideoOpenBtn
-    }
+    },
+    hideWhiteBoardBtn: hideWhiteBoardBtn
   };
 
   var common = {

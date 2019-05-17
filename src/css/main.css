@@ -420,7 +420,7 @@ input[type="number"]{
   width: 100%;
   height: 100%;
   z-index: 20;
-  background-color: black;
+  background-color: #fff;
 }
 
 .rong-rtc .rong-wb-box .rong-wb-close {
@@ -443,7 +443,7 @@ input[type="number"]{
   width: 100%;
   height: 100%;
   z-index: 20;
-  background-color: black;
+  background-color: #fff;
 }
 
 .rong-stream-wrap {

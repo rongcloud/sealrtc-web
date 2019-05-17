@@ -361,7 +361,7 @@
   };
   //用户信息缓存
   function setUserInfoObj(params) {
-    var currentTimestamp = new Date().getTime().toString();
+    var currentTimestamp = new Date().getTime();
     var userInfo = {
       userId: roomTelNumDom.value,
       userName: userNameDom.value,
