@@ -11,8 +11,8 @@
 
 
   return {
-    appkey: 'z3v5yqkbv8v30',
-    // navi: 'http://navqa.cn.ronghub.com',
-    server: 'https://sealrtc.rongcloud.cn'
+    appkey: 'appkey',
+    // navi: 'navi',
+    server: 'server'
   };
 });
