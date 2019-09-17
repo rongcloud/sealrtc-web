@@ -1,5 +1,24 @@
 $loginBackColor: rgb(74, 82, 103);
-$loginBackImg: url('./img/cover.png');
+$loginBackImg: url('../img/cover.png');
+
+@font-face {
+    font-family: colorEmojiFont;
+    src: local("Noto Color Emoji"), local("Apple Color Emoji"), local("Segoe UI Emoji");
+    unicode-range: U+1F300-1F5FF, U+1F900-1F9FF, U+1F600-1F64F, U+1F680-1F6FF, U+2600-26FF, U+2700-27BF, U+2300-23FF, U+1F000-1F02F, U+1F100-1F1FF, U+1F20-1F2FF, U+2122, U+2139, U+FE00-FE0F;
+}
+@font-face {
+    font-family: tickFont;
+    src: local("Microsoft YaHei"), local(sans-serif);
+    unicode-range: U+221a;
+}
+@font-face {
+    font-family: numberFont;
+    src: local("PingFangSC-Regular"), local(sans-serif);
+    unicode-range: U+0030-0039;
+}
+
+$fontfamily: tickFont, numberFont, colorEmojiFont, "Microsoft YaHei", sans-serif, "PingFangSC-Regular";
+
 
 html, body {
   height: 100%;
@@ -8,7 +27,17 @@ html, body {
   padding: 0;
   background-color: black;
   color: black;
+  font-family: $fontfamily;
 }
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+input[type="number"]{
+    -moz-appearance: textfield;
+}
+
 
 p, input, button {
   // margin: 5px 0;
@@ -35,7 +64,29 @@ ul, li {
   background-size: cover;
   background-color: $loginBackColor;
   min-width: 1000px;
+  min-height: 760px;
   z-index: 10;
+  .rong-login-systemTips {
+    clear: both;
+    text-align: left;
+    color: #fff;
+    font-size: 14px;
+  }
+  .rong-copyright {
+    position: absolute;
+    bottom: 0;
+    color: #fff;
+    text-align: center;
+    width: 100%;
+    font-size: 13px;
+  }
+  .rong-copyright p:nth-child(1){
+    display: inline-block;
+  }
+  .rong-copyright p:nth-child(2){
+    display: inline-block;
+    margin-left: 50px;
+  }
   .rong-login-content {
     position: absolute;
     top: 50%;
@@ -54,7 +105,7 @@ ul, li {
   }
   .rong-login-input {
     display: block;
-    margin: 40px 0;
+    margin: 40px 0 0 0;
     padding: 10px 20px;
     width: 100%;
     height: 48px;
@@ -118,6 +169,11 @@ ul, li {
     color: #FFFFFF;
     cursor: pointer;
   }
+  .rong-btn-start:disabled {
+    background-color: rgb(71, 81, 99);
+    border: rgb(71, 81, 99);
+    cursor: default;
+  }
   .rong-opt-resolution {
     position: absolute;
     right: 180px;
@@ -125,7 +181,7 @@ ul, li {
     width: 20px;
     height: 20px;
     display: inline-block;
-    background-image: url(./img/setting.svg);
+    background-image: url(../img/setting.svg);
     background-position: 0 0;
     background-repeat: no-repeat;
     background-size: 20px 20px;
@@ -206,7 +262,6 @@ ul, li {
 }
 
 .rong-rtc {
-  display: none;
   overflow: hidden;
   .rong-rtc-btn {
     display: inline-block;
@@ -215,7 +270,8 @@ ul, li {
     border-radius: 50%;
     background-position: center;
     background-repeat: no-repeat;
-    background-size: cover;
+    background-size: contain;
+    background-color: rgba(1, 1, 1, 0.6);
     cursor: pointer;
   }
   .rong-rtc-opt {
@@ -235,22 +291,49 @@ ul, li {
     .rong-user-title {
       float: left;
     }
+    .rong-time-title {
+      position: absolute;
+      left: 255px;
+    }
     .rong-rtc-btn {
       float: right;
       position: relative;
+      border: none;
       top: 50%;
       transform: translateY(-50%);
       margin: 0 13px;
     }
+    .rong-rtc-btn:disabled {
+      cursor: none;
+      pointer-events: none;
+      opacity: 0.6;
+    }
     .rong-opt-hangup {
-      background-color: rgb(232, 98, 98);
-      background-image: url('./img/hangup.png');
+      background-color: #e86262;
+      background-image: url(../img/hangup.png);
+      border: 1px solid #e86262;
     }
     .rong-opt-share {
-      background-image: url('./img/share.png');
+      background-image: url('../img/share.png');
+    }
+    .rong-opt-share-closed {
+      background-image: url('../img/share-close.png');
+      // background-color: white;
+    }
+    .rong-opt-camera-opened {
+      background-image: url('../img/video-disable.png');
+    }
+    .rong-opt-camera-closed {
+      background-image: url('../img/video-enable.png');
+    }
+    .rong-opt-mic-opened {
+      background-image: url('../img/audio-disable.png');
+    }
+    .rong-opt-mic-closed {
+      background-image: url('../img/audio-enable.png');
     }
     .rong-opt-wb {
-      background-image: url('./img/wb.png');
+      background-image: url('../img/wb.png');
     }
   }
   .rong-wb-box {
@@ -271,7 +354,7 @@ ul, li {
       right: 30px;
       border-radius: 4px;
       z-index: 30;
-      background-image: url('./img/whiteboard_close.png');
+      background-image: url('../img/whiteboard_close.png');
       cursor: pointer;
     }
     .rong-whiteboard {
@@ -288,8 +371,12 @@ ul, li {
 .rong-stream-wrap {
   position: absolute;
   top: 53px;
-  height: calc(100% - 53px);
+  bottom: 0;
   width: 100%;
+  .rong-stream-content {
+    width: 100%;
+    height: 100%;
+  }
   .rong-stream-list {
     max-width: 100%;
     height: 165px;
@@ -379,10 +466,10 @@ ul, li {
       cursor: pointer;
     }
     .rong-opt-video {
-      background-image: url('./img/video-enable.png');
+      background-image: url('../img/video-enable.png');
     }
     .rong-opt-audio {
-      background-image: url('./img/audio-enable.png');
+      background-image: url('../img/audio-enable.png');
     }
   }
   .rong-stream-box:hover .rong-user-name {
@@ -451,12 +538,12 @@ ul, li {
       display: block;
     }
     .rong-opt-video {
-      background-image: url('./img/video-disable.png');
+      background-image: url('../img/video-disable.png');
     }
   }
   .rong-audio-self-close {
     .rong-opt-audio {
-      background-image: url('./img/audio-disable.png');
+      background-image: url('../img/audio-disable.png');
     }
   }
   .rong-video-other-close {
@@ -529,5 +616,87 @@ ul, li {
       background-color: rgb(78, 108, 170);
       color: white;
     }
+  }
+}
+
+.rong-btn-loading {
+  width: 100%;
+  height: 50px;
+  border-radius: 40px;
+  border: 1px #28d6f6 solid;
+  background: #28d6f6;
+  font-size: 15px;
+  color: #FFFFFF;
+  cursor: pointer;
+  position: relative;
+  line-height: 50px;
+  img {
+    width: 22px;
+    margin: 0 5px 0 -5px;
+    position: absolute;
+    left: 151px;
+    top: 14px;
+  }
+}
+.rong-login-telverify {
+  .rong-login-sms-tip {
+    color: #fff;
+    font-size: 15px;
+    margin-bottom: -20px;
+  }
+  .rong-login-telNum {
+    display: block;
+    margin: 40px 0;
+    padding: 10px 20px;
+    width: 100%;
+    height: 48px;
+    border: 1px #DDDDDD solid;
+    border-radius: 40px;
+    background-color: white;
+    text-align: left;
+    font-size: 15px;
+    color: #777;
+    box-sizing: border-box;
+  }
+  .rong-login-verifyBtn {
+    float: right;
+    width: 33%;
+    height: 50px;
+    border: 1px #28d6f6 solid;
+    background: #28d6f6;
+    border-radius: 40px;
+    font-size: 15px;
+    color: #FFFFFF;
+    cursor: pointer;
+  }
+  .rong-login-verifyBtn:disabled {
+    border: 1px #475163 solid;
+    background: #475163;
+  }
+  .rong-login-verifyCode {
+    display: block;
+    float:left;
+    padding: 10px 20px;
+    width: 60%;
+    height: 48px;
+    border: 1px #DDDDDD solid;
+    border-radius: 40px;
+    background-color: white;
+    text-align: left;
+    font-size: 15px;
+    color: #777;
+    box-sizing: border-box;
+  }
+  .rong-btn-verifyLogin {
+    float: left;
+    width: 100%;
+    height: 50px;
+    margin: 30px 0;
+    border-radius: 40px;
+    border: 1px #28d6f6 solid;
+    background: #28d6f6;
+    font-size: 15px;
+    color: #FFFFFF;
+    cursor: pointer;
   }
 }

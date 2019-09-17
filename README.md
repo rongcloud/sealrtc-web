@@ -1,36 +1,43 @@
-## SealRTC-v3
+## SealRTC-IE-v3
 
-基于 RongRTC.3.0.0.js 的实时音视频会议 Demo
+基于 RongRTC-IE-3.0.4.js 的实时音视频会议 Demo
 
-## 使用说明
+## 注意事项
 
-1. 执行 npm install, 安装 eslint 等工具
-2. 必须使用 HTTPS 站点或 localhost 运行 Demo, 端口不限
-3. Demo 启动页为 src/index.html
+1、运行此 Demo 前, 必须安装 [IE 插件](https://docs.rongcloud.cn/rtc/rtclib/ie/plugin)
+
+2、运行此 Demo 前, 必须启动 [SealRTC-Server](https://github.com/rongcloud/sealrtc-server), 并将正确的 Server 地址填入 setting.js 中
+
+## 配置说明
+
+**setting.js 配置:**
+
+```js
+{
+  appkey: 'appkey',
+  navi: '导航地址',
+  server: 'sealrtc server 地址'
+}
+```
 
 ## 目录结构
 
 ```
-├── package.json
 └── src
-    ├── config.js  配置文件
     ├── index.html  程序启动页
-    ├── css  资源文件
-    │   ├── img  图片资源
+    ├── setting.js  配置文件
+    ├── img  图片资源
+    ├── css  样式文件
     │   ├── main.css
     │   └── main.scss
     ├── js
-    │   ├── utils.js  工具方法
-    │   ├── common.js  程序相关工具方法
+    │   ├── main.js  
     │   ├── login.js  登录
-    │   ├── main.js  音视频会议
-    │   └── locale  多语言
-    │       ├── en.js  英文配置
-    │       └── zh.js  中文配置
-    ├── lib
-    │   ├── RongRTC.3.0.0.js  
-    │   ├── frameImage.js  获取 stream 帧图片
-    │   └── screenshare.js  屏幕共享
-    └── plugin
-        └── screenshare-addon.zip  屏幕共享插件
+    │   ├── rtc.js  音视频会议
+    │   └── common  公共文件
+    │       ├── promise.js  Promise 兼容层
+    │       ├── service.js  调用接口封装
+    │       ├── common.js  应用公用方法
+    │       └── utils.js  工具方法
+    └── lib
 ```
