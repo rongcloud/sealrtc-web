@@ -5,7 +5,6 @@
     Dom = utils.Dom,
     addClass = Dom.addClass,
     removeClass = Dom.removeClass;
-
   var eventEmitter = new utils.EventEmitter();
   var EventName = {
     NETWORK_ERROR: 'network_error'
@@ -14,6 +13,7 @@
   var StreamListTemp = Dom.getById('RongStreamList').innerText; // 音视频列表展示模板
   var StreamBoxTemp = Dom.getById('RongStreamBox').innerText; // 单个音视频流展示模板
   var AlertTemp = Dom.getById('RongAlert').innerText; // 提示弹框展示模板
+  var TipsTemp = Dom.getById('RongTips').innerText; // 提示弹框展示模板
 
   var OptClassName = {
     isSelf: 'rong-is-self',
@@ -190,6 +190,31 @@
       win.document.body.removeChild(alertBox);
     };
   }
+  var sealTipsList = [];
+  /**
+  * 提示弹框
+  * @param {string} str 提示信息
+  * @param {object} duration 消息停留时间
+  */
+  function sealTips(str, duration) {
+    sealTipsList.push([str, duration]);
+    if (sealTipsList.length > 1) {
+      return;
+    }
+    var innerHTML = utils.tplEngine(TipsTemp, {
+      content: str
+    });
+    var alertBox = createLocaleDom(innerHTML);
+    win.document.body.appendChild(alertBox);
+    setTimeout(function () {
+      sealTipsList.shift();
+      win.document.body.removeChild(alertBox);
+      if (sealTipsList.length > 0) {
+        var _item = sealTipsList.shift();
+        sealTips(_item[0], _item[1]);
+      }
+    }, duration)
+  }
   /** *
    * toast 提示
    * @param {string} str 提示信息
@@ -268,12 +293,12 @@
         hour += 1;
       }
       timerDom = Dom.get('.rong-user-timer');
-      if(minute < 60 && hour <= 0){
+      if (minute < 60 && hour <= 0) {
         timerDom.innerHTML = '通话时长：' + format(minute) + ':' + format(second);
-      }else {
+      } else {
         timerDom.innerHTML = '通话时长：' + format(hour) + ':' + format(minute) + ':' + format(second);
       }
-      
+
     }
 
     function start() {
@@ -338,11 +363,11 @@
       }
     }
 
-    function insertBox(streamBox,targetEl) {
+    function insertBox(streamBox, targetEl) {
       var self = this;
       if (!self.hasBox(streamBox)) {
         self.streamBoxList.push(streamBox);
-        Dom.insertAfter(streamBox.dom,targetEl.dom);
+        Dom.insertAfter(streamBox.dom, targetEl.dom);
       }
     }
 
@@ -431,7 +456,7 @@
     function zoom(user) {
       var self = this;
       user = user || {};
-      if(self.isZoom){
+      if (self.isZoom) {
         // do nothing
       } else {
         clearStreamBoxZoom(user.id);
@@ -441,11 +466,11 @@
     }
     function showSoundGif() {
       var soundDom = this.dom.childNodes[3].childNodes[1].childNodes[0];
-      addClass(soundDom,'rong-sound-show')
+      addClass(soundDom, 'rong-sound-show')
     }
     function hideSoundGif() {
       var soundDom = this.dom.childNodes[3].childNodes[1].childNodes[0];
-      removeClass(soundDom,'rong-sound-show')
+      removeClass(soundDom, 'rong-sound-show')
     }
     function closeVideoBySelf() {
       setClass(this.dom, OptClassName.CLOSE_VIDEO_BY_SELF, true);
@@ -507,6 +532,9 @@
       videoBoxChild[4].style.display = 'none';
       videoBoxChild[5].style.display = 'block';
       videoBoxChild[5].innerText = videoTitle;
+    }
+    function hideCustomAudioBox() {
+      this.dom.style.display = 'none';
     }
     return function (id, params, temp) {
       params = params || {};
@@ -571,6 +599,7 @@
       self.showSoundGif = showSoundGif;
       self.hideSoundGif = hideSoundGif;
       self.setCustomVideoUI = setCustomVideoUI;
+      self.hideCustomAudioBox = hideCustomAudioBox;
 
       StreamBoxList[id] = self;
 
@@ -600,7 +629,9 @@
       var dom = Dom.getById(domId);
       var closeDom = Dom.getChild(dom, 'rong-wb-close');
       var iframeDom = Dom.getChild(dom, 'rong-whiteboard');
-      closeDom.onclick = function () {
+      closeDom.onclick = function (e) {
+        // e.stopPropagation();
+        e.preventDefault();
         self.hide();
       };
       self.dom = dom;
@@ -611,10 +642,10 @@
       };
       self.hide = function (callback) {
         callback = callback || utils.noop;
-        iframeDom.src = '';
-        iframeDom.contentWindow.RongWB.leaveWBRoom();
-        // iframeDom.close()
         Dom.hide(self.dom);
+        iframeDom.contentWindow.RongWB.leaveWBRoom();
+        iframeDom.src = '';
+        // iframeDom.close()
         callback();
       };
       return self;
@@ -624,20 +655,40 @@
   function userListView(userList) {
     var userListDom = Dom.getById('rongRoomUsers');
     var userListNumDom = Dom.getById('userListNum');
-    var userJoinMode = '';
-    userListNumDom.innerHTML = '<span>在线人数（'+userList.length+'人）</span>';
-    userListDom.innerHTML = '';
-    for(var i=0;i<userList.length;i++){
-      if(userList[i].joinMode === 0){
-        userJoinMode = '视频模式加入';
-      }else if(userList[i].joinMode === 1){
-        userJoinMode = '音频模式加入';
-      } else {
-        userJoinMode = '旁听者模式加入';
+    var _local = RongSeal.locale[RongSeal.common.lang].common;
+    var userJoinMode = {
+      name: _local.spectators,
+      cls: ''
+    };
+    var joinData = {
+      0: {
+        name: _local.video,
+        cls: 'join-video'
+      },
+      1: {
+        name: _local.audio,
+        cls: 'join-audio'
       }
-      userListDom.innerHTML += '<div class="user-list-item">' +
+    }
+
+    userListNumDom.innerHTML = '<span>' + utils.tplEngine(_local.online, { 0: userList.length }) + '</span>';
+    userListDom.innerHTML = '';
+    for (var i = 0; i < userList.length; i++) {
+      var masterHtml = '';
+      userJoinMode = joinData[userList[i].joinMode] ? joinData[userList[i].joinMode] : userJoinMode;
+      if (RongSeal.userInfo.master == 1 && userList[i].userId !== RongSeal.userInfo.userId) {
+        masterHtml = '<span class="user-kick-off" operate="op.kick.off" id = "' + userList[i].userId + '" title="移除用户" username="' + userList[i].userName + '"></span>';
+      } else if (userList[i].master == 1) {
+        masterHtml = '<span class ="user-manage-name" >管理员</span>';
+      }
+      var userHtml = '<div class="user-list-item">' +
         '<div class="online-user" id=""> ' + userList[i].userName + '</div>' +
-        '<div class="user-join-mode" id="">' + userJoinMode + '</div></div>';
+        '<div class="user-join-mode  ' + userJoinMode.cls + '" id="">' + userJoinMode.name + '</div>' + masterHtml + '</div>';
+      if (userList[i].master == 1) {
+        userListDom.innerHTML = userHtml + userListDom.innerHTML;
+      } else {
+        userListDom.innerHTML = userListDom.innerHTML + userHtml;
+      }
     }
   }
   function showUserList() {
@@ -652,6 +703,13 @@
   function hideCustomVideoList() {
     Dom.hideByClass('rong-user-customvideo');
   }
+  function showCustomAudioList() {
+    Dom.showByClass('rong-user-customaudio');
+  }
+  function hideCustomAudioList() {
+    Dom.hideByClass('rong-user-customaudio');
+  }
+
   function showCustomVideoOpenBtn() {
     Dom.showByClass('rong-opt-videoicon-open');
     Dom.hideByClass('rong-opt-videoicon-close');
@@ -666,11 +724,33 @@
   }
   function switchCustomVideo() {
     var isOpen = Dom.getByClass('rong-user-customvideo').style.display === 'block';
-    if(isOpen) {
+    if (isOpen) {
       hideCustomVideoList();
-    }else {
+    } else {
+      hideCustomAudioList();
       showCustomVideoList();
     }
+  }
+  function switchCustomAudio() {
+    var isOpen = Dom.getByClass('rong-user-customaudio').style.display === 'block';
+    if (isOpen) {
+      hideCustomAudioList();
+    } else {
+      hideCustomVideoList();
+      showCustomAudioList();
+    }
+  }
+  function showCustomAudioOpenBtn() {
+    Dom.showByClass('rong-opt-audioicon-open');
+    Dom.hideByClass('rong-opt-audioicon-close');
+  }
+  function hideCustomAudioOpenBtn() {
+    Dom.hideByClass('rong-opt-audioicon-open');
+  }
+  function showCustomAudioCloseBtn() {
+    Dom.hideByClass('rong-user-customaudio');
+    Dom.hideByClass('rong-opt-audioicon-open');
+    Dom.showByClass('rong-opt-audioicon-close');
   }
   function hideWhiteBoardBtn() {
     var whiteBoardBtn = Dom.getByClass('rong-opt-wb')
@@ -693,12 +773,19 @@
       showCustomVideoCloseBtn: showCustomVideoCloseBtn,
       hideCustomVideoOpenBtn: hideCustomVideoOpenBtn
     },
+    customAudioOpt: {
+      switchCustomAudio: switchCustomAudio,
+      showCustomAudioOpenBtn: showCustomAudioOpenBtn,
+      hideCustomAudioOpenBtn: hideCustomAudioOpenBtn,
+      showCustomAudioCloseBtn: showCustomAudioCloseBtn
+    },
     hideWhiteBoardBtn: hideWhiteBoardBtn
   };
 
   var common = {
     sealAlert: sealAlert,
     SealTimer: SealTimer,
+    sealTips: sealTips,
     StreamBoxList: StreamBoxList,
     SealToast: SealToast,
     formatResolution: formatResolution,

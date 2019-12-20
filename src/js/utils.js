@@ -335,6 +335,39 @@
       parentEl.insertBefore(newEl,targetEl.nextSibling);
     }     
   }
+
+  var getBrowser = function() {
+    var userAgent = win.navigator.userAgent;
+    var version;
+    var type;
+
+    /* 记录各浏览器名字和匹配条件 */
+    var condition = {
+      IE: /rv:([\d.]+)\) like Gecko|MSIE ([\d.]+)/,
+      Edge: /Edge\/([\d.]+)/,
+      Firefox: /Firefox\/([\d.]+)/,
+      Opera: /(?:OPERA|OPR).([\d.]+)/,
+      WeChat: /MicroMessenger/i,
+      QQBrowser: /QQBrowser\/([\d.]+)/,
+      Chrome: /Chrome\/([\d.]+)/,
+      Safari: /Version\/([\d.]+).*Safari/,
+      iOSChrome: /Mobile\/([\d.]+).*Safari/
+    };
+
+    for (var key in condition) {
+      if (!condition.hasOwnProperty(key)) continue;
+      var browserContent = userAgent.match(condition[key]);
+      if (browserContent) {
+        type = key;
+        version = browserContent[1] || browserContent[2];
+        break;
+      }
+    }
+    return {
+      type: type ? type : 'UnKonw',
+      version: version ? version : 'UnKonw'
+    };
+  }
   var Dom = {
     create: create,
     get: getDom,
@@ -381,7 +414,8 @@
     Dom: Dom,
     isNumberAndLetter: isNumberAndLetter,
     EventEmitter,
-    trim: trim
+    trim: trim,
+    getBrowser: getBrowser
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.utils = utils;

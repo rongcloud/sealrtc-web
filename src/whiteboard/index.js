@@ -75,7 +75,7 @@
   function leaveWBRoom() {
     Room.disconnect();
   }
-  function getWhite(isNewWhite,roomInfo,callback, rtcUserRole) {
+  function getWhite(isNewWhite,roomInfo,callback, isBystander) {
     if(isNewWhite){
       fetch(url, requestInit).then(function(response) {
         return response.json();
@@ -104,7 +104,7 @@
       }).then(function(room){
         room.bindHtmlElement(document.getElementById('whiteboard'));
         Room = room;
-        if(rtcUserRole == 'bystander'){
+        if(isBystander){
           room.disableOperations = true;
           toolsBoxDom.style.display = 'none';
           preSceneDom.style.display = 'none';

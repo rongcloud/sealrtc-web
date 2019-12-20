@@ -112,14 +112,14 @@
       rate: [1000]
     };
     RongIMClient.reconnect({
-      onSuccess: function(userId) {
-        console.log('Reconnect successfully.'+ userId);
+      onSuccess: function (userId) {
+        console.log('Reconnect successfully.' + userId);
         callback.success()
       },
-      onTokenIncorrect: function() {
+      onTokenIncorrect: function () {
         console.log('token无效');
       },
-      onError: function(errorCode){
+      onError: function (errorCode) {
         console.log(errorCode);
         callback.error();
       }

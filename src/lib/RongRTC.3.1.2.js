@@ -1,5 +1,5 @@
 /*
-* RongRTC.js v3.0.2
+* RongRTC.js v3.1.2
 * Copyright 2019 RongCloud
 * Released under the MIT License.
 */
@@ -40,16 +40,30 @@
   var parse = function parse(str) {
     return JSON.parse(str);
   };
-  var forEach = function forEach(obj, callback) {
+
+  /**
+   * options.isReverse  是否反向循环
+   * */
+  var forEach = function forEach(obj, callback, options) {
+    options = options || {};
     callback = callback || noop;
+    var _options = options,
+        isReverse = _options.isReverse;
+
     var loopObj = function loopObj() {
       for (var key in obj) {
         callback(obj[key], key, obj);
       }
     };
     var loopArr = function loopArr() {
-      for (var i = 0, len = obj.length; i < len; i++) {
-        callback(obj[i], i);
+      if (isReverse) {
+        for (var i = obj.length - 1; i >= 0; i--) {
+          callback(obj[i], i);
+        }
+      } else {
+        for (var j = 0, len = obj.length; j < len; j++) {
+          callback(obj[j], j);
+        }
       }
     };
     if (isObject(obj)) {
@@ -59,6 +73,7 @@
       loopArr();
     }
   };
+
   var isEmpty = function isEmpty(obj) {
     var result = true;
     if (isObject(obj)) {
@@ -68,6 +83,9 @@
     }
     if (isString(obj) || isArray(obj)) {
       result = obj.length === 0;
+    }
+    if (isNumber(obj)) {
+      result = obj === 0;
     }
     return result;
   };
@@ -119,7 +137,7 @@
     }
     return ret.join('');
   };
-  // 鏆傛椂鏀寔 String
+  // 暂时支持 String
   var isContain = function isContain(str, keyword) {
     return str.indexOf(keyword) > -1;
   };
@@ -354,6 +372,39 @@
    });
   */
   var Log = console;
+  var getBrowser = function getBrowser() {
+    var userAgent = navigator.userAgent;
+    var name = '',
+        version = '';
+    if (/(Msie|Firefox|Opera|Chrome|Netscape)\D+(\d[\d.]*)/.test(userAgent)) {
+      name = RegExp.$1;
+      version = RegExp.$2;
+    }
+    if (/Version\D+(\d[\d.]*).*Safari/.test(userAgent)) {
+      name = 'Safari';
+      version = RegExp.$1;
+    }
+    return {
+      name: name,
+      version: version
+    };
+  };
+
+  var getUUID = function getUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0,
+          v = c == 'x' ? r : r & 0x3 | 0x8;
+      return v.toString(16);
+    });
+  };
+
+  var getKeys = function getKeys(_object) {
+    var keys = [];
+    for (var key in _object) {
+      keys.push(key);
+    }
+    return keys;
+  };
   var utils = {
     Prosumer: Prosumer,
     Log: Log,
@@ -389,7 +440,10 @@
     isNull: isNull,
     isNumber: isNumber,
     toArray: toArray,
-    Index: Index
+    Index: Index,
+    getBrowser: getBrowser,
+    getUUID: getUUID,
+    getKeys: getKeys
   };
 
   var DownEvent = {
@@ -423,6 +477,9 @@
     STREAM_UNSUBSCRIBE: 'stream_unsubscribe',
     STREAM_RESIZE: 'stream_resize',
     STREAM_GET: 'stream_get',
+
+    LIVE_SUBSCRIBE: 'live_subscribe',
+    LIVE_UNSUBSCRIBE: 'live_unsubscribe',
 
     AUDIO_MUTE: 'audio_mute',
     AUDIO_UNMUTE: 'audio_unmute',
@@ -498,6 +555,14 @@
       name: 'ROOM_REPEAT_JOIN',
       msg: 'Not rejoin the room'
     }, {
+      code: 50004,
+      name: 'RTC_NOT_JOIN_ROOM',
+      msg: 'Please join the room first'
+    }, {
+      code: 50056,
+      name: 'ENGINE_ERROR',
+      msg: 'RTC engine error'
+    }, {
       code: 50010,
       name: '',
       msg: 'Http request timeout'
@@ -518,7 +583,7 @@
       name: 'SET_OFFER_ERROR',
       msg: 'Set offer error'
     }, {
-      code: 50021,
+      code: 50022,
       name: 'SET_ANSWER_ERROR',
       msg: 'Set answer error'
     }, {
@@ -528,7 +593,7 @@
     }, {
       code: 50024,
       name: 'STREAM_NOT_EXIST',
-      msg: 'Stream not exist. Please check user.id銆乻tream.type or stream.tag'
+      msg: 'Stream not exist. Please check user.id、stream.type or stream.tag'
     }, {
       code: 50030,
       name: 'SUBSCRIBE_STREAM_NOT_EXIST',
@@ -536,7 +601,7 @@
     }, {
       code: 50030,
       name: 'STREAM_TRACK_NOT_EXIST',
-      msg: 'Track not exist. Please check user.id銆乻tream.type or stream.tag'
+      msg: 'Track not exist. Please check user.id、stream.type or stream.tag'
     }, {
       code: 50031,
       name: 'STREAM_SUBSCRIBED',
@@ -545,10 +610,6 @@
       code: 50032,
       name: 'UNSUBSCRIBE_STREAM_NOT_EXIST',
       msg: 'Unsubscribe to non-existent resource'
-    }, {
-      code: 50050,
-      name: 'RTC_NOT_JOIN_ROOM',
-      msg: 'Please join the room first'
     }, {
       code: 50051,
       name: 'SOCKET_UNAVAILABLE',
@@ -570,10 +631,6 @@
       name: 'PARAMTER_ILLEGAL',
       msg: 'Please check the parameters, the {name} parameter is mandatory'
     }, {
-      code: 50056,
-      name: 'ENGINE_ERROR',
-      msg: 'RTC engine error'
-    }, {
       code: 50057,
       name: 'MEDIA_SERVER_ERROR',
       msg: 'Network is abnormal or Media Server is unavailable'
@@ -581,6 +638,10 @@
       code: 50058,
       name: 'MEDIA_SERVER_RESPONSE_EMPTY',
       msg: 'Media Server response body is empty'
+    }, {
+      code: 50059,
+      name: 'NO_AUDIO_AND_VIDEO_SERVICE',
+      msg: 'No audio and video services have been activated'
     }, {
       code: 40001,
       name: 'NOT_IN_ROOM',
@@ -655,11 +716,13 @@
     ROOM: 'room',
     STREAM: 'stream',
     STREAM_HANDLER: 'stream_handler',
+    LIVE_HANDLER: 'live_handler',
     ROOM_HANDLER: 'room_handler',
     STORAGE_HANDLER: 'storage_handler',
     IM: 'im',
     MESSAGE: 'message',
-    DEVICE: 'device'
+    DEVICE: 'device',
+    STAT: 'stat'
   };
 
   var LogLevel = {
@@ -698,6 +761,46 @@
   var REQUEST_TIMEOUT = 5 * 1000;
 
   var MEDIASERVER_SUCCESS = 10000;
+
+  var RTC_MODE = {
+    RTC: 0,
+    LIVE: 2
+  };
+
+  var TAG_V2 = '';
+
+  var STAT_FREQUENCY = 2 * 1000;
+
+  var STAT_TPL = {
+    R1: 'R1\t{rtcVersion}\t{imVersion}\t{platform}\t{pcName}\t{pcVersion}\t{browserName}\t{browserVersion}',
+
+    R2: 'R2\t{type}\t{state}\r{trackIds}',
+
+    R3_ITEM: '{googTrackId}\t{googCodecName}\t{audioLevel}\t{samplingRate}\t{trackSent}\t{packLostSentRate}\t{frameRate}\t{resolution}\t{googRenderDelayMs}\t{googJitterSent}\t{googNacksSent}\t{googPlisSent}\t{googRtt}\t{googFirsSent}\t{codecImplementationName}\t{trackState}',
+    R3: 'R3\t{totalRate}\t-1\t-1\t-1\t{networkType}\t{rtt}\t{localAddress}\t{receiveBand}\t{sendBand}\t{packetsLost}\r{tracks}',
+
+    R4_ITEM: '{googTrackId}\t{googCodecName}\t{audioLevel}\t{samplingRate}\t{trackReceived}\t{packLostReceivedRate}\t{frameRate}\t{resolution}\t{googRenderDelayMs}\t{googJitterReceived}\t{googNacksReceived}\t{googPlisReceived}\t{googRtt}\t{googFirsReceived}\t{codecImplementationName}\t{trackState}',
+    R4: 'R4\t{totalRate}\t-1\t-1\t-1\t{networkType}\t{rtt}\t{localAddress}\t{receiveBand}\t{sendBand}\t{packetsLost}\r{tracks}'
+
+  };
+
+  var STAT_NONE = '-1';
+
+  var STAT_SEPARATOR = '\n';
+
+  var STAT_NAME = {
+    R1: 'r1',
+    R2: 'r2',
+    R3: 'r3',
+    R4: 'r4'
+  };
+
+  var SDK_VERSION = '3.0.4';
+
+  var TRACK_STATE = {
+    DISABLE: 0,
+    ENABLE: 1
+  };
 
   var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
     return typeof obj;
@@ -802,8 +905,8 @@
   };
 
   /* 
-    data锛� 浠绘剰瀵硅薄
-    rules: 鏍￠獙瑙勫垯锛屾暟缁�
+    data： 任意对象
+    rules: 校验规则，数组
     let user = {
       id: '',
       stream: {
@@ -811,7 +914,7 @@
         tag: 2
       }
     };
-    // 鏍￠獙蹇呬紶鍏ュ弬鏁�, 鏆傛椂鏀寔 2 绾�
+    // 校验必传入参数, 暂时支持 2 级
     check(user, ['id', 'stream.type', 'stream.tag', 'stream.mediaStream']);
   */
   var check = function check(data, rules) {
@@ -876,6 +979,25 @@
     });
   };
 
+  var getHeaders = function getHeaders(im) {
+    var roomId = im.getRoomId();
+    var token = im.getRTCToken();
+
+    var _im$getAppInfo = im.getAppInfo(),
+        appKey = _im$getAppInfo.appKey;
+
+    var browser = utils.getBrowser();
+    var tpl = 'web|{name}|{version}';
+    var type = utils.tplEngine(tpl, browser);
+    return {
+      'App-Key': appKey,
+      RoomId: roomId,
+      Token: token,
+      ClientType: type,
+      ClientVersion: 1
+    };
+  };
+
   var dispatchStreamEvent = function dispatchStreamEvent(user, callback) {
     var id = user.id,
         uris = user.uris;
@@ -886,16 +1008,20 @@
     var streams = [user];
     if (uris) {
       streams = utils.uniq(uris, function (target) {
-        var streamId = target.streamId,
-            tag = target.tag,
+        var tag = target.tag,
             mediaType = target.mediaType,
             state = target.state;
 
+        var streamId = target.streamId || target.msid;
+        var msUris = utils.filter(uris, function (uri) {
+          var _msid = uri.streamId || uri.msid;
+          return utils.isEqual(_msid, streamId);
+        });
         return {
-          key: [streamId, tag].join('_'),
+          key: [streamId].join('_'),
           value: {
             tag: tag,
-            uris: uris,
+            uris: msUris,
             mediaType: mediaType,
             state: state
           }
@@ -914,25 +1040,25 @@
     var getModifyEvents = function getModifyEvents() {
       var events = {},
           tpl = '{type}_{state}';
-      // 绂佺敤瑙嗛
+      // 禁用视频
       var name = utils.tplEngine(tpl, {
         type: StreamType.VIDEO,
         state: StreamState.DISBALE
       });
       events[name] = DownEvent.STREAM_DISABLED;
-      // 鍚敤瑙嗛
+      // 启用视频
       name = utils.tplEngine(tpl, {
         type: StreamType.VIDEO,
         state: StreamState.ENABLE
       });
       events[name] = DownEvent.STREAM_ENABLED;
-      // 闊抽闈欓煶
+      // 音频静音
       name = utils.tplEngine(tpl, {
         type: StreamType.AUDIO,
         state: StreamState.DISBALE
       });
       events[name] = DownEvent.STREAM_MUTED;
-      // 闊抽鍙栨秷闈欓煶
+      // 音频取消静音
       name = utils.tplEngine(tpl, {
         type: StreamType.AUDIO,
         state: StreamState.ENABLE
@@ -957,6 +1083,57 @@
   var isSafari = function isSafari() {
     return (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)
     );
+  };
+
+  var isV2Tag = function isV2Tag(tag) {
+    return utils.isUndefined(tag) || utils.isEmpty(tag);
+  };
+
+  var getVersion = function getVersion() {
+    return SDK_VERSION;
+  };
+
+  var getTrackIds = function getTrackIds(user) {
+    var id = user.id,
+        streams = user.stream;
+
+    if (!utils.isArray(streams)) {
+      streams = [streams];
+    }
+    var getTracks = function getTracks(type) {
+      var tracks = [{
+        kind: 'video',
+        type: StreamType.VIDEO
+      }, {
+        kind: 'audio',
+        type: StreamType.AUDIO
+      }];
+      if (utils.isEqual(type, StreamType.AUDIO_AND_VIDEO)) {
+        return tracks;
+      }
+      return utils.filter(tracks, function (track) {
+        return utils.isEqual(track.type, type);
+      });
+    };
+    var trackIds = [];
+    var tpl = '{id}_{tag}_{kind}';
+    utils.forEach(streams, function (stream) {
+      var tag = stream.tag,
+          type = stream.type;
+
+      var tracks = getTracks(type);
+      utils.forEach(tracks, function (track) {
+        var kind = track.kind;
+
+        var trackId = utils.tplEngine(tpl, {
+          id: id,
+          tag: tag,
+          kind: kind
+        });
+        trackIds.push(trackId);
+      });
+    });
+    return trackIds;
   };
 
   function Logger() {
@@ -1313,8 +1490,19 @@
       }
     }, {
       key: 'off',
-      value: function off(name) {
-        delete this.events[name];
+      value: function off(name, offEvent) {
+        if (offEvent) {
+          var events = this.events[name] || [];
+          utils.forEach(events, function (event) {
+            if (utils.isEqual(event, offEvent)) {
+              events.splice(event);
+            }
+          }, {
+            isReverse: true
+          });
+        } else {
+          delete this.events[name];
+        }
       }
     }, {
       key: 'emit',
@@ -1367,14 +1555,17 @@
     REQUEST_CONSUME: 'common_request_consume',
     CONNECTED: 'common_connected',
     PEERCONN_CREATED: 'common_peerconn_created',
-    PUBLISHED_STREAM: 'common_published_stream'
+    PUBLISHED_STREAM: 'common_published_stream',
+    SEND_REPORT: 'common_send_report',
+    TRACK_MODIFY: 'common_track_modify',
+    SET_URIS: 'common_set_uris'
   };
 
   function request$1() {
     var config = {
       urls: []
     };
-    // 姝ｅ湪浣跨敤鐨� URL 涓嬫爣锛屾瘡娆¤姹傚湪 urls 涓彇瀵瑰簲鐨勫湴鍧€鍙戦€佽姹�
+    // 正在使用的 URL 下标，每次请求在 urls 中取对应的地址发送请求
     var indexTools = new utils.Index();
 
     var prosumer = new utils.Prosumer();
@@ -1397,7 +1588,11 @@
             var Inner = ErrorType.Inner;
 
             indexTools.reset();
-            error = utils.isEqual(error.status, 0) ? Inner.MEDIA_SERVER_ERROR : error;
+            if (error == undefined) {
+              error = Inner.NO_AUDIO_AND_VIDEO_SERVICE;
+            } else {
+              error = utils.isEqual(error.status, 0) ? Inner.MEDIA_SERVER_ERROR : error;
+            }
             return reject(error);
           }
           var domain = urls[index];
@@ -1476,6 +1671,7 @@
       var _this = possibleConstructorReturn(this, (PeerConnection.__proto__ || Object.getPrototypeOf(PeerConnection)).call(this));
 
       var context = _this;
+      context.bandWidthCount = 0;
       var pc = new RTCPeerConnection({
         sdpSemantics: 'plan-b',
         // Chrome 49 Test
@@ -1497,7 +1693,7 @@
           context.emit(PeerConnectionEvent.REMOVED, stream);
         },
         ondatachannel: function ondatachannel(event) {
-          //TODO: 鍏蜂綋杩斿洖鍙傛暟
+          //TODO: 具体返回参数
           context.emit(PeerConnectionEvent.RECEIVED, event);
         },
         oniceconnectionstatechange: function oniceconnectionstatechange() {
@@ -1570,6 +1766,19 @@
         return pc.setRemoteDescription(new RTCSessionDescription(answer));
       }
     }, {
+      key: 'setRemoteAnwser',
+      value: function setRemoteAnwser(answer) {
+        var context = this;
+        var pc = context.pc;
+
+        answer = context.setBitrate(answer);
+        return pc.setRemoteDescription(new RTCSessionDescription(answer)).then(function () {
+          pc.createAnswer().then(function (answer) {
+            return pc.setLocalDescription(answer);
+          });
+        });
+      }
+    }, {
       key: 'setBitrate',
       value: function setBitrate(answer) {
         var context = this;
@@ -1577,10 +1786,10 @@
         var sdp = answer.sdp;
 
         var lineFeed = '\n';
-        sdp = sdp.replace(/a=mid:video\n/g, ['a=mid:video', 'b=AS:' + bitrate.max + lineFeed].join(lineFeed));
-        utils.extend(answer, {
-          sdp: sdp
-        });
+        // sdp = sdp.replace(/a=mid:video\n/g, ['a=mid:video', 'b=AS:' + bitrate.max + lineFeed].join(lineFeed));
+        // utils.extend(answer, {
+        //   sdp
+        // });
         var sdpDetails = sdp.split(lineFeed);
         var findIndex = function findIndex(keyword) {
           var index = null;
@@ -1593,6 +1802,14 @@
           }
           return index;
         };
+
+        var midVideo = 'a=mid:video';
+        var midVideoIndex = findIndex(midVideo);
+        if (utils.isNull(midVideoIndex)) {
+          return answer;
+        }
+        sdpDetails[midVideoIndex] = [sdpDetails[midVideoIndex], 'b=AS:' + bitrate.max].join(lineFeed);
+
         var mVideo = 'm=video';
         var mVideoIndex = findIndex(mVideo);
         if (utils.isNull(mVideoIndex)) {
@@ -1603,16 +1820,21 @@
         // m=video 10 UDP/TLS/RTP/SAVPF
         var videoDescDetails = videoDesc.split(separator);
         var firstVideoCodec = videoDescDetails[3];
-        var codecDesc = 'a=rtpmap:' + firstVideoCodec;
+        var codecDesc = 'a=fmtp:' + firstVideoCodec;
         var codecDescIndex = findIndex(codecDesc);
         if (utils.isNull(codecDescIndex)) {
           return answer;
         }
-        var desc = 'a=fmtp:' + firstVideoCodec + ' x-google-min-bitrate=' + bitrate.min + '; x-google-max-bitrate=' + bitrate.max;
-        if (utils.isNumber(bitrate.start)) {
-          desc += '; x-google-start-bitrate=' + bitrate.start;
+        context.bandWidthCount++;
+        bitrate = JSON.parse(JSON.stringify(bitrate));
+        if (context.bandWidthCount % 2 === 0) {
+          bitrate.min = bitrate.min + 1;
         }
-        sdpDetails[codecDescIndex] = [sdpDetails[codecDescIndex], desc].join(lineFeed);
+        var desc = ';x-google-min-bitrate=' + bitrate.min + ';x-google-max-bitrate=' + bitrate.max;
+        if (utils.isNumber(bitrate.start)) {
+          desc += ';x-google-start-bitrate=' + bitrate.start;
+        }
+        sdpDetails[codecDescIndex] = [sdpDetails[codecDescIndex], desc].join('');
         sdp = sdpDetails.join(lineFeed);
         utils.extend(answer, {
           sdp: sdp
@@ -1625,6 +1847,7 @@
         var context = this;
         var pc = context.pc;
 
+        context.bandWidthCount = 0;
         pc.close();
         context.pc = null;
         delete context.pc;
@@ -1679,6 +1902,7 @@
             utils.extend(context, {
               desc: desc
             });
+            // desc = context.setBitrate(desc);
             resole(desc);
           }, function (error) {
             reject(error);
@@ -1692,9 +1916,11 @@
         var pc = context.pc;
 
         var option = context.getOption();
+        option.iceRestart = false;
         var success = function success(desc) {
           desc = context.renameCodec(desc);
           callback && callback(desc);
+          // desc = context.setBitrate(desc);
           return desc;
         };
         return pc.createOffer(option).then(success);
@@ -1717,7 +1943,7 @@
           name: 'H264/90000',
           code: 98,
           rtx: 99,
-          value: 'a=rtpmap:98 H264/90000\r\na=rtcp-fb:98 ccm fir\r\na=rtcp-fb:98 nack\r\na=rtcp-fb:98 nack pli\r\na=rtcp-fb:98 goog-remb\r\na=rtcp-fb:98 transport-cc\r\na=fmtp:98 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f\r\na=rtpmap:99 rtx/90000\r\na=fmtp:99 apt=98'
+          value: 'a=rtpmap:98 H264/90000\r\na=rtcp-fb:98 ccm fir\r\na=rtcp-fb:98 nack\r\na=rtcp-fb:98 nack pli\r\na=rtcp-fb:98 goog-remb\r\na=rtcp-fb:98 transport-cc\r\na=fmtp:98 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f;\r\na=rtpmap:99 rtx/90000\r\na=fmtp:99 apt=98'
         }, {
           name: 'VP8/90000',
           code: 96,
@@ -1746,10 +1972,10 @@
           codecs.length = len;
           return codecs;
         };
-        // 鑾峰彇 m=video 缂栫爜琛ㄧ殑鍓嶄笁浣�
+        // 获取 m=video 编码表的前三位
         var videoCodecs = getVideoCodecs(3);
 
-        // 寰楀埌 Video 鎻忚堪淇℃伅鍒楄〃
+        // 得到 Video 描述信息列表
         var videoTotalIndex = sdp.indexOf('m=video');
         var ssrcIndex = sdp.indexOf('a=ssrc-group');
         if (utils.isEqual(ssrcIndex, -1)) {
@@ -1776,14 +2002,14 @@
           sdpBody += value + separator;
           videoCodecs.push(code, rtx);
         });
-        // 鏂� SDP = m=video + 鎵€鏈� a=rtpmap + sdpFooter
+        // 新 SDP = m=video + 所有 a=rtpmap + sdpFooter
         videoBody = videoBody.split(separator);
         videoBody.shift();
         videoBody = videoBody.join(separator);
         var headerIndex = videoBody.indexOf('a=rtpmap');
         var sdpHeader = sdp.substring(0, videoTotalIndex);
         var videoHeader = videoBody.substring(0, headerIndex);
-        // 鍖呭惈 ssrc 淇℃伅
+        // 包含 ssrc 信息
         var sdpFooter = sdp.substring(ssrcIndex, sdp.length);
         sdp = sdpHeader + videoCodecs.join(' ') + '\r\n' + videoHeader + sdpBody + sdpFooter;
         utils.extend(offer, {
@@ -1794,7 +2020,7 @@
       /* 
         let ratio = {
           msid: {
-            // 1澶ф祦    2灏忔祦 
+            // 1大流    2小流 
             simulcast: 1,
             resolution: "0x0"
           }
@@ -1854,6 +2080,9 @@
         if (utils.isEqual(size, StreamSize.MIN)) {
           tpl = '{userId}_{tag}_{suffix}';
         }
+        if (isV2Tag(tag)) {
+          return userId;
+        }
         return utils.tplEngine(tpl, {
           userId: userId,
           tag: tag,
@@ -1871,6 +2100,10 @@
       value: function getStreamSymbolById(id) {
         var connector = '_';
         var details = id.split(connector);
+        if (utils.isEqual(details.length, 1)) {
+          details.push(TAG_V2);
+          return details;
+        }
         var tag = details.pop();
         var userId = details.join(connector);
         return [userId, tag];
@@ -1903,7 +2136,10 @@
     UNPUBLISH: '/exchange',
     RESIZE: '/exchange',
     SUBSCRIBE: '/exchange',
+    ONLY_SUBSCRIBE: '/subscribe',
     UNSUBSCRIBE: '/exchange',
+    LIVE_SUBSCRIBE: '/broadcast/subscribe',
+    LIVE_EXIT: '/broadcast/exit',
     EXIT: '/exit'
   };
 
@@ -1960,11 +2196,13 @@
       var timer = new utils.Timer({
         timeout: Timeout.TIME
       });
+      var v2Users = utils.Cache();
       var context = _this;
       var isJoinRoom = false;
       utils.extend(context, {
         timer: timer,
-        isJoinRoom: isJoinRoom
+        isJoinRoom: isJoinRoom,
+        v2Users: v2Users
       });
       var im = option.RongIMLib.RongIMClient,
           RongIMLib = option.RongIMLib;
@@ -1991,7 +2229,7 @@
         im: im,
         RongIMLib: RongIMLib
       });
-      // 濡傛灉瀹炰緥鍖� RongRTC 鏃讹紝IM 宸茶繛鎺ユ垚鍔燂紝涓诲姩瑙﹀彂鍐呴儴 init
+      // 如果实例化 RongRTC 时，IM 已连接成功，主动触发内部 init
       if (utils.isEqual(connectState, CONNECTED)) {
         init();
       }
@@ -2030,8 +2268,8 @@
         });
       };
       /**
-       * 鏀跺埌 UnkownMessage 鑷姩杞负 ObjectName + "Message" 鍋氫负 MessageType
-       * 鍏嶅幓娉ㄥ唽鑷畾涔夋秷鎭€昏緫
+       * 收到 UnkownMessage 自动转为 ObjectName + "Message" 做为 MessageType
+       * 免去注册自定义消息逻辑
        */
       var renameMessage = function renameMessage(message) {
         var messageType = message.messageType;
@@ -2076,12 +2314,27 @@
             users = _message$content.users;
 
         var user = { id: id };
+        if (utils.isArray(uris)) {
+          uris = utils.map(uris, function (uri) {
+            var tag = uri.tag;
+
+            if (isV2Tag(tag)) {
+              utils.extend(uri, {
+                tag: TAG_V2
+              });
+            }
+            return uri;
+          });
+        }
         switch (type) {
           case Message.STATE:
             roomEventHandler(users);
             break;
           case Message.PUBLISH:
             user = { id: id, uris: uris };
+            if (utils.isInclude(id, '_')) {
+              v2Users.set(id, true);
+            }
             dispatchStreamEvent(user, function (user) {
               context.emit(DownEvent.STREAM_PUBLISHED, user);
             });
@@ -2177,28 +2430,35 @@
               var _context$getUser = context.getUser(),
                   currentUserId = _context$getUser.id;
 
-              utils.forEach(users, function (user, userId) {
-                user = user || {};
-                // 杩囨护鑷繁鍜屼负绌虹殑鐢ㄦ埛
-                if (utils.isEmpty(user) || utils.isEqual(currentUserId, user.id)) {
+              var tempUsers = utils.clone(users);
+              Logger$1.log(LogTag.IM, {
+                msg: 'join:room:inner:success',
+                users: tempUsers
+              });
+              utils.forEach(tempUsers, function (tUser, userId) {
+                tUser = tUser || {};
+                // 过滤自己和为空的用户
+                if (utils.isEmpty(tUser) || utils.isEqual(currentUserId, tUser.id)) {
                   delete users[userId];
-                }
-                var _user = user,
-                    uris = _user.uris;
+                } else {
+                  var user = users[userId];
+                  var uris = user.uris;
 
-                if (!utils.isUndefined(uris)) {
-                  uris = utils.parse(uris);
-                  utils.extend(user, {
-                    uris: uris
-                  });
+                  context.v2Users.set(userId, true);
+                  if (!utils.isUndefined(uris)) {
+                    uris = utils.parse(uris);
+                    utils.extend(user, {
+                      uris: uris
+                    });
+                  }
                 }
               });
               utils.extend(room, {
                 rtcToken: token,
                 users: users
               });
-              context.emit(CommonEvent.JOINED, room);
               resolve(users);
+              context.emit(CommonEvent.JOINED, room);
             },
             onError: function onError(code) {
               return reject(errorHandler(code));
@@ -2287,14 +2547,16 @@
         var engines = rtcInfo.callEngine;
         var engine = utils.filter(engines, function (e) {
           return e.engineType === 4;
-        })[0];
+        })[0] || {};
         var urls = engine.backupMediaServer,
             mediaServer = engine.mediaServer;
 
         if (utils.isUndefined(urls)) {
           urls = [];
         }
-        urls.unshift(mediaServer);
+        if (!utils.isUndefined(mediaServer)) {
+          urls.unshift(mediaServer);
+        }
         return urls;
       }
     }, {
@@ -2602,7 +2864,7 @@
             context.emit(CommonEvent.LEFT);
             return context.emit(CommonEvent.ERROR, Inner.SOCKET_UNAVAILABLE);
           }
-          // 濡傛灉涓婃 Ping 娌℃湁缁撴潫锛岀疮璁� Ping 娆℃暟
+          // 如果上次 Ping 没有结束，累计 Ping 次数
           if (isPinging) {
             Status.sum();
           }
@@ -2618,6 +2880,48 @@
             }
           });
         }, true);
+      }
+    }, {
+      key: 'getIMVersion',
+      value: function getIMVersion() {
+        var context = this;
+        var im = context.im;
+
+        if (!context.isCompatibleIM('getSDKInfo')) {
+          return '';
+        }
+        var info = im.getInstance().getSDKInfo();
+        return info.version || '';
+      }
+    }, {
+      key: 'setRTCState',
+      value: function setRTCState(content) {
+        var context = this;
+        var im = context.im,
+            room = context.room;
+
+        if (!context.isCompatibleIM('setRTCState')) {
+          return '';
+        }
+        return im.getInstance().setRTCState(room, content, {
+          onSuccess: function onSuccess() {},
+          onError: function onError() {}
+        });
+      }
+    }, {
+      key: 'isCompatibleIM',
+      value: function isCompatibleIM(key) {
+        var context = this;
+        var im = context.im;
+
+        var imInstance = im.getInstance();
+        if (imInstance[key]) {
+          return true;
+        }
+        Logger$1.warn(LogTag.IM, {
+          msg: 'Low version IM SDK is not supported, please update IM SDK'
+        });
+        return false;
       }
     }]);
     return IM;
@@ -2692,21 +2996,21 @@
     var DataCache = utils.Cache();
     var DataCacheName = {
       USERS: 'room_users',
-      // 鍏ㄩ儴閫氱煡鍚庝竴娆℃€т氦鎹� SDP
+      // 全部通知后一次性交换 SDP
       IS_NOTIFY_READY: 'is_notify_ready'
     };
     var SubPromiseCache = utils.Cache();
     var PubResourceCache = utils.Cache();
-    // 缂撳瓨鑷繁鍙戝竷鐨勮棰戞祦
+    // 缓存自己发布的视频流
     var PublishStreamCache = utils.Cache();
     /* 
-      缂撳瓨宸茶闃� MediaStream
+      缓存已订阅 MediaStream
       userId_type: mediaStream
-      鏂逛究瑙嗛娴佹搷浣�
+      方便视频流操作
     */
     var StreamCache = utils.Cache();
     /* 
-      缂撳瓨璁㈤槄鍏崇郴锛屾瘡娆′慨鏀归渶鍚屾鍏ㄩ噺鏁版嵁
+      缓存订阅关系，每次修改需同步全量数据
       userId: [{ streamId: '', uri: '', type: 1, tag: ''}]
     */
     var subCache = utils.Cache();
@@ -2738,7 +3042,11 @@
 
           return !utils.isEqual(streamId, msid);
         });
-        subCache.set(userId, subs);
+        if (subs.length > 0) {
+          subCache.set(userId, subs);
+        } else {
+          subCache.remove(userId);
+        }
       },
       clear: function clear() {
         subCache.clear();
@@ -2777,19 +3085,6 @@
       });
       return subs;
     };
-    var getHeaders = function getHeaders() {
-      var roomId = im.getRoomId();
-      var token = im.getRTCToken();
-
-      var _im$getAppInfo = im.getAppInfo(),
-          appKey = _im$getAppInfo.appKey;
-
-      return {
-        'App-Key': appKey,
-        RoomId: roomId,
-        Token: token
-      };
-    };
     var getBody = function getBody(desc) {
       var subs = getSubs();
       var streams = [];
@@ -2826,13 +3121,13 @@
       pc.setAnwser(sdp);
     };
     /* 
-    浜哄憳姣旇緝:
-      1銆乧lone 鏈湴鏁版嵁
-      2銆侀亶鍘嗘湇鍔＄鏁版嵁锛屽湪鏈湴鑾峰彇锛屾湰鍦版病鏈夎涓烘槸鏂板锛屾湰鍦版湁璁や负浜哄憳鏃犲彉鍖�
-      3銆佹湰鍦版湁鍚屾椂鍒犳帀 clone 鏁版嵁锛屾渶缁堝墿涓嬬殑鏁版嵁璁や负宸茬寮€鎴块棿
-    璧勬簮姣旇緝:
-      1銆佹湰鍦版暟鎹€佽繙绔暟鎹浆鎹负 {msid: [uri1, uri2]}
-    鏈€鍚庢洿鏂版湰鍦版暟鎹�
+    人员比较:
+      1、clone 本地数据
+      2、遍历服务端数据，在本地获取，本地没有认为是新增，本地有认为人员无变化
+      3、本地有同时删掉 clone 数据，最终剩下的数据认为已离开房间
+    资源比较:
+      1、本地数据、远端数据转换为 {msid: [uri1, uri2]}
+    最后更新本地数据
     */
     var compare = function compare() {
       var format = function format(users) {
@@ -2858,16 +3153,16 @@
           im.emit(event, user);
         });
       };
-      // 鍙戝竷銆佸彇娑堝彂甯冦€佽棰戞搷浣溿€侀煶棰戞搷浣�
+      // 发布、取消发布、视频操作、音频操作
       var compareStreams = function compareStreams(localUsers, remoteUsers) {
         localUsers = format(localUsers);
         remoteUsers = format(remoteUsers);
         var tempLocalUsers = utils.clone(localUsers);
         utils.forEach(remoteUsers, function (remoteUris, remoteMSId) {
           /** 
-           * 鍖呭惈鏈湴璧勬簮璇存槑娴佹病鏈夊彉鍖栵紝鍒犻櫎 tempLocalUsers锛屼笖闇€姣斿 track 鍙樺寲锛宻tate 鏈夊樊寮傦紝浠� remoteUsers 涓哄噯
-           * 鏈寘鍚鏄庢槸鏂板彂甯冭祫婧愶紝瑙﹀彂 published 浜嬩欢 
-           * 閬嶅巻鍚� tempLocalUsers 杩樻湁鏁版嵁璁や负鏄彇娑堝彂甯�
+           * 包含本地资源说明流没有变化，删除 tempLocalUsers，且需比对 track 变化，state 有差异，以 remoteUsers 为准
+           * 未包含说明是新发布资源，触发 published 事件 
+           * 遍历后 tempLocalUsers 还有数据认为是取消发布
            */
           var isInclude = remoteMSId in localUsers;
 
@@ -2905,7 +3200,7 @@
           dispatch(DownEvent.STREAM_UNPUBLISHED, userId, localUris);
         });
       };
-      // 鎴愬憳鍔犲叆銆侀€€鍑�
+      // 成员加入、退出
       var compareUser = function compareUser(localUsers, remoteUsers) {
         var tempLocalUsers = utils.clone(localUsers);
         var tempRemoteUsers = utils.toArray(remoteUsers);
@@ -2974,7 +3269,7 @@
           roomId: roomId,
           body: body
         });
-        var headers = getHeaders();
+        var headers = getHeaders(im);
         var offer = body.sdp;
 
         return request$2.post({
@@ -3121,7 +3416,7 @@
         var tempUris = utils.filter(cacheUris, function (stream) {
           return getCondition(stream);
         });
-        // 绗竴娆� publish 杩囨护鍚� tempUris 涓虹┖锛屼娇鐢ㄩ粯璁ゅ€�
+        // 第一次 publish 过滤后 tempUris 为空，使用默认值
         return utils.isEmpty(tempUris) ? uris : tempUris;
       };
       var sendUris = getTempUris(type);
@@ -3141,6 +3436,9 @@
           tag = _user$stream2.tag,
           type = _user$stream2.type;
 
+      if (utils.isEmpty(tag)) {
+        tpl = '{userId}_{type}';
+      }
       return utils.tplEngine(tpl, {
         userId: userId,
         tag: tag,
@@ -3159,11 +3457,15 @@
         callback(key, uri);
       });
     };
-    /* 宸插湪鎴块棿锛屽啀鏈夋柊浜哄彂甯冭祫婧愯Е鍙戞浜嬩欢 */
+    /* 已在房间，再有新人发布资源触发此事件 */
     im.on(DownEvent.STREAM_PUBLISHED, function (error, user) {
       if (error) {
         throw error;
       }
+      // 缓存 URIs 上报数据
+      var stream = user.stream;
+
+      im.emit(CommonEvent.SET_URIS, stream.uris);
       dispatchStreamEvent$$1(user, function (key, uri) {
         DataCache.set(key, uri);
       });
@@ -3241,6 +3543,14 @@
 
         PublishStreamCache.remove(streamId);
       });
+      var trackIds = getTrackIds(user);
+      im.emit(CommonEvent.SEND_REPORT, {
+        type: STAT_NAME.R2,
+        name: UpEvent.STREAM_UNPUBLISH,
+        content: {
+          trackIds: trackIds
+        }
+      });
       return pc.removeStream(user).then(function (desc) {
         return getBody().then(function (body) {
           var url = utils.tplEngine(Path.UNPUBLISH, {
@@ -3252,7 +3562,7 @@
             user: user,
             body: body
           });
-          var headers = getHeaders();
+          var headers = getHeaders(im);
           return request$2.post({
             path: url,
             body: body,
@@ -3277,7 +3587,7 @@
         });
       });
     };
-    /* 鍔犲叆鎴块棿鎴愬姛鍚庯紝涓诲姩鑾峰彇宸插彂甯冭祫婧愮殑浜哄憳鍒楄〃锛岄€氱煡搴旂敤灞� */
+    /* 加入房间成功后，主动获取已发布资源的人员列表，通知应用层 */
     im.on(CommonEvent.JOINED, function (error, room) {
       if (error) {
         throw error;
@@ -3285,13 +3595,28 @@
       pc = new PeerConnection(option);
       im.emit(CommonEvent.PEERCONN_CREATED, pc);
       var getStreamUser = function getStreamUser(stream) {
-        var id = stream.id,
-            type = StreamType.NODE;
-        var _pc$getStreamSymbolBy5 = pc.getStreamSymbolById(id),
-            _pc$getStreamSymbolBy6 = slicedToArray(_pc$getStreamSymbolBy5, 2),
-            userId = _pc$getStreamSymbolBy6[0],
-            tag = _pc$getStreamSymbolBy6[1];
+        var id = stream.id;
 
+        var hasUnderline = im.v2Users.get(id);
+
+        var type = StreamType.NODE,
+            userId = void 0,
+            tag = void 0;
+        if (hasUnderline) {
+          userId = id;
+          tag = TAG_V2;
+        } else {
+          var _pc$getStreamSymbolBy5 = pc.getStreamSymbolById(id);
+
+          var _pc$getStreamSymbolBy6 = slicedToArray(_pc$getStreamSymbolBy5, 2);
+
+          userId = _pc$getStreamSymbolBy6[0];
+          tag = _pc$getStreamSymbolBy6[1];
+
+          if (isV2Tag(tag)) {
+            tag = TAG_V2;
+          }
+        }
         var videoTracks = stream.getVideoTracks();
         var audioTrakcks = stream.getAudioTracks();
         var isEmtpyVideo = utils.isEmpty(videoTracks);
@@ -3351,6 +3676,21 @@
 
         StreamCache.set(id, stream);
         var user = getStreamUser(stream);
+        var uris = SubscribeCache.get(user.id) || [];
+        utils.forEach(uris, function (uri) {
+          var state = uri.state,
+              type = uri.type;
+
+          var isVideo = utils.isEqual(StreamType.VIDEO, type);
+          var isDisabled = utils.isEqual(state, StreamState.DISBALE);
+          var isId = utils.isEqual(stream.id, uri.msid);
+          if (isVideo && isDisabled && isId) {
+            var videoTracks = stream.getVideoTracks();
+            utils.forEach(videoTracks, function (track) {
+              track.enabled = false;
+            });
+          }
+        });
         im.emit(CommonEvent.PUBLISHED_STREAM, {
           mediaStream: stream,
           user: user
@@ -3383,7 +3723,7 @@
         if (error) {
           throw error;
         }
-        if (pc.isNegotiate()) {
+        if (pc.isNegotiate() && im.isJoined()) {
           network.detect(function (isOnline) {
             if (isOnline) {
               reconnect();
@@ -3448,11 +3788,14 @@
             DataCache.set(key, uri);
           });
           var streams = utils.uniq(uris, function (target) {
-            var streamId = target.streamId,
-                tag = target.tag;
+            var tag = target.tag;
 
+            var streamId = target.msid || target.streamId;
+            if (isV2Tag(tag)) {
+              tag = TAG_V2;
+            }
             return {
-              key: [streamId, tag].join('_'),
+              key: [streamId].join('_'),
               value: {
                 tag: tag
               }
@@ -3474,7 +3817,7 @@
                   uris: msUris
                 }
               });
-            });
+            },10);
           });
         });
       };
@@ -3511,6 +3854,14 @@
           });
         }
       });
+      var trackIds = getTrackIds(user);
+      im.emit(CommonEvent.SEND_REPORT, {
+        type: STAT_NAME.R2,
+        name: UpEvent.STREAM_PUBLISH,
+        content: {
+          trackIds: trackIds
+        }
+      });
       pc.addStream(user);
       var roomId = im.getRoomId();
       return utils.deferred(function (resolve, reject) {
@@ -3525,12 +3876,17 @@
               user: user,
               body: body
             });
-            var headers = getHeaders();
+            var headers = getHeaders(im);
             return request$2.post({
               path: url,
               body: body,
               headers: headers
             }).then(function (response) {
+              var publishList = response.publishList;
+
+              if (utils.isArray(publishList)) {
+                im.emit(CommonEvent.SET_URIS, publishList);
+              }
               Logger$1.log(LogTag.STREAM_HANDLER, {
                 msg: 'publish:response',
                 roomId: roomId,
@@ -3577,7 +3933,11 @@
       });
       return isError;
     };
-    var subscribe = function subscribe(user) {
+    /* 
+      subscribe 增加 callback: 订阅需要等流来，等待过程中会阻塞后续请求，所以增加 callback，与 
+      MediaServer 交互成功后即消费后续请求
+    */
+    var subscribe = function subscribe(user, callback) {
       var userId = user.id,
           _user$stream3 = user.stream,
           tag = _user$stream3.tag,
@@ -3593,6 +3953,9 @@
 
         return utils.Defer.reject(Inner.STREAM_TRACK_NOT_EXIST);
       }
+      // let isTypeEnabled = (type) => {
+      //   return types.indexOf(type) !== -1;
+      // };
       utils.forEach(types, function (type) {
         var tUser = {
           id: userId,
@@ -3602,32 +3965,53 @@
           }
         };
         var key = getUId(tUser);
-
-        var _DataCache$get = DataCache.get(key),
-            uri = _DataCache$get.uri;
-
+        var uri = DataCache.get(key);
         var isAdd = true;
         utils.forEach(subs, function (sub) {
           var existType = sub.type,
               existTag = sub.tag;
 
+          if (isV2Tag(existTag)) {
+            tag = TAG_V2;
+          }
           var isExist = utils.isEqual(type, existType) && utils.isEqual(tag, existTag);
           if (isExist) {
             isAdd = false;
           }
         });
-        var msid = pc.getStreamId(user);
         if (isAdd && !utils.isUndefined(uri)) {
-          subs.push({
-            msid: msid,
-            uri: uri,
-            type: type,
-            tag: tag
+          uri = utils.clone(uri);
+          uri = utils.rename(uri, {
+            mediaType: 'type'
           });
+          // uri.state = isTypeEnabled(uri.type) ? TRACK_STATE.ENABLE : TRACK_STATE.DISABLE;
+          subs.push(uri);
         }
       });
-      SubscribeCache.set(userId, subs);
+
       var roomId = im.getRoomId();
+
+      var url = utils.tplEngine(Path.SUBSCRIBE, {
+        roomId: roomId
+      });
+      var isOnlySubscribe = false;
+      if (SubscribeCache.getKeys().length > 0) {
+        url = utils.tplEngine(Path.ONLY_SUBSCRIBE, {
+          roomId: roomId
+        });
+        isOnlySubscribe = true;
+      }
+
+      SubscribeCache.set(userId, subs);
+
+      var trackIds = getTrackIds(user);
+      im.emit(CommonEvent.SEND_REPORT, {
+        type: STAT_NAME.R2,
+        name: UpEvent.STREAM_SUBSCRIBE,
+        content: {
+          trackIds: trackIds
+        }
+      });
       return utils.deferred(function (resolve, reject) {
         var uid = getSubPromiseUId(user);
         SubPromiseCache.set(uid, {
@@ -3638,10 +4022,10 @@
         getBody().then(function (body) {
           var offer = body.sdp;
 
-          var url = utils.tplEngine(Path.SUBSCRIBE, {
-            roomId: roomId
-          });
-          var headers = getHeaders();
+          if (isOnlySubscribe) {
+            delete body.sdp;
+          }
+          var headers = getHeaders(im);
           var option = {
             path: url,
             body: body,
@@ -3653,16 +4037,21 @@
             option: option
           });
           request$2.post(option).then(function (response) {
-            pc.setOffer(offer);
             var answer = response.sdp;
 
-            pc.setAnwser(answer);
+            if (!isOnlySubscribe) {
+              pc.setOffer(offer);
+              pc.setAnwser(answer);
+            } else {
+              pc.setRemoteAnwser(answer);
+            }
             Logger$1.log(LogTag.STREAM_HANDLER, {
-              msg: 'subscribe:response',
+              msg: 'subscribe:response:stream:not:arrive',
               roomId: roomId,
               user: user,
               response: response
             });
+            callback();
           }, function (error) {
             Logger$1.log(LogTag.STREAM_HANDLER, {
               msg: 'subscribe:response:error',
@@ -3680,6 +4069,9 @@
       });
     };
     var unsubscribe = function unsubscribe(user) {
+      if (utils.isNull(pc) || !(SubscribeCache.get(user.id))) {
+        return utils.Defer.resolve();
+      }
       SubscribeCache.remove(user);
       var roomId = im.getRoomId();
       Logger$1.log(LogTag.STREAM_HANDLER, {
@@ -3687,6 +4079,15 @@
         roomId: roomId,
         user: user
       });
+      var trackIds = getTrackIds(user);
+      im.emit(CommonEvent.SEND_REPORT, {
+        type: STAT_NAME.R2,
+        name: UpEvent.STREAM_UNSUBSCRIBE,
+        content: {
+          trackIds: trackIds
+        }
+      });
+
       return getBody().then(function (body) {
         var url = utils.tplEngine(Path.UNSUBSCRIBE, {
           roomId: roomId
@@ -3697,7 +4098,7 @@
           user: user,
           body: body
         });
-        var headers = getHeaders();
+        var headers = getHeaders(im);
         var offer = body.sdp;
 
         return request$2.post({
@@ -3778,7 +4179,7 @@
           user: user,
           body: body
         });
-        var headers = getHeaders();
+        var headers = getHeaders(im);
         return request$2.post({
           path: url,
           body: body,
@@ -3864,6 +4265,10 @@
         });
         var tracks = stream[type]();
         utils.forEach(tracks, function (track) {
+          im.emit(CommonEvent.TRACK_MODIFY, {
+            id: track.id,
+            isEnable: isEnable
+          });
           track.enabled = isEnable;
         });
       }
@@ -3881,7 +4286,7 @@
         var isSameStream = utils.isEqual(targetId, msid),
             isSameType = utils.isEqual(mediaType, type);
         var isFit = isSameStream && isSameType;
-        // state 榛樿涓� StreamState.ENABLE锛屼负 DISABLE 鏈彂甯冭祫婧�
+        // state 默认为 StreamState.ENABLE，为 DISABLE 未发布资源
         if (isFit) {
           utils.extend(stream, {
             state: state
@@ -3893,7 +4298,7 @@
     };
     var saveModify = function saveModify(user, type, state) {
       var uris = getFitUris(user, type, state);
-      // uris 涓虹┖琛ㄧず娌℃湁鍙戝竷璧勬簮锛屼笉闇€瑕佷慨鏀�
+      // uris 为空表示没有发布资源，不需要修改
       if (!utils.isEmpty(uris)) {
         var id = user.id;
 
@@ -3979,6 +4384,42 @@
       });
       unsubscribe(user);
     });
+    // STREAM_DISABLED: 'stream_disabled',
+    // STREAM_ENABLED: 'stream_enabled',
+    // STREAM_MUTED: 'stream_muted',
+    // STREAM_UNMUTED: 'stream_unmuted',
+    im.on(DownEvent.STREAM_DISABLED, function (error, user) {
+      var streamId = pc.getStreamId(user);
+      var stream = StreamCache.get(streamId);
+      var videoTracks = stream.getVideoTracks();
+      utils.forEach(videoTracks, function (track) {
+        track.enabled = false;
+      });
+    });
+    im.on(DownEvent.STREAM_ENABLED, function (error, user) {
+      var streamId = pc.getStreamId(user);
+      var stream = StreamCache.get(streamId);
+      var videoTracks = stream.getVideoTracks();
+      utils.forEach(videoTracks, function (track) {
+        track.enabled = true;
+      });
+    });
+    // im.on(DownEvent.STREAM_MUTED, (error, user) => {
+    //   let streamId = pc.getStreamId(user);
+    //   var stream = StreamCache.get(streamId);
+    //   let audioTracks = stream.getAudioTracks();
+    //   utils.forEach(audioTracks, (track) => {
+    //     track.enabled = false;
+    //   });
+    // });
+    // im.on(DownEvent.STREAM_UNMUTED, (error, user) => {
+    //   let streamId = pc.getStreamId(user);
+    //   var stream = StreamCache.get(streamId);
+    //   let audioTracks = stream.getAudioTracks();
+    //   utils.forEach(audioTracks, (track) => {
+    //     track.enabled = true;
+    //   });
+    // });
     eventEmitter.on(CommonEvent.CONSUME, function () {
       prosumer.consume(function (_ref13, next) {
         var event = _ref13.event,
@@ -4004,8 +4445,9 @@
               reject(error);
             });
           case UpEvent.STREAM_SUBSCRIBE:
-            return subscribe.apply(undefined, toConsumableArray(args)).then(function (result) {
+            return subscribe.apply(undefined, toConsumableArray(args).concat([function () {
               next();
+            }])).then(function (result) {
               resolve(result);
             }).catch(function (error) {
               next();
@@ -4086,35 +4528,34 @@
     };
   }
 
-  function RoomHandler(im) {
-    var getHeaders = function getHeaders() {
-      var roomId = im.getRoomId();
-      var token = im.getRTCToken();
-
-      var _im$getAppInfo = im.getAppInfo(),
-          appKey = _im$getAppInfo.appKey;
-
-      return {
-        'App-Key': appKey,
-        RoomId: roomId,
-        Token: token
-      };
-    };
+  function RoomHandler(im, option) {
     var join = function join(room) {
       Logger$1.log(LogTag.ROOM_HANDLER, {
         msg: 'join:before',
         room: room
       });
-      if (im.isJoined()) {
-        var Inner = ErrorType.Inner;
+      var Inner = ErrorType.Inner;
 
+      if (im.isJoined()) {
         Logger$1.log(LogTag.ROOM_HANDLER, {
           msg: 'join:after',
           extra: 'repeate join room'
         });
         return utils.Defer.reject(Inner.ROOM_REPEAT_JOIN);
       }
+      if (!im.isIMReady()) {
+        Logger$1.log(LogTag.ROOM_HANDLER, {
+          msg: 'im:connected',
+          extra: 'IM not connected'
+        });
+        return utils.Defer.reject(Inner.IM_NOT_CONNECTED);
+      }
       return utils.deferred(function (resolve, reject) {
+        var mode = option.mode;
+
+        utils.extend(room, {
+          mode: mode
+        });
         im.joinRoom(room).then(function (users) {
           Logger$1.log(LogTag.ROOM_HANDLER, {
             msg: 'join:after',
@@ -4125,6 +4566,11 @@
             return {
               id: user[0]
             };
+          });
+          im.emit(CommonEvent.SEND_REPORT, {
+            type: STAT_NAME.R1,
+            name: UpEvent.ROOM_JOIN,
+            content: {}
           });
           resolve({
             users: users
@@ -4147,32 +4593,50 @@
         roomId: roomId,
         user: user
       });
-      return im.leaveRoom().then(function () {
-        Logger$1.log(LogTag.ROOM_HANDLER, {
-          msg: 'leave:after',
-          roomId: roomId,
-          user: user
+      var token = im.getRTCToken();
+      var url = utils.tplEngine(Path.EXIT, {
+        roomId: roomId
+      });
+      var headers = getHeaders(im);
+      utils.extend(im, {
+        isJoinRoom: false
+      });
+      var leaveRoom = function leaveRoom(resolve, reject) {
+        im.leaveRoom().then(function () {
+          Logger$1.log(LogTag.ROOM_HANDLER, {
+            msg: 'leave:after',
+            roomId: roomId,
+            user: user
+          });
+          resolve();
+        }, function (error) {
+          Logger$1.log(LogTag.ROOM_HANDLER, {
+            msg: 'leave:im:error',
+            roomId: roomId,
+            error: error,
+            user: user
+          });
+          reject(error);
         });
-        var token = im.getRTCToken();
-        var url = utils.tplEngine(Path.EXIT, {
-          roomId: roomId
-        });
-        var headers = getHeaders();
-        return request$2.post({
+      };
+      return utils.deferred(function (resolve, reject) {
+        request$2.post({
           path: url,
           headers: headers,
           body: {
             token: token
           }
+        }).then(function () {
+          leaveRoom(resolve, reject);
+        }, function (error) {
+          Logger$1.log(LogTag.ROOM_HANDLER, {
+            msg: 'leave:ms:error',
+            roomId: roomId,
+            error: error,
+            user: user
+          });
+          leaveRoom(resolve, reject);
         });
-      }, function (error) {
-        Logger$1.log(LogTag.ROOM_HANDLER, {
-          msg: 'leave:after',
-          roomId: roomId,
-          error: error,
-          user: user
-        });
-        return error;
       });
     };
     var get$$1 = function get$$1() {
@@ -4283,8 +4747,500 @@
     };
   }
 
+  function Stat(im, option) {
+    var statTimer = 0;
+    var stat = option.stat || {};
+    var frequency = stat.frequency || STAT_FREQUENCY;
+
+    var StatCacheName = {
+      TOTAL_PACAKS_LOST: 'total_packs_lost',
+      IS_FIRST: 'is_first',
+      PACKAGE_SENT: 'package_sent',
+      PACKAGE_RECEIVED: 'package_received',
+      PACKAGE_SENT_LOST: 'package_sent_lost',
+      PACKAGE_RECEIVED_LOST: 'package_received_lost',
+      PACKAGE_SENT_ENUM: {
+        AUDIO: 'package_sent_audio',
+        VIDEO: 'package_sent_video'
+      },
+      PACKAGE_RECEIVED_ENUM: {
+        AUDIO: 'package_received_audio',
+        VIDEO: 'package_received_video'
+      },
+      PACKAGE_SENT_LOST_ENUM: {
+        AUDIO: 'package_sent_lost_audio',
+        VIDEO: 'package_sent_lost_video'
+      },
+      PACKAGE_RECEIVED_LOST_ENUM: {
+        AUDIO: 'package_received_lost_audio',
+        VIDEO: 'package_received_lost_video'
+      },
+      BYTES_SENT: 'bytes_sent',
+      BYTES_RECEIVED: 'bytes_received'
+    };
+    var StatCache = utils.Cache();
+    var TrackStateCache = utils.Cache();
+
+    var urisCache = utils.Cache();
+    var URIsCache = {
+      get: function get(ssrc) {
+        return urisCache.get(ssrc);
+      },
+      set: function set(uris) {
+        if (!utils.isArray(uris)) {
+          uris = [uris];
+        }
+        var kinds = {
+          1: 'video',
+          0: 'audio'
+        };
+        utils.forEach(uris, function (item) {
+          var uri = item.uri,
+              msid = item.msid,
+              mediaType = item.mediaType;
+
+          uri = utils.parse(uri);
+          var _uri = uri,
+              ssrc = _uri.ssrc;
+
+          var kind = kinds[mediaType];
+          var trackId = utils.tplEngine('{msid}_{kind}', {
+            msid: msid,
+            kind: kind
+          });
+          urisCache.set(ssrc, trackId);
+        });
+      },
+      remove: function remove(ssrc) {
+        urisCache.remove(ssrc);
+      }
+    };
+
+    im.on(CommonEvent.SET_URIS, function (error, uris) {
+      if (error) {
+        return;
+      }
+      URIsCache.set(uris);
+    });
+
+    im.on(CommonEvent.TRACK_MODIFY, function (error, track) {
+      if (error) {
+        return;
+      }
+      var id = track.id,
+          isEnable = track.isEnable;
+
+      TrackStateCache.set(id, isEnable);
+    });
+    /* 
+      data = {
+        content: ''
+      }
+      or
+      data = [{
+        content: ''
+      }]
+    */
+    var send = function send(report) {
+      if (!isSafari()) {
+        im.setRTCState(report);
+        Logger$1.log(LogTag.STAT, report);
+      }
+    };
+    var getR1 = function getR1(content) {
+      return utils.tplEngine(STAT_TPL.R1, content);
+    };
+    var getR2 = function getR2(content) {
+      return utils.tplEngine(STAT_TPL.R2, content);
+    };
+    var getR3Item = function getR3Item(content) {
+      return utils.tplEngine(STAT_TPL.R3_ITEM, content);
+    };
+    var getR3 = function getR3(content) {
+      return utils.tplEngine(STAT_TPL.R3, content);
+    };
+
+    var getR4Item = function getR4Item(content) {
+      return utils.tplEngine(STAT_TPL.R4_ITEM, content);
+    };
+    var getR4 = function getR4(content) {
+      return utils.tplEngine(STAT_TPL.R4, content);
+    };
+
+    /* 封装日志格式 */
+    var format = function format(stats) {
+      var getResolution = function getResolution(stat) {
+        var googFrameWidthSent = stat.googFrameWidthSent,
+            googFrameHeightSent = stat.googFrameHeightSent,
+            googFrameHeightReceived = stat.googFrameHeightReceived,
+            googFrameWidthReceived = stat.googFrameWidthReceived;
+
+        var tpl = '{width}x{height}';
+        var send = utils.tplEngine(tpl, {
+          height: googFrameHeightSent,
+          width: googFrameWidthSent
+        });
+        send = utils.isInclude(send, 'height') ? STAT_NONE : send;
+        var receive = utils.tplEngine(tpl, {
+          height: googFrameHeightReceived,
+          width: googFrameWidthReceived
+        });
+        receive = utils.isInclude(receive, 'height') ? STAT_NONE : receive;
+
+        return {
+          send: send,
+          receive: receive
+        };
+      };
+      var getRate = function getRate(ssrc) {
+        var bytesSent = ssrc.bytesSent,
+            bytesReceived = ssrc.bytesReceived;
+        var googTrackId = ssrc.googTrackId;
+
+        var transferRate = bytesSent ? bytesSent : bytesReceived;
+        var lastRate = StatCache.get(googTrackId);
+        StatCache.set(googTrackId, transferRate);
+        // 发送、接收总码率为空，直接返回，下次有合法值再行计算
+        if (utils.isUndefined(lastRate)) {
+          return STAT_NONE;
+        }
+
+        var getCurrent = function getCurrent(current, latest) {
+          var rate = (current - latest) * 8 / 1024 / (frequency / 1000);
+          return rate;
+        };
+        var rate = getCurrent(transferRate, lastRate);
+        return rate;
+      };
+      var getTrack = function getTrack(stat) {
+        var track = {};
+        var audioLevel = stat['audioOutputLevel'] || stat['audioInputLevel'] || STAT_NONE;
+        var frameRate = stat['googFrameRateInput'] || stat['googFrameRateOutput'] || STAT_NONE;
+        var samplingRate = STAT_NONE,
+            transferRate = STAT_NONE;
+        var id = stat.id;
+
+        var ratio = getResolution(stat);
+
+        var trackId = stat.googTrackId;
+        var trackState = TRACK_STATE.DISABLE;
+        var trackEnabled = TrackStateCache.get(trackId);
+        if (utils.isUndefined(trackEnabled) || trackEnabled) {
+          trackState = TRACK_STATE.ENABLE;
+        }
+
+        var isSender = utils.isInclude(id, 'send');
+        var resolution = ratio.receive;
+        if (isSender) {
+          resolution = ratio.send;
+        }
+
+        var rate = getRate(stat);
+        var trackSent = STAT_NONE,
+            trackReceived = STAT_NONE;
+
+        var calcLostRate = function calcLostRate(stat) {
+          var packetsSent = stat.packetsSent,
+              packetsReceived = stat.packetsReceived,
+              packetsLost = stat.packetsLost,
+              mediaType = stat.mediaType;
+
+          var calc = function calc(packets, prePackets, packetsLost, prePacketsLost) {
+            var _packets = Math.abs(packets - prePackets);
+            var _packetsLost = Math.abs(packetsLost - prePacketsLost);
+            if (_packets == 0) {
+              return 100;
+            }
+            var rate = _packetsLost / (_packets + _packetsLost);
+            if (rate.toString() === 'NaN') {
+              return 0;
+            }
+            return rate.toFixed(2);
+          };
+          var _mediaType = mediaType.toUpperCase();
+          var calcHandles = {
+            sender: function sender() {
+              var prePacketsSent = StatCache.get(StatCacheName.PACKAGE_SENT_ENUM[_mediaType]);
+              StatCache.set(StatCacheName.PACKAGE_SENT_ENUM[_mediaType], packetsSent);
+
+              var prePacketsLostSent = StatCache.get(StatCacheName.PACKAGE_SENT_LOST_ENUM[_mediaType]);
+              StatCache.set(StatCacheName.PACKAGE_SENT_LOST_ENUM[_mediaType], packetsLost);
+
+              return calc(packetsSent, prePacketsSent, packetsLost, prePacketsLostSent);
+            },
+            receiver: function receiver() {
+              var prePacketsReceived = StatCache.get(StatCacheName.PACKAGE_RECEIVED_ENUM[_mediaType]);
+              StatCache.set(StatCacheName.PACKAGE_RECEIVED_ENUM[_mediaType], packetsReceived);
+
+              var prePacketsLostReceived = StatCache.get(StatCacheName.PACKAGE_RECEIVED_LOST_ENUM[_mediaType]);
+              StatCache.set(StatCacheName.PACKAGE_RECEIVED_LOST_ENUM[_mediaType], packetsLost);
+
+              return calc(packetsReceived, prePacketsReceived, packetsLost, prePacketsLostReceived);
+            }
+          };
+
+          var name = isSender ? 'sender' : 'receiver';
+          var func = calcHandles[name];
+          return func();
+        };
+        var lostRate = calcLostRate(stat);
+        var packLostReceivedRate = 0,
+            packLostSentRate = 0;
+
+        if (isSender) {
+          trackSent = rate;
+          packLostSentRate = lostRate;
+        } else {
+          packLostReceivedRate = lostRate;
+          trackReceived = rate;
+        }
+        var props = ['googCodecName', 'packetsLost', 'googJitterReceived', 'googNacksReceived', 'googPlisReceived', 'googRtt', 'googFirsReceived', 'codecImplementationName', 'googRenderDelayMs', 'googJitterSent', 'googNacksSent', 'googPlisSent', 'googFirsSent'];
+        utils.forEach(props, function (prop) {
+          track[prop] = stat[prop] || STAT_NONE;
+        });
+
+        var googTrackId = stat.googTrackId,
+            ssrc = stat.ssrc;
+
+        googTrackId = URIsCache.get(ssrc) || STAT_NONE;
+        utils.extend(track, {
+          googTrackId: googTrackId,
+          audioLevel: audioLevel,
+          samplingRate: samplingRate,
+          frameRate: frameRate,
+          transferRate: transferRate,
+          resolution: resolution,
+          trackState: trackState,
+          trackSent: trackSent,
+          trackReceived: trackReceived,
+          packLostSentRate: packLostSentRate,
+          packLostReceivedRate: packLostReceivedRate,
+          isSender: isSender
+        });
+        return track;
+      };
+      var getProps = function getProps(prop, isArray) {
+        var props = utils.filter(stats, function (stat) {
+          var type = stat.type;
+
+          return utils.isEqual(type, prop);
+        });
+        return isArray ? props : props[0];
+      };
+      var getPair = function getPair(pair) {
+        pair = pair || {};
+        var _pair = pair,
+            _bytesReceived = _pair.bytesReceived,
+            _bytesSent = _pair.bytesSent,
+            googLocalAddress = _pair.googLocalAddress;
+
+        var preBytesSent = StatCache.get(StatCacheName.BYTES_SENT);
+        var preBytesReceived = StatCache.get(StatCacheName.BYTES_RECEIVED);
+
+        var totalSend = STAT_NONE,
+            totalReceive = STAT_NONE;
+        if (preBytesSent) {
+          totalSend = (_bytesSent - preBytesSent) * 8 / 1024 / (frequency / 1000);
+        }
+        if (preBytesReceived) {
+          totalReceive = (_bytesReceived - preBytesReceived) * 8 / 1024 / (frequency / 1000);
+        }
+        StatCache.set(StatCacheName.BYTES_SENT, _bytesSent);
+        StatCache.set(StatCacheName.BYTES_RECEIVED, _bytesReceived);
+        return {
+          totalSend: totalSend,
+          totalReceive: totalReceive,
+          localAddress: googLocalAddress
+        };
+      };
+      var ssrcs = getProps('ssrc', true);
+      var videoBwe = getProps('VideoBwe');
+      var localcandidate = getProps('localcandidate');
+      var googCandidatePair = getProps('googCandidatePair');
+
+      ssrcs = utils.map(ssrcs, function (ssrc) {
+        var track = getTrack(ssrc);
+        return track;
+      });
+      googCandidatePair = getPair(googCandidatePair);
+      var _googCandidatePair = googCandidatePair,
+          totalSend = _googCandidatePair.totalSend,
+          totalReceive = _googCandidatePair.totalReceive,
+          localAddress = _googCandidatePair.localAddress;
+
+
+      var totalPacketsLost = 0;
+      utils.forEach(ssrcs, function (ssrc) {
+        var packetsLost = ssrc.packetsLost;
+
+        packetsLost = Number(packetsLost);
+        if (!utils.isEqual(packetsLost, STAT_NONE)) {
+          totalPacketsLost += packetsLost;
+        }
+      });
+
+      if (utils.isUndefined(localcandidate)) {
+        return {};
+      }
+      var networkType = localcandidate.networkType,
+          rtt = localcandidate.stunKeepaliveRttTotal;
+      var receiveBand = videoBwe.googAvailableReceiveBandwidth,
+          sendBand = videoBwe.googAvailableSendBandwidth;
+
+
+      var R5Data = {
+        networkType: networkType,
+        rtt: rtt,
+        receiveBand: receiveBand,
+        localAddress: localAddress,
+        sendBand: sendBand,
+        packetsLost: totalPacketsLost
+      };
+
+      var sendTracks = [],
+          receiveTracks = [];
+      utils.forEach(ssrcs, function (ssrc) {
+        var isSender = ssrc.isSender,
+            trackSent = ssrc.trackSent;
+
+
+        if (isSender) {
+          if (trackSent != '0.00') {
+            var track = getR3Item(ssrc);
+            sendTracks.push(track);
+          }
+        } else {
+          var _track = getR4Item(ssrc);
+          receiveTracks.push(_track);
+        }
+      });
+      var R3 = void 0,
+          R4 = void 0;
+      if (!utils.isEmpty(sendTracks)) {
+        var content = {
+          totalRate: totalSend,
+          tracks: sendTracks.join(STAT_SEPARATOR)
+        };
+        utils.extend(content, R5Data);
+        R3 = getR3(content);
+      }
+      if (!utils.isEmpty(receiveTracks)) {
+        var _content = {
+          totalRate: totalReceive,
+          tracks: receiveTracks.join(STAT_SEPARATOR)
+        };
+        utils.extend(_content, R5Data);
+        R4 = getR4(_content);
+      }
+      if (utils.isUndefined(StatCache.get(StatCacheName.IS_FIRST))) {
+        StatCache.set(StatCacheName.IS_FIRST, true);
+        return {};
+      }
+      return {
+        R3: R3,
+        R4: R4
+      };
+    };
+    /* 根据条件调用 Send 方法 */
+    var sendReport = function sendReport(reports) {
+      utils.forEach(reports, function (report) {
+        if (report) {
+          send({
+            report: report
+          });
+        }
+      });
+    };
+    var take = function take(pc) {
+      statTimer = setInterval(function () {
+        pc.getStats(function (stats) {
+          var reports = format(stats);
+          sendReport(reports);
+        });
+      }, frequency);
+    };
+    im.on(CommonEvent.LEFT, function () {
+      clearInterval(statTimer);
+    });
+    im.on(CommonEvent.PEERCONN_CREATED, function (error, pc) {
+      if (error) {
+        throw error;
+      }
+      if (!isSafari()) {
+        take(pc);
+      }
+    });
+    var getType = function getType(name) {
+      var type = '',
+          state = '';
+      switch (name) {
+        case UpEvent.STREAM_PUBLISH:
+          type = 'publish';
+          state = 'begin';
+          break;
+        case UpEvent.STREAM_UNPUBLISH:
+          type = 'publish';
+          state = 'end';
+          break;
+        case UpEvent.STREAM_SUBSCRIBE:
+          type = 'subscribe';
+          state = 'begin';
+          break;
+        case UpEvent.STREAM_UNSUBSCRIBE:
+          type = 'subscribe';
+          state = 'end';
+          break;
+      }
+      return {
+        type: type,
+        state: state
+      };
+    };
+    im.on(CommonEvent.SEND_REPORT, function (error, data) {
+      if (utils.isUndefined(error)) {
+        var type = data.type,
+            name = data.name,
+            trackIds = data.content.trackIds;
+
+        var report = '';
+        var borwser = utils.getBrowser();
+        switch (type) {
+          case STAT_NAME.R1:
+            report = getR1({
+              rtcVersion: getVersion(),
+              imVersion: im.getIMVersion(),
+              platform: 'Web',
+              pcName: navigator.platform,
+              pcVersion: STAT_NONE,
+              browserName: borwser.name,
+              browserVersion: borwser.version
+            });
+            break;
+          case STAT_NAME.R2:
+            {
+              var _getType = getType(name),
+                  _type = _getType.type,
+                  state = _getType.state;
+
+              report = getR2({
+                type: _type,
+                state: state,
+                trackIds: trackIds.join('\t')
+              });
+            }
+            break;
+        }
+        if (!utils.isEmpty(report)) {
+          send({
+            report: report
+          });
+        }
+      }
+    });
+  }
+
   /* 
-      鐗堟湰鏇存柊椤荤煡: 鍘熺増 adapter.js 涓嶆敮鎸� es6 寮曞叆锛屽皢鍘熷鏂囦欢 factory 瀹氫箟 Adapter 鏂规硶锛岄€氳繃妯″潡寮曠敤鍒濆鍖�
+      版本更新须知: 原版 adapter.js 不支持 es6 引入，将原始文件 factory 定义 Adapter 方法，通过模块引用初始化
   */
   function Adapter() {
   return function () {
@@ -7064,7 +8020,7 @@
 
         function maybeAddCandidate(iceTransport, candidate) {
           // Edge's internal representation adds some fields therefore
-          // not all field褧 are taken into account.
+          // not all fieldѕ are taken into account.
           var alreadyAdded = iceTransport.getRemoteCandidates().find(function (remoteCandidate) {
             return candidate.foundation === remoteCandidate.foundation && candidate.ip === remoteCandidate.ip && candidate.port === remoteCandidate.port && candidate.priority === remoteCandidate.priority && candidate.protocol === remoteCandidate.protocol && candidate.type === remoteCandidate.type;
           });
@@ -7439,7 +8395,7 @@
             iceGatherer.onlocalcandidate = function (evt) {
               if (pc.usingBundle && sdpMLineIndex > 0) {
                 // if we know that we use bundle we can drop candidates with
-                // 褧dpMLineIndex > 0. If we don't do this then our state gets
+                // ѕdpMLineIndex > 0. If we don't do this then our state gets
                 // confused since we dispose the extra ice gatherer.
                 return;
               }
@@ -7447,7 +8403,7 @@
               event.candidate = { sdpMid: mid, sdpMLineIndex: sdpMLineIndex };
 
               var cand = evt.candidate;
-              // Edge emits an empty object for RTCIceCandidateComplete鈥�
+              // Edge emits an empty object for RTCIceCandidateComplete‥
               var end = !cand || Object.keys(cand).length === 0;
               if (end) {
                 // polyfill since RTCIceGatherer.state is not implemented in
@@ -9073,7 +10029,7 @@
           rtcpParameters.reducedSize = rsize.length > 0;
           rtcpParameters.compound = rsize.length === 0;
 
-          // parses the rtcp-mux attr褨bute.
+          // parses the rtcp-mux attrіbute.
           // Note that Edge does not support unmuxed RTCP.
           var mux = SDPUtils.matchPrefix(mediaSection, 'a=rtcp-mux');
           rtcpParameters.mux = mux.length > 0;
@@ -9288,7 +10244,7 @@
           mediaType = stat.mediaType;
 
       if (utils.isEqual(mediaType, 'audio')) {
-        // 涓嶅尯鍒� Input銆丱utput 鏈€缁堝搴旂敤灞傛寜 user 鏆撮湶
+        // 不区分 Input、Output 最终对应用层按 user 暴露
         var audioLevel = stat['audioOutputLevel'] || stat['audioInputLevel'];
         audioLevel = getAudioLevel(audioLevel);
         var latestLevel = TrackStateCache.get(trackId);
@@ -9401,6 +10357,7 @@
         device: DeviceHandler(im),
         report: ReportHandler(im)
       };
+      Stat(im, option);
       var context = _this;
       var RongIMLib = option.RongIMLib;
 
@@ -9419,19 +10376,27 @@
           context.emit(name, user, error);
         });
       };
+      // 离开房间时, 需将 client 绑定的 RoomEvents 事件取消, 否则重新加入房间会重复触发前后多次的监听
+      var unbindRoomEvents = function unbindRoomEvents() {
+        utils.forEach(RoomEvents, function (event) {
+          var name = event.name;
+
+          context.off(name);
+        });
+      };
       utils.forEach(RoomEvents, bindEvent);
       im.on(CommonEvent.JOINED, function () {
         var urls = im.getMSUrl();
+        var customUrl = option.url;
+
+        if (!utils.isEmpty(customUrl)) {
+          urls = [customUrl];
+        }
         if (utils.isEmpty(urls)) {
           var Inner = ErrorType.Inner;
 
           var error = Inner.ENGINE_ERROR;
           return context.emit(DownEvent.RTC_ERROR, error);
-        }
-        var customUrl = option.url;
-
-        if (!utils.isEmpty(customUrl)) {
-          urls = [customUrl];
         }
         request$2.setOption({
           urls: urls
@@ -9439,6 +10404,7 @@
         context.emit(DownEvent.RTC_MOUNTED);
       });
       im.on(CommonEvent.LEFT, function () {
+        unbindRoomEvents();
         context.emit(DownEvent.RTC_UNMOUNTED);
       });
       im.on(CommonEvent.ERROR, function (error, data) {
@@ -9456,7 +10422,7 @@
             var mediaType = _ref.mediaType;
 
             // return utils.isEqual(msType, mediaType) && utils.isEqual(state, StreamState.ENABLE);
-            // 鍙尯鍒� track 涓嶅尯鍒�
+            // 只区分 track 不区分
             return utils.isEqual(msType, mediaType);
           });
         };
@@ -9817,6 +10783,7 @@
           min: 100,
           start: 300
         },
+        mode: RTC_MODE.RTC,
         created: function created() {},
         mounted: function mounted() {},
         unmounted: function unmounted() {},
@@ -9849,6 +10816,7 @@
         StreamType: StreamType,
         StreamSize: StreamSize,
         StorageType: StorageType,
+        Mode: RTC_MODE,
         Message: Message$1,
         Device: Device,
         Report: Report,
@@ -9900,6 +10868,13 @@
     }]);
     return RongRTC;
   }();
+
+  utils.extend(RongRTC, {
+    StreamType: StreamType,
+    StreamSize: StreamSize,
+    StorageType: StorageType,
+    Mode: RTC_MODE
+  });
 
   return RongRTC;
 

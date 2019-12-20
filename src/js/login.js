@@ -7,7 +7,7 @@
     getDomListByName = Dom.getDomListByName,
     getSelectedByName = Dom.getSelectedByName,
     getDomById = Dom.getById,
-    Cache = utils.Cache,
+    Cache = utils.Cache, _5min = 5 * 60,
     Config = RongSeal.Config;
   // var randomUserId;
   var userId, rongIMToken;
@@ -47,7 +47,7 @@
    */
   function getSmsCode(params, callback) {
     callback = callback || utils.noop;
-    var url = RongSeal.Config.URL+'/user/send_code';
+    var url = RongSeal.Config.URL + '/user/send_code';
     return new Promise(function (resolve, reject) {
       utils.ajax({
         url: url,
@@ -82,7 +82,7 @@
    */
   function verifySmsCode(params, callback) {
     callback = callback || utils.noop;
-    var url = RongSeal.Config.URL+'/user/verify_code';
+    var url = RongSeal.Config.URL + '/user/verify_code';
     return new Promise(function (resolve, reject) {
       utils.ajax({
         url: url,
@@ -112,7 +112,7 @@
     var selectID = null;
     var radios = document.querySelectorAll('[name=userOption]')
     for (var el of radios) {
-      el.addEventListener('click', function() {
+      el.addEventListener('click', function () {
         if (selectID == this.id && selectID) {
           this.checked = '';
           selectID = null;
@@ -154,18 +154,18 @@
       setCountDownTimer(countDown)
     }, 1000)
   }
-  var verifyPhoneNumber = function (phoneNumber){
-    return new Promise(function(resolve,reject){
-      var telReg = /^[1][3,4,5,7,8][0-9]{9}$/;
-      if(telReg.test(phoneNumber)){
+  var verifyPhoneNumber = function (phoneNumber) {
+    return new Promise(function (resolve, reject) {
+      var telReg = /^[1][3,4,5,6,7,8,9][0-9]{9}$/;
+      if (telReg.test(phoneNumber)) {
         resolve();
-      }else {
+      } else {
         reject();
       }
     })
   };
   var sendSmsCode = function () {
-    verifyPhoneNumber(telDom.value).then(function(){
+    verifyPhoneNumber(telDom.value).then(function () {
       console.log(telDom.value);
       var params = {
         tel: telDom.value,
@@ -178,7 +178,7 @@
       })
       var countDown = 60;
       setCountDownTimer(countDown);
-    }).catch(function(){
+    }).catch(function () {
       sealAlert(localeData.phoneNumberErr);
     })
   }
@@ -186,8 +186,8 @@
     var tel = telDom.value,
       code = verifyCodeDom.value;
     var imTokenKey = StorageKeys.IMToken + '_' + tel;
-    verifyPhoneNumber(tel).then(function(){
-      console.log(tel,'tel ss')
+    verifyPhoneNumber(tel).then(function () {
+      console.log(tel, 'tel ss')
       if (tel && code) {
         //发送验证码
         var params = {
@@ -223,8 +223,8 @@
       } else {
         sealAlert(localeData.verifyCodeErr)
       }
-    }).catch(function(){
-      console.log(tel,'tel ff')
+    }).catch(function () {
+      console.log(tel, 'tel ff')
       sealAlert(localeData.phoneNumberErr);
     })
   }
@@ -253,12 +253,22 @@
     }
   }
   var RTCEnterLogic = function () {
+    var userId = roomTelNumDom.value;
+    var _cache = Cache.get(userId);
+    if (_cache) {
+      _cache = JSON.parse(_cache);
+      var isKick = (((+new Date()) - parseInt(_cache.kickOffTime)) / 1000 - _5min) < 0;
+      if (_cache.roomId === roomDom.value && isKick) {
+        sealAlert(localeData.sealRtcKickOﬀ);
+        return;
+      }
+    }
+    if (!isChromeOrSafari()) {
+      return sealAlert(localeData.supportedBrowsers);
+    }
     var imToken = hasIMToken();
     if (imToken) {
       startRTC(imToken);
-      // join room page
-      // Dom.showByClass('rong-login-roomjoin')
-      // Dom.hideByClass('rong-login-telverify')
     } else {
       // verify tel page
       var tips = localeData.verifyCodeTips;
@@ -287,7 +297,15 @@
       }
     }
   };
-
+  var isChromeOrSafari = function () {
+    var browser = utils.getBrowser();
+    var name = browser.type;
+    if (name == 'Chrome' || name == 'Safari') {
+      return true;
+    } else {
+      return false;
+    }
+  }
   var checkRTCValue = function () {
     var isRoomIdEmpty = !roomDom.value;
     var userNameVal = utils.trim(userNameDom.value);
@@ -302,11 +320,11 @@
       prompt = localeData.roomIdIllegal;
       isValid = false;
     }
-    if(isUserNameEmpty){
+    if (isUserNameEmpty) {
       prompt = localeData.userNameEmpty;
       isValid = false;
     }
-    if(userNameVal.indexOf(' ') !== -1){
+    if (userNameVal.indexOf(' ') !== -1) {
       prompt = localeData.userNameIllegal;
       isValid = false;
     }
@@ -331,16 +349,16 @@
     // closeAudioDom = getSelectedByName('isCloseAudio');
     var modeOption = GetRadioValue('userOption');
     var videoEnable, bystanderEnable;
-    if(modeOption){
-      if(modeOption == 'closeVideo') {
+    if (modeOption) {
+      if (modeOption == 'closeVideo') {
         videoEnable = false;
         bystanderEnable = false;
       }
-      if(modeOption == 'bystander'){
+      if (modeOption == 'bystander') {
         videoEnable = true;
         bystanderEnable = true;
       }
-    }else {
+    } else {
       videoEnable = true;
       bystanderEnable = false;
     }
@@ -366,7 +384,8 @@
       userId: roomTelNumDom.value,
       userName: userNameDom.value,
       joinMode: params.joinMode,
-      joinTime: currentTimestamp
+      joinTime: currentTimestamp,
+      master: params.master
     };
     var forKey = roomTelNumDom.value;
     var message = {
@@ -420,8 +439,8 @@
           }
           reconnect();
         }
-      },{
-        rate: [5000,2000]
+      }, {
+        rate: [5000, 2000]
       })
     };
     reconnect();
@@ -439,7 +458,7 @@
       Dom.showByClass('rong-login-telverify')
     };
     var token = user.token;
-    if(!token){
+    if (!token) {
       return goVerifyPage();
     }
     RongSeal.im.connect(user, {
@@ -493,21 +512,9 @@
       userId: userId,
       token: imToken
     })
-    // randomUserId = new Date().getTime().toString();
-    // common.getIMToken({
-    //   // id: randomUserId
-    //   id: userId
-    // }).then(function (user) {
-    //   connect(user);
-    // }, function (error) {
-    //   console.log(error)
-    //   sealAlert(localeData.networkError);
-    //   Dom.hideByClass('rong-btn-loading');
-    //   Dom.showByClass('rong-btn-start');
-    //   RongSeal.im.instance().logout();
-    // });
     RongSeal.userInfo = {
-      userName: userNameDom.value
+      userName: userNameDom.value,
+      userId: userId
     }
   };
 
@@ -532,7 +539,7 @@
       startRTC(token);
     }
   };
-  var pressVerifyLogin = function(e) {
+  var pressVerifyLogin = function (e) {
     if ((e.keyCode || e.which) == 13) {
       verifyLogin();
     }
@@ -556,7 +563,7 @@
   })();
   RongSeal.setUserInfoObj = setUserInfoObj;
   RongSeal.StorageKeys = StorageKeys;
-  
+
 })({
   win: window,
   RongSeal: window.RongSeal,

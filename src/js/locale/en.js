@@ -28,7 +28,12 @@
       openVideoError: 'Failed to open the camera',
       closeAudioError: 'Turn off the microphone failed',
       openAudioError: 'Turning on the microphone failed',
-      switchStreamError: 'Switching stream failed'
+      switchStreamError: 'Switching stream failed',
+      sealRtcKickOﬀ: 'You have been removed from the room by the administrator, please try to join later',
+      isManage: 'You are currently an administrator',
+      newManage: ' become a new administrator',
+      joinMeeting: ' Join the meeting',
+      removeUser: 'Are you sure you want to remove user {0} from your room?'
     },
     placeholder: {
       roomId: 'Please enter the RoomId',
@@ -53,6 +58,12 @@
       hangup: 'hangup',
       screenshare: 'screenshare',
       whiteboard: 'whiteboard'
+    },
+    common: {
+      spectators: 'Spectators',
+      video: 'Video',
+      audio: 'Audio',
+      online: 'Number of people online ( {0} )'
     }
   };
 })(window);

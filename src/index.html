@@ -1,30 +1,32 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="stylesheet" href="./css/main.css">
   <link rel="icon" href="./css/img/icon.png" type="image/x-icon" />
-  <script src="./lib/protobuf-2.3.4.min.js"></script>
-  <script src="./lib/RongIMLib-2.4.0.js"></script>
-  <script src="./lib/RongRTC.3.0.2.js?d=201904231830"></script>
+  <script src="./lib/RongRTC.3.1.2.js"></script>
+  <script src="//cdn.ronghub.com/RongIMLib-2.5.3.js"></script>
   <script src="./lib/frameImage.js"></script>
   <script src="./lib/screenshare.js"></script>
   <script src="./lib/media.js"></script>
   <script src="./config.js"></script>
-  <title>SealRTC v3.0.5</title>
+  <title>SealRTC</title>
 </head>
+
 <body lang="zh">
   <video id="test"></video>
   <!-- Login -->
   <div id="RongLogin" class="rong-wrap rong-login">
     <div class="rong-login-content">
       <img class="rong-login-logo" src="./css/img/logo.png">
-      <h3 class="rong-login-title">SealRTC v3.0.5</h3>
+      <h3 class="rong-login-title">SealRTC</h3>
       <div class="rong-login-roomjoin">
         <input id="roomId" class="rong-login-input" type="text" autocomplete="off" lang-placeholder="roomId">
-        <input id="userName" maxlength="8" class="rong-login-input" type="text" autocomplete="off" lang-placeholder="userName">
+        <input id="userName" maxlength="8" class="rong-login-input" type="text" autocomplete="off"
+          lang-placeholder="userName">
         <input id="roomTelNum" class="rong-login-input" type="text" autocomplete="off" lang-placeholder="phoneNumber">
         <div class="rong-opt-stream">
           <div class="rong-opt-checkbox">
@@ -43,10 +45,12 @@
       </div>
       <div class="rong-login-telverify">
         <p class="rong-login-sms-tip" lang-textContent="phoneTips"></p>
-        <input id="telNumber" class="rong-login-telNum rong-login-verify-input" type="text" autocomplete="off" lang-placeholder="phoneNumber">
+        <input id="telNumber" class="rong-login-telNum rong-login-verify-input" type="text" autocomplete="off"
+          lang-placeholder="phoneNumber">
         <div class="rong-login-codeline">
-          <input id="verifyCode" class="rong-login-verifyCode rong-login-verify-input" type="number" autocomplete="off" lang-placeholder="verifyCode">
-          <input id="verifyCodeBtn" class="rong-login-verifyBtn" type="button"  lang-value="sendVerifyCode">
+          <input id="verifyCode" class="rong-login-verifyCode rong-login-verify-input" type="number" autocomplete="off"
+            lang-placeholder="verifyCode">
+          <input id="verifyCodeBtn" class="rong-login-verifyBtn" type="button" lang-value="sendVerifyCode">
         </div>
         <input id="verifyLogin" class="rong-btn-verifyLogin" type="button" lang-value="verifyLogin">
       </div>
@@ -72,7 +76,7 @@
               <span>640 * 480</span>
             </li>
             <li>
-              <input id="Rl-1280-720" value="1280*720" type="radio" name="resolution" >
+              <input id="Rl-1280-720" value="1280*720" type="radio" name="resolution">
               <label for="Rl-1280-720"></label>
               <span>1280 * 720</span>
             </li>
@@ -86,7 +90,7 @@
     </div>
   </div>
 
-  <!-- RTC -->
+  <!-- RTC  -->
   <script id="RongRTC" type="text/x-template">
     <div id="RongRTC" class="rong-wrap rong-rtc">
       <div class="rong-rtc-opt">
@@ -100,6 +104,8 @@
         <a class="rong-rtc-btn rong-opt-custom-video rong-opt-videoicon-open" lang-title="customvideo"></a>
         <a class="rong-rtc-btn rong-opt-custom-video-close rong-opt-videoicon-close" lang-title="closecustomvideo"></a>
         <a class="rong-rtc-btn rong-opt-wb" lang-title="whiteboard"></a>
+        <a class="rong-rtc-btn rong-opt-custom-audio rong-opt-audioicon-open" lang-title="customaudio"></a>
+        <a class="rong-rtc-btn rong-opt-custom-audio-close rong-opt-audioicon-close" lang-title="closecustomaudio"></a>
       </div>
       <div id="RongWB" class="rong-wb-box">
         <a class="rong-wb-close"></a>
@@ -116,11 +122,18 @@
       <div class="rong-user-customvideo">
         <div class="customvideo-triangle"></div>
         <ul class="customvideo-list">
-          <li id="rong-customVideo1">视频文件1.mp4</li>
-          <li id="rong-customVideo2">视频文件2.mp4</li>
+          <li id="rong-customVideo1" lang-textContent="customVideo1"></li>
+          <li id="rong-customVideo2" lang-textContent="customVideo2"></li>
+        </ul>
+      </div>
+      <div class="rong-user-customaudio">
+        <div class="customaudio-triangle"></div>
+        <ul class="customaudio-list">
+          <li id="rong-customAudio1" lang-textContent="customAudio1"></li>
         </ul>
       </div>
     </div>
+    
   </script>
 
   <script id="RongStreamList" type="text/x-template">
@@ -171,6 +184,11 @@
       </div>
     </div>
   </script>
+  <script id="RongTips" type="text/x-template">
+    <div class="rong-seal-tips" style="display: block; margin-top: -11px;">
+    <span class="rong-seal-tips-text">{content}</span>
+  </div>
+  </script>
 
   <script src="./js/locale/en.js"></script>
   <script src="./js/locale/zh.js"></script>
@@ -181,4 +199,5 @@
   <script src="./js/main.js"></script>
   <script src="./js/whiteboard.js"></script>
 </body>
+
 </html>

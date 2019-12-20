@@ -23,7 +23,8 @@
       tokenExpired: 'token 已失效，请重新获取',
       kickedByOtherTips: '此用户已被其他端登录！',
       verifyCodeTips: '您还未验证过手机号，请先验证',
-      publishedCustomVideo: '已发布自定义视频信息',
+      publishedCustomVideo: '已发布自定义媒体信息',
+      supportedBrowsers: '目前支持 Safari 和 Chrome 浏览器，推荐使用 Chrome',
 
       getTokenError: '获取 token 失败',
       rtcError: '初始化 RTC 失败',
@@ -40,7 +41,13 @@
       openVideoError: '打开摄像头失败',
       closeAudioError: '关闭麦克风失败',
       openAudioError: '打开麦克风失败',
-      switchStreamError: '切换流失败'
+      switchStreamError: '切换流失败',
+      sealRtcKickOﬀ: '你已经被管理员移出房间，请稍后再尝试加入',
+      isManage: '您当前是管理员',
+      newManage: ' 成为新管理员',
+      joinMeeting: ' 加入会议',
+      leaveMeeting: ' 离开会议',
+      removeUser: '确定从房间中移除用户 {0} 吗？'
     },
     placeholder: {
       roomId: '请输入会议室 ID',
@@ -65,6 +72,9 @@
       userListClose: '关闭',
       copyright: 'Copyright 2019 RongCloud',
       copyrightRecord: '京 ICP 备 15042119 号-1',
+      customVideo1: '视频文件1.mp4',
+      customVideo2: '视频文件2.mp4',
+      customAudio1: '音频文件1.mp3'
     },
     value: {
       startRTC: '开始会议',
@@ -79,7 +89,15 @@
       whiteboard: '白板',
       userlist: '在线成员',
       customvideo: '自定义视频流',
-      closecustomvideo: '关闭自定义视频流'
+      closecustomvideo: '关闭自定义视频流',
+      customaudio: '自定义音频流',
+      closecustomaudio: '关闭自定义音频流'
+    },
+    common: {
+      spectators: '旁听者',
+      video: '视频',
+      audio: '音频',
+      online: '在线人数 ( {0} ) 人'
     }
   };
 })(window);

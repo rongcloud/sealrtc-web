@@ -29,49 +29,51 @@
     console.log(iframeWin.RongWB);
   }
 
-  function joinWBRoom(value,userRole) {
+  function joinWBRoom(value,isBystander) {
     var key = whiteBoardEnum.wbKey;
     var iframeWin=document.getElementById('rongWhiteboard').contentWindow;
     var roomInfo = JSON.parse(value[key]);
-    iframeWin.RongWB.getWhite(false,roomInfo,function(){},userRole)
+    iframeWin.RongWB.getWhite(false,roomInfo,function(){},isBystander)
   }
-  function destroyWBRoom(callback){
+  function destroyWBRoom(){
     rongStorage = win.RongSeal.rongStorage;
-    
     //判断是否最后一人
-    rongStorage.get([]).then(function (infos){
-      delete infos[whiteBoardEnum.wbKey];
-      var rtcPerNum = Object.getOwnPropertyNames(infos);
-      if (rtcPerNum.length === 1) {
-        //若是 清房间属性
-        rongStorage.remove(whiteBoardEnum.wbKey).then(function(val){
-          console.log('remove whiteBoard sss',val)
-          callback();
-        }).catch(function(err){
-          console.log('remove whiteBoard fff',err)
-          callback();
-        })
-      } else {
-        callback();
-      }
-    }).catch(function(err){
-      console.log('get wb room info fail',err)
+    return new Promise(function(resolve, reject) {
+      rongStorage.get([]).then(function (infos){
+        delete infos[whiteBoardEnum.wbKey];
+        var rtcPerNum = Object.getOwnPropertyNames(infos);
+        if (rtcPerNum.length === 1) {
+          //若是 清房间属性
+          rongStorage.remove(whiteBoardEnum.wbKey).then(function(val){
+            console.log('remove whiteBoard sss',val)
+            resolve();
+          }).catch(function(err){
+            console.log('remove whiteBoard fff',err)
+            resolve();
+          })
+        } else {
+          resolve();
+        }
+      }).catch(function(err){
+        console.log('get wb room info fail',err)
+        reject();
+      })
     })
   }
-  function whiteBoardLogic(userRole) {
+  function whiteBoardLogic(isBystander) {
     rongStorage = win.RongSeal.rongStorage;
     var key = whiteBoardEnum.wbKey;
     rongWhiteBoard = new common.UI.WhiteBoard();
     var url = './whiteboard/whiteboard.html';
     //获取
-    if (userRole == 'bystander') { 
+    if (isBystander) { 
       rongStorage.get(key).then(function(value){
         if (!value.hasOwnProperty(key)) {
           sealAlert('房间内未创建白板');
         }else {
           rongWhiteBoard.show(url);
           document.getElementById('rongWhiteboard').onload=function(){
-            joinWBRoom(value,userRole);
+            joinWBRoom(value,isBystander);
           }
         }
       })
