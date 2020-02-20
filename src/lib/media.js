@@ -78,7 +78,7 @@
       };
     } 
     else {
-      option.video.frameRate = 15;
+      // option.video.frameRate = 15;
       opts = option;
     }
     

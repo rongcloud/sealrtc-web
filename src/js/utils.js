@@ -78,6 +78,30 @@
       remove: remove
     };
   })();
+  var SessionCache = (function (config){
+    config = config || {};
+    var prefix = config.prefix || 'rong-sealrtc-v2';
+    var genKey = function (key) {
+      return utils.tplEngine('{prefix}_{key}', {
+        prefix: prefix,
+        key: key
+      });
+    };
+    var set = function (key, value) {
+      sessionStorage.setItem(genKey(key), value);
+    };
+    var get = function (key) {
+      return sessionStorage.getItem(genKey(key));
+    };
+    var remove = function (key) {
+      sessionStorage.removeItem(genKey(key));
+    };
+    return {
+      set: set,
+      get: get,
+      remove: remove
+    };
+  })();
   /* 
       var option = {
         url: '',
@@ -327,6 +351,12 @@
     return reg.test(val)
   };
 
+  var isLetter = function (val) {
+    var reg = /^[A-Za-z]+$/;
+    return reg.test(val)
+   
+  };
+
   var insertAfter = function(newEl, targetEl) {
     var parentEl = targetEl.parentNode;
     if(parentEl.lastChild == targetEl){
@@ -402,11 +432,32 @@
   function trim(str) {
     return str.replace(/(^\s*)|(\s*$)/g, '');
   }
+  function isChineseChar(str){   
+    var reg = /[\u4E00-\u9FA5\uF900-\uFA2D]/;
+    return reg.test(str);
+ }
+
+  function getRandomStr() {
+    var tplArr=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','0','1','2','3','4','5','6','7','8','9'];
+    var randomArr = [],randomStr = '{a}{b}{c}{d}';
+    for(var i=0; i<4; i++){
+      var index = Math.floor(Math.random()* tplArr.length)
+      randomArr.push(tplArr[index])
+    }
+    randomStr = tplEngine('{a}{b}{c}{d}',{
+      a: randomArr[0],
+      b: randomArr[1],
+      c: randomArr[2],
+      d: randomArr[3],
+    })
+    return randomStr;
+  }
   utils = {
     noop: noop,
     forEach: forEach,
     tplEngine: tplEngine,
     Cache: Cache,
+    SessionCache: SessionCache,
     sendForm: sendForm,
     ajax: ajax,
     isObject: isObject,
@@ -415,7 +466,10 @@
     isNumberAndLetter: isNumberAndLetter,
     EventEmitter,
     trim: trim,
-    getBrowser: getBrowser
+    getBrowser: getBrowser,
+    isChineseChar: isChineseChar,
+    isLetter: isLetter,
+    getRandomStr: getRandomStr
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.utils = utils;

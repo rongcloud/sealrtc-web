@@ -48,8 +48,9 @@
   var VideoPrefix = {
     STREAM: 'Rong-{id}'
   };
-  var loginUserId, rongRTC, rongRTCRoom, rongRTCStream, rongRTCMessage, rongStorage, rongReport;
+  var loginUserId, rongRTC, rongRTCRoom, rongRTCStream, rongRTCMessage, rongStorage, rongReport, userInfos;
   var rongRTCPage, streamList, hasCustomVideoTag, isBystander;
+  var uiTable, totalUiTable, showMonitor = false;
   var userStreams = {
     users: {},
     getList: function (id) {
@@ -234,10 +235,11 @@
 
   function getSelfMediaStream(videoEnable, audioEnable, resolution, audioOnly) {
     var videoConfig = videoEnable ? resolution : videoEnable;
+    videoConfig.frameRate = 15;
     var constraints = {
       video: videoConfig,
       audio: audioEnable,
-      frameRate: 15,
+      // frameRate: 15,
       audioOnly: audioOnly,
     };
     return new Promise(function (resolve, reject) {
@@ -317,9 +319,13 @@
   }
 
   function showUserStream(user) {
-    var id = user.id,
-      // type = user.stream.type,
+    var id = user.id,mediaStream;
+    // type = user.stream.type,
+    if(user.stream.mediaStream){
       mediaStream = user.stream.mediaStream;
+    }else{
+      mediaStream = user.stream[0].mediaStream;
+    }
     var streamBox = StreamBox.get(id);
     var isSelf = id === loginUserId;
     if (isSelf) {
@@ -841,9 +847,14 @@
       removeCustomVideoBox(user)
     }
   }
-  function publishSelfMediaStream(videoEnable, audioEnable, resolution, audioOnly) {
+  function publishSelfMediaStream(videoEnable, audioEnable, resolution, frameRate, audioOnly) {
+    console.info(videoEnable,frameRate)
     return new Promise(function (resolve, reject) {
-      getSelfMediaStream(videoEnable, audioEnable, resolution, audioOnly).then(function (user) {
+      console.info(videoEnable,frameRate)
+      if(!frameRate){
+        frameRate = 15;
+      }
+      getSelfMediaStream(videoEnable, audioEnable, resolution, audioOnly,frameRate).then(function (user) {
         rongRTCStream.publish(user).then(function () {
           if (!videoEnable) {
             closeVideo(user);
@@ -909,6 +920,7 @@
         RongSeal.userStreams.clearUsers();
         sealToast.destroy();
         RongSeal.destroyRongRTCPage();
+        RongSeal.rongMonitor.quit();
       }).catch(function () {
         common.UI.backLoginPage();
       })
@@ -919,6 +931,9 @@
       sealToast.destroy();
       RongSeal.destroyRongRTCPage();
     })
+
+    clickTimes = 0;
+    customAudioClickTimes = 0;
   }
   function manageChange(callback) {
     getRtcUserInfos([]).then(function (infos) {
@@ -1162,7 +1177,7 @@
     } else if (peopleNum >= LimitNum.SRJoinNumAV && peopleNum < LimitNum.SRJoinNumAudioOnly) {
       streamBox.disabledVideoBySelf();
       var audioOnly = true;
-      publishSelfMediaStream(false, true, params.resolution, audioOnly).then(
+      publishSelfMediaStream(false, true, params.resolution, params.frameRate, audioOnly).then(
         addUserStream, publishStreamError);
     } else if (peopleNum >= LimitNum.SRJoinNumAudioOnly) {
       streamBox.closeVideoBySelf();
@@ -1189,9 +1204,10 @@
         Dom.showByClass(ClassName.RTC_PAGE);
         var videoEnable = params.videoEnable,
           audioEnable = params.audioEnable,
+          frameRate = params.frameRate,
           resolution = params.resolution;
         RTCJoinConfirm(peopleNum, params)
-        publishSelfMediaStream(videoEnable, audioEnable, resolution).then(
+        publishSelfMediaStream(videoEnable, audioEnable, resolution, frameRate).then(
           addUserStream, publishStreamError);
       } else if (peopleNum >= LimitNum.SRJoinNumAV && peopleNum < LimitNum.SRJoinNumAudioOnly) {
         sealAlert(tipStr1, {
@@ -1268,6 +1284,10 @@
     return new Promise(function (resolve, reject) {
       RongSeal.rongStorage.get(InfosKey).then(function (infos) {
         delete infos.rongRTCWhite;
+        userInfos = {};
+        for (var key in infos) {
+          userInfos[key] = JSON.parse(infos[key]);
+        }
         resolve(infos)
       }).catch(function (err) {
         // console.log(err)
@@ -1278,10 +1298,12 @@
   function setRtcUserInfos() {
     RongSeal.rongStorage.get([]).then(function (infos) {
       delete infos.rongRTCWhite;
+      userInfos = {};
       var userList = [];
       for (var key in infos) {
         var userInfo = JSON.parse(infos[key]);
         userList.push(userInfo);
+        userInfos[key] = userInfo;
       }
       var list = userListSortByDesc(userList)
       common.UI.userListView(list);
@@ -1383,6 +1405,8 @@
     loginUserId = params.userId;
     rongRTC = new RongRTC({
       appkey: RongSeal.Config.APP_ID,
+      url: params.url,
+      bitrate: params.bitrate,
       // debug: true,
       logger: (log) => {
         console.log(JSON.stringify(log));
@@ -1412,6 +1436,117 @@
       enabled: showUserVideo,
       muted: hideUserAudio,
       unmuted: showUserAudio
+    });
+    function getData(items) {
+      var keys = ['googTrackId', 'mediaType', 'googCodecName', 'resolution', 'frameRate', 'trackSent', 'packLostSentRate', 'trackReceived', 'packLostReceivedRate',];
+      var returnData = [];
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        var needItem = {};
+        var ids = item.googTrackId.split('_');
+        var val = item['googTrackId'];
+        if (userInfos[ids[0]]) {
+          var name = ids[0] === loginUserId ? '本地' : userInfos[ids[0]].userName;
+          var name1 = ids[1] === CustomizeTag.PROMOTIONAL_VIDEO ? '-自定义视频' : '';
+          var name2 = ids[1] === CustomizeTag.PROMOTIONAL_AUDIO ? '-自定义音频' : '';
+          //       PROMOTIONAL_VIDEO: 'RongRTCFileVideo',
+          // PROMOTIONAL_AUDIO
+          val = name + name1 + name2;
+        }
+        needItem['isLocal'] = val;
+        for (var j in keys) {
+          var key = keys[j];
+          if (item[key] && item[key] !== '-1') {
+            switch (key) {
+            case 'trackReceived':
+              needItem['trackSent'] = Math.ceil(item[key]);
+              break;
+            case 'trackSent':
+              needItem[key] = Math.ceil(item[key]);
+              break;
+            case 'packLostReceivedRate':
+              needItem['packLostSentRate'] = item[key];
+              break;
+            default:
+              needItem[key] = item[key];
+              break;
+            }
+
+          } else {
+            needItem[key] = '-';
+          }
+
+        }
+        returnData.push(needItem);
+      }
+      return returnData;
+    }
+    function initMonitor() {
+      uiTable = null;
+      totalUiTable = null;
+      showMonitor = false;
+      var num = 0, timer = 0, dom = document.getElementById('RongMonitor');
+      document.body.onclick = function () {
+        num += 1;
+        clearTimeout(timer);
+        if (num < 5) {
+          timer = setTimeout(function () { num = 0 }, 1000);
+          return;
+        }
+        showMonitor = !showMonitor;
+        dom.style.display = showMonitor ? 'inline-block' : 'none';
+        num = 0;
+      }
+    }
+    function quitMonitor() {
+      document.getElementById('RongMonitor').style.display = 'none';
+      document.body.onclick = function () { };
+    }
+    initMonitor();
+    new rongRTC.Monitor({
+      stats: function (data) {
+        if (!showMonitor) {
+          return;
+        }
+        var senderData = data.sender;
+        var receivedData = data.received;
+        // var tableData = [];
+        if (!uiTable || !totalUiTable) {
+          uiTable = new common.Table({
+            domId: 'RongMonitorDesc',
+            clm: [
+              { id: 'googTrackId', name: '用户ID', unique: true, hide: true },
+              { id: 'isLocal', name: '用户信息' },
+              { id: 'mediaType', name: '通道名称' },
+              { id: 'googCodecName', name: 'Codec' },
+              { id: 'resolution', name: '分辨率' },
+              { id: 'frameRate', name: '帧率' },
+              { id: 'trackSent', name: '码率' },
+              { id: 'packLostSentRate', name: '丢包率(%)' }]
+          });
+          totalUiTable = new common.Table({
+            domId: 'RongMonitorTotal',
+            clm: [
+              { id: 'id', name: '', unique: true, hide: true },
+              { id: 'name', name: '通道名称' },
+              { id: 'totalRate', name: '码率(kbps)' },
+              { id: 'rtt', name: '往返延时(ms)' }]
+          });
+          uiTable.init(getData(senderData && senderData.tracks || []))
+          totalUiTable.init([{ id: 'sender', name: '发送', totalRate: Math.ceil(senderData && senderData.totalRate || 0), rtt: senderData && senderData.rtt || 0 }])
+
+        } else {
+          uiTable.updateData(getData(senderData && senderData.tracks || []));
+          uiTable.updateData(getData(receivedData && receivedData.tracks || []));
+          if (senderData) {
+            totalUiTable.updateData([{ id: 'sender', name: '发送', totalRate: Math.ceil(senderData.totalRate), rtt: senderData.rtt }])
+          }
+          if (receivedData) {
+            totalUiTable.updateData([{ id: 'received', name: '接收', totalRate: Math.ceil(receivedData.totalRate), rtt: receivedData.rtt }]);
+          }
+        }
+
+      }
     });
     rongRTCMessage = new rongRTC.Message({
       received: receivedRoomMsg,
@@ -1451,6 +1586,7 @@
     RongSeal.rongRTCRoom = rongRTCRoom;
     RongSeal.rongStorage = rongStorage;
     RongSeal.rongRTCMessage = rongRTCMessage;
+    RongSeal.rongMonitor = { quit: quitMonitor };
   };
 
   RongSeal.startRTC = startRTC;

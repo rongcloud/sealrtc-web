@@ -668,6 +668,10 @@
       1: {
         name: _local.audio,
         cls: 'join-audio'
+      },
+      2: {
+        name: _local.spectators,
+        cls: ''
       }
     }
 
@@ -756,6 +760,118 @@
     var whiteBoardBtn = Dom.getByClass('rong-opt-wb')
     Dom.hide(whiteBoardBtn);
   }
+  function UiTable(param) {
+    var params = {
+      domId: param.domId,
+      dom: document.getElementById(param.domId),
+      clm: param.clm,
+      data: [],
+      click: param.click || function () { },
+      tools: {},
+      event: {},
+      clmMap: {},
+      unique: ''
+    }
+    var prefix = {
+      tr: 'ui_tableuiTr_'
+    }
+    params.clmMap = {};
+    params.dom.innerHTML = '';
+    var clms = params.clm;
+    for (var i = 0; i < clms.length; i++) {
+      var clm = clms[i];
+      params.clmMap[clm.id] = clm;
+      if (clm.unique) {
+        params.unique = clm.id
+      }
+    }
+
+    function getHeadHtmlTemple() {
+      var uiHtml = '<thead><tr>'
+      for (var i = 0; i < params.clm.length; i++) {
+        var item = params.clm[i];
+        uiHtml += '<td id="' + item.id + '"  style="display:' + (item.hide ? 'none' : '') + ';"><span >' + item.name + '</span></td>';
+        if (item.type == 'btn') {
+          params.tools.btns = item;
+        }
+      }
+      uiHtml += '</tr></thead>';
+      return uiHtml;
+    }
+    function getDataHtml(item) {
+      var uiTr = '';
+      for (var i = 0; i < params.clm.length; i++) {
+        var key = params.clm[i];
+        uiTr += '<td  data-name= "' + key.id + '" style="display:' + (key.hide ? 'none' : '') + ';"> <span>' + item[key.id] + '</span> </td>'
+      }
+      return uiTr;
+    }
+    function getBodyHtmlTemple(data) {
+      var uiHtml = '<tbody>';
+      for (var j = 0; j < data.length; j++) {
+        var item = data[j];
+        var uiTr = '<tr data-index="' + j + '" id= "' + prefix.tr + item[params.unique] + '">';
+        uiTr += getDataHtml(item);
+        uiTr += '</tr>';
+        uiHtml += uiTr;
+      }
+      uiHtml += '</tbody>';
+      return uiHtml;
+    }
+    function addLine(item) {
+      params.data.push(item);
+      var uiTr = '<tr data-index="' + (params.data.length - 1) + '" id= "' + prefix.tr + item[params.unique] + '">';
+      uiTr += getDataHtml(item);
+      uiTr += '</tr>';
+      params.dom.querySelector('tbody').innerHTML += uiTr;
+    }
+    function bindClmEvent() {
+      var uiTr = params.dom.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+      for (var i = 0; i < uiTr.length; i++) {
+        uiTr[i].onclick = function (e) {
+          var index = parseInt(this.getAttribute('data-index'));
+          var item = params.data[index];
+          params.click(e, item);
+        };
+      }
+    }
+    function bindEvent() {
+      bindClmEvent();
+    }
+    this.init = function (data) {
+      var headHtml = getHeadHtmlTemple();
+      var bodyHtml = getBodyHtmlTemple(data);
+      params.dom.innerHTML = '<table class = "rong-table">' + headHtml + bodyHtml + '</table>';
+      params.data = data;
+      bindEvent();
+    }
+    this.getParams = function () {
+      return params;
+    }
+    this.param = params;
+    var updateOneLine = function (data) {
+      var dom = document.getElementById(prefix.tr + data[params.unique])
+      if (!dom) {
+        addLine(data);
+        return;
+      }
+      var childrens = dom.children;
+      for (var i = 0; i < childrens.length; i++) {
+        var item = childrens[i];
+        var key = item.getAttribute('data-name');
+        if (data[key]) {
+          item.children[0].innerHTML = data[key];
+          item.children[0].setAttribute('title',data[key]);
+        }
+      }
+    }
+    this.updateData = function (data) {
+      for (var i = 0; i < data.length; i++) {
+        updateOneLine(data[i]);
+      }
+    }
+  }
+
   var UI = {
     RongRTCPage: RongRTCPage,
     StreamList: StreamList,
@@ -794,7 +910,8 @@
     getIMToken: getIMToken,
     UI: UI,
     setLocale: setLocale,
-    lang: win.document.body.lang
+    lang: win.document.body.lang,
+    Table: UiTable
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.common = common;

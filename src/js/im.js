@@ -74,7 +74,7 @@
     RongIMClient.connect(token, {
       onSuccess: function (userId) {
         console.log('连接成功', userId);
-        callbacks.connected && callbacks.connected();
+        callbacks.connected && callbacks.connected(userId);
       },
       onTokenIncorrect: function () {
         callbacks.tokenIncorrect()

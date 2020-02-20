@@ -1018,3 +1018,58 @@ input[type="number"]{
   background: #150101;
   border-radius: 2px;
 }
+
+
+.rong-table-box {
+  display: none; 
+  width: 500px;
+  height: auto;
+  min-height: 30px;
+  position: absolute;
+  top: 100px;
+  left: calc(50% - 350px);
+  color: #cecece;
+  z-index: 18;
+}
+
+.rong-table-box .rong-table {
+  border: 1px solid #ccc;
+}
+
+.rong-table-box .rong-table tr td {
+  border-left: 1px solid #ccc;
+  border-top: 1px solid #ccc;
+  padding: 5px;
+}
+
+.rong-table-box .rong-table tr td:nth-child(1) {
+  border-left: 0px solid #ccc;
+}
+.rong-table-box .rong-table tr td:nth-child(2) {
+  border-left: 0px solid #ccc;
+}
+
+.rong-table-box .rong-table thead tr td {
+  border-top: 0px solid #ccc;
+}
+.rong-table-box .rong-table tbody tr td span{
+    width: 100px;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* .rong-table-box .rong-table tbody tr td:nth-of-type(n+1) span {
+  width: 100px;
+} */
+.rong-login .rong-resolution-wrap .rong-setting span{
+  margin:0;
+}
+.rong-setting{
+  margin: 6px 0;
+}
+.rong-login .rong-resolution-wrap .rong-setting input{
+  width: 70px;
+  display: inline-block;
+  margin-left: 10px;
+}

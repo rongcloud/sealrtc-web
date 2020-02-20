@@ -1,5 +1,6 @@
 (function (dependencies) {
   var RongSeal = dependencies.RongSeal,
+    win = dependencies.win,
     utils = RongSeal.utils,
     common = RongSeal.common,
     sealAlert = common.sealAlert,
@@ -8,9 +9,10 @@
     getSelectedByName = Dom.getSelectedByName,
     getDomById = Dom.getById,
     Cache = utils.Cache, _5min = 5 * 60,
-    Config = RongSeal.Config;
+    Config = RongSeal.Config,
+    SessionCache = utils.SessionCache;
   // var randomUserId;
-  var userId, rongIMToken;
+  var userId, rongIMToken, IMUserId;
   // console.log('randomUserId: ', typeof randomUserId);
 
   var locale = RongSeal.locale[common.lang],
@@ -26,7 +28,8 @@
     verifyCodeDom = getDomById('verifyCode'),
     verifyCodeBtnDom = getDomById('verifyCodeBtn'),
     inputTelVerifyDomList = Dom.getList('.rong-login-verify-input'),
-    verifyLoginDom = getDomById('verifyLogin');
+    verifyLoginDom = getDomById('verifyLogin'),
+    userLoginIdDom = getDomById('userLoginId');
 
   var StorageKeys = {
     RoomId: 'rong-sealv2-roomid',
@@ -34,9 +37,29 @@
     IMToken: 'rong-im-token',
     UserInfoKey: 'rong-user-info',
     VideoEnable: 'video-enable',
-    BystanderEnable: 'bystander-enable'
+    BystanderEnable: 'bystander-enable',
+    UserId:'rong-user-id',
+    TabIdKey: 'rong-tab-id'
   };
 
+  var verifyLoginClickTimes = 0;
+
+  var platform = 'web';
+  //生成 tabId 并存储
+  var generateTabId = function() {
+    var tabId = SessionCache.get(StorageKeys.TabIdKey);
+    var randomStr = utils.getRandomStr()
+    if(!tabId){
+      SessionCache.set(StorageKeys.TabIdKey, randomStr)
+    }
+  }
+  generateTabId();
+  // 处理清除缓存未生成 tabId
+  var handleNullTabId = function() {
+    var randomStr = utils.getRandomStr()
+    SessionCache.set(StorageKeys.TabIdKey, randomStr)
+    return randomStr;
+  }
   var sealToast = new common.SealToast();
   /**
    * 获取手机验证码 
@@ -183,18 +206,33 @@
     })
   }
   var verifyLogin = function () {
+    if(verifyLoginClickTimes>0){
+      return;
+    }
+    verifyLoginClickTimes++;
     var tel = telDom.value,
+        tabId = SessionCache.get(StorageKeys.TabIdKey) ? SessionCache.get(StorageKeys.TabIdKey) : handleNullTabId(),
       code = verifyCodeDom.value;
-    var imTokenKey = StorageKeys.IMToken + '_' + tel;
+    var imTokenKey = utils.tplEngine('{IMTokenKey}_{tel}{tabId}_{platform}', {
+      IMTokenKey: StorageKeys.IMToken,
+      tel: tel,
+      tabId: tabId,
+      platform: platform
+    });
+    var loginUserId = utils.tplEngine('{tel}_{tabId}_{platform}', {
+      tel: tel,
+      tabId: tabId,
+      platform: platform
+    });
     verifyPhoneNumber(tel).then(function () {
       console.log(tel, 'tel ss')
       if (tel && code) {
         //发送验证码
         var params = {
-          tel: tel,
+          tel: tel, //验证码验证手机号
           region: '86',
           code: code,
-          key: tel
+          key: loginUserId //获取 token 用 id
         };
         verifySmsCode(params).then(function (data) {
           //验证正确：
@@ -202,6 +240,9 @@
             rongIMToken = data.result.token;
             if (rongIMToken) {
               Cache.set(imTokenKey, rongIMToken);
+              Cache.remove(StorageKeys.UserId); //移除之前用的 登录 UserId
+              userLoginIdDom.value = loginUserId;
+              
               startRTC(rongIMToken);
             } else {
               console.log('IM token 为空----');
@@ -210,21 +251,25 @@
               Dom.hideByClass('rong-login-telverify')
             }
           } else if (data.code === 1000) {
+            verifyLoginClickTimes = 0;
             sealAlert(localeData.verifyCodeIncorrect)
           } else if (data.code === 2000) {
+            verifyLoginClickTimes = 0;
             sealAlert(localeData.verifyCodeIncorrect)
           } else {
-            // console.log(data.message,'----') 
             sealAlert(data.message)
           }
         }).catch(function (err) {
           console.log('veriyCodeErr:', err)
+          verifyLoginClickTimes = 0;
         })
       } else {
         sealAlert(localeData.verifyCodeErr)
+        verifyLoginClickTimes = 0;
       }
     }).catch(function () {
       console.log(tel, 'tel ff')
+      verifyLoginClickTimes = 0;
       sealAlert(localeData.phoneNumberErr);
     })
   }
@@ -242,9 +287,14 @@
     }
   }
   var hasIMToken = function () {
-    var roomTel = roomTelNumDom.value;
-    var imTokenKey = StorageKeys.IMToken + '_' + roomTel;
-    // console.log(roomTel)
+    var roomTel = roomTelNumDom.value,
+    tabId = SessionCache.get(StorageKeys.TabIdKey);
+    var imTokenKey = utils.tplEngine('{IMTokenKey}_{tel}{tabId}_{platform}', {
+      IMTokenKey: StorageKeys.IMToken,
+      tel: roomTel,
+      tabId: tabId,
+      platform: platform
+    });
     var IMToken = Cache.get(imTokenKey);
     if (IMToken) {
       return IMToken;
@@ -253,6 +303,10 @@
     }
   }
   var RTCEnterLogic = function () {
+    var checkContent = checkRTCValue();
+    if (!checkContent.isValid) {
+      return sealAlert(checkContent.prompt);
+    }
     var userId = roomTelNumDom.value;
     var _cache = Cache.get(userId);
     if (_cache) {
@@ -328,6 +382,10 @@
       prompt = localeData.userNameIllegal;
       isValid = false;
     }
+    // if(!utils.isNumberAndLetter(userNameVal)) {
+    //   prompt = localeData.userNameEnglishOnly;
+    //   isValid = false;
+    // }
     return {
       isValid: isValid,
       prompt: prompt
@@ -349,6 +407,17 @@
     // closeAudioDom = getSelectedByName('isCloseAudio');
     var modeOption = GetRadioValue('userOption');
     var videoEnable, bystanderEnable;
+
+    var frameRate = getDomById('frameRate').value;
+    var bitrate = getDomById('bitrate').value;
+    var bitrateMIN = getDomById('bitrateMIN').value;
+    var bitrateMAX = getDomById('bitrateMAX').value;
+    var bitrateObj = {
+      max: parseInt(bitrateMAX) || 1000,
+      min: parseInt(bitrateMIN) || 100,
+      start: parseInt(bitrate) || 300
+    }
+    var url = getDomById('url').value || Config.MEDIA_SERVER;
     if (modeOption) {
       if (modeOption == 'closeVideo') {
         videoEnable = false;
@@ -368,20 +437,33 @@
       resolution = common.formatResolution(resolutionDom.value);// 格式如: { width: 640, height: 320 }
     // console.log(resolutionDom);
     // audioEnable = !closeAudioDom;
-    return {
+    var option ={
       userId: userId,
       roomId: roomId,
       resolution: resolution,
       videoEnable: videoEnable,
       audioEnable: true,
-      bystanderEnable: bystanderEnable
+      bystanderEnable: bystanderEnable,
+      bitrate: bitrateObj
     };
+    if(frameRate){
+      option.frameRate = parseInt(frameRate);
+    }
+    if(url){
+      option.url = url;
+    }
+    return option
   };
   //用户信息缓存
   function setUserInfoObj(params) {
     var currentTimestamp = new Date().getTime();
+    var userId = utils.tplEngine('{tel}_{userName}_{platform}', {
+      tel: roomTelNumDom.value,
+      userName: SessionCache.get(StorageKeys.TabIdKey),
+      platform: platform
+    });
     var userInfo = {
-      userId: roomTelNumDom.value,
+      userId: userId,
       userName: userNameDom.value,
       joinMode: params.joinMode,
       joinTime: currentTimestamp,
@@ -462,11 +544,12 @@
       return goVerifyPage();
     }
     RongSeal.im.connect(user, {
-      connected: function (/* userId */) {
+      connected: function (IMUserId) {
+        IMUserId = IMUserId;
         var option = getRTCOption();
         console.log(option);
         var resolution = option.resolution;
-        option.userId = user.userId;
+        option.userId = IMUserId;
         option.token = user.token;
         console.log('user', user);
         RongSeal.startRTC(option);
@@ -476,6 +559,7 @@
         Cache.set(StorageKeys.Resolution, common.reFormatResolution(resolution));
         Dom.showByClass('rong-login-roomjoin')
         Dom.hideByClass('rong-login-telverify')
+        verifyLoginClickTimes = 0;
       },
       backLoginPage: function () {
         reconnectionMechanism();
@@ -494,12 +578,15 @@
             // common.UI.backLoginPage();
             clear();
             sealToast.destroy();
+            // RongSeal.im.disconnect();
+            win.location.reload();
           }
         })
       }
     });
   };
 
+  
   var startRTC = function (imToken) {
     var checkContent = checkRTCValue();
     if (!checkContent.isValid) {
@@ -507,7 +594,12 @@
     }
     Dom.hideByClass('rong-btn-start');
     Dom.showByClass('rong-btn-loading');
-    userId = roomTelNumDom.value;
+    // var userId = roomTelNumDom.value;
+    var userId = utils.tplEngine('{tel}_{userName}_{platform}', {
+      tel: roomTelNumDom.value,
+      userName: SessionCache.get(StorageKeys.TabIdKey),
+      platform: platform
+    });
     connect({
       userId: userId,
       token: imToken
