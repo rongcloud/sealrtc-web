@@ -1,6 +1,6 @@
 ## SealRTC-v3
 
-基于 RongRTC.3.0.0.js 的实时音视频会议 Demo
+基于 RongRTC.3.2.1.js 的实时音视频会议 Demo
 
 ## 使用说明
 
@@ -28,7 +28,7 @@
     │   └── locale  多语言
     │       ├── en.js  英文配置
     │       └── zh.js  中文配置
-    ├── videos 自定义视频文件
+    ├── mediaresource 自定义媒体文件
     ├── lib
     │   ├── RongRTC.3.0.0.js  
     │   ├── frameImage.js  获取 stream 帧图片

@@ -102,6 +102,30 @@
       remove: remove
     };
   })();
+  var LocalCache = (function (config){
+    config = config || {};
+    var prefix = config.prefix || 'rong-sealrtc-v2';
+    var genKey = function (key) {
+      return utils.tplEngine('{prefix}_{key}', {
+        prefix: prefix,
+        key: key
+      });
+    };
+    var set = function (key, value) {
+      localStorage.setItem(genKey(key), value);
+    };
+    var get = function (key) {
+      return localStorage.getItem(genKey(key));
+    };
+    var remove = function (key) {
+      localStorage.removeItem(genKey(key));
+    };
+    return {
+      set: set,
+      get: get,
+      remove: remove
+    };
+  })();
   /* 
       var option = {
         url: '',
@@ -398,6 +422,11 @@
       version: version ? version : 'UnKonw'
     };
   }
+  var isSupportGetDisplayMedia = function() {
+    var bro = getBrowser();
+    var version = parseInt(bro.version);
+    return version > 71 ? true : false;
+  }
   var Dom = {
     create: create,
     get: getDom,
@@ -435,13 +464,12 @@
   function isChineseChar(str){   
     var reg = /[\u4E00-\u9FA5\uF900-\uFA2D]/;
     return reg.test(str);
- }
-
+  }
   function getRandomStr() {
-    var tplArr=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','0','1','2','3','4','5','6','7','8','9'];
+    var tplArr = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
     var randomArr = [],randomStr = '{a}{b}{c}{d}';
     for(var i=0; i<4; i++){
-      var index = Math.floor(Math.random()* tplArr.length)
+      var index = Math.floor(Math.random() * tplArr.length)
       randomArr.push(tplArr[index])
     }
     randomStr = tplEngine('{a}{b}{c}{d}',{
@@ -458,6 +486,7 @@
     tplEngine: tplEngine,
     Cache: Cache,
     SessionCache: SessionCache,
+    LocalCache: LocalCache,
     sendForm: sendForm,
     ajax: ajax,
     isObject: isObject,
@@ -469,7 +498,8 @@
     getBrowser: getBrowser,
     isChineseChar: isChineseChar,
     isLetter: isLetter,
-    getRandomStr: getRandomStr
+    getRandomStr: getRandomStr,
+    isSupportGetDisplayMedia
   };
   win.RongSeal = win.RongSeal || {};
   win.RongSeal.utils = utils;

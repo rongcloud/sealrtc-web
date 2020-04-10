@@ -1,5 +1,5 @@
 /*
-* RongRTC.js v3.1.2
+* RongRTC.js v3.2.1
 * Copyright 2020 RongCloud
 * Released under the MIT License.
 */
@@ -351,6 +351,15 @@
     });
     return arrs;
   };
+  var isPromise = function isPromise(val) {
+    var isTrue = false;
+    try {
+      isTrue = Object.prototype.toString.call(val) === '[object Promise]' || val && val.then && val.catch && val.finally;
+    } catch (e) {
+      isTrue = false;
+    }
+    return isTrue;
+  };
   function Timer(_option) {
     _option = _option || {};
     var option = {
@@ -612,6 +621,25 @@
     }
     return keys;
   };
+
+  /* 去重合并 */
+  var merge = function merge(arr1, arr2, options) {
+    options = options || {};
+    var isReverse = options.isReverse;
+    var newArr = [];
+    forEach(arr1, function (item) {
+      newArr.push(item);
+    });
+    forEach(arr2, function (item) {
+      var index = newArr.indexOf(item);
+      if (index > -1) {
+        newArr.splice(index, 1);
+      }
+      isReverse ? newArr.unshift(item) : newArr.push(item);
+    }, options);
+    return newArr;
+  };
+
   var utils = {
     Prosumer: Prosumer,
     Log: Log,
@@ -647,6 +675,7 @@
     isNull: isNull,
     isNumber: isNumber,
     toArray: toArray$1,
+    isPromise: isPromise,
     Index: Index,
     getBrowser: getBrowser,
     getUUID: getUUID,
@@ -656,12 +685,14 @@
     lineToHump: lineToHump,
     humpToLine: humpToLine,
     clearEselessFields: clearEselessFields,
-    getKeys: getKeys
+    getKeys: getKeys,
+    merge: merge
   };
 
   var DownEvent = {
     ROOM_USER_JOINED: 'room_user_joined',
     ROOM_USER_LEFT: 'room_user_left',
+    ROOM_USER_KICK: 'room_user_kick',
 
     STREAM_PUBLISHED: 'stream_published',
     STREAM_UNPUBLISHED: 'stream_unpublished',
@@ -685,6 +716,7 @@
     ROOM_JOIN: 'room_join',
     ROOM_LEAVE: 'room_leave',
     ROOM_GET: 'room_get',
+    ROOM_GET_SESSONID: 'room_getsessionid',
 
     STREAM_PUBLISH: 'stream_publish',
     STREAM_UNPUBLISH: 'stream_UNPUBLISH',
@@ -721,6 +753,9 @@
   }, {
     name: DownEvent.ROOM_USER_LEFT,
     type: 'left'
+  }, {
+    name: DownEvent.ROOM_USER_KICK,
+    type: 'kick'
   }];
 
   var StreamEvents = [{
@@ -880,8 +915,16 @@
       msg: 'This method can only be called by the anchor'
     }, {
       code: 50064,
-      name: 'MUST_PUBLISHED_BEFORE_SETCONFIG',
-      msg: 'Must be published before setConfig'
+      name: 'MUST_PUBLISHED_BEFORE_SETMIXCONFIG',
+      msg: 'Must be published before setMixConfig'
+    }, {
+      code: 50065,
+      name: 'ROOM_USER_KICK',
+      msg: 'You have been removed from the room！'
+    }, {
+      code: 50066,
+      name: 'ROOM_USER_BLOCK',
+      msg: 'You are not allowed to join the room！'
     }, {
       code: 40001,
       name: 'NOT_IN_ROOM',
@@ -998,7 +1041,7 @@
 
   var REPORT_FREQUENCY = 1 * 1000;
 
-  var REQUEST_TIMEOUT = 5 * 1000;
+  var REQUEST_TIMEOUT = 10 * 1000; // 默认改为 10s
 
   var MEDIASERVER_SUCCESS = 10000;
 
@@ -1018,6 +1061,19 @@
   var LIVE_ROLE = {
     ANCHOR: 1, // 主播
     AUDIENCE: 2 // 观众
+  };
+
+  /* 直播布局模式 */
+  var LIVE_LAYOUT_MODE = {
+    CUSTOMIZE: 1, // 自定义布局
+    SUSPENSION: 2, // 悬浮
+    ADAPTATION: 3 // 自适应布局
+  };
+
+  /* 直播自定义布局, 视频渲染方式 */
+  var LIVE_RENDER_MODE = {
+    CROP: 1, // 裁剪
+    WHOLE: 2 // 填充
   };
 
   var LIVE_CONFIG_VERSION = 1;
@@ -1058,7 +1114,7 @@
     R4: 'r4'
   };
 
-  var SDK_VERSION = '3.0.4';
+  var SDK_VERSION = '3.2.1';
 
   var TRACK_STATE = {
     DISABLE: 0,
@@ -1069,16 +1125,26 @@
     UUID: 'uuid'
   };
 
+  var PROTOCOL = {
+    HTTP: 'http://',
+    HTTPS: 'https://'
+  };
+
+  var PROTOCOL_SUFFIX = '://';
+
+  var Storage$1 = utils.Storage;
+
+
   var getClientID = function getClientID() {
     var key = STORAGE_KEY.UUID;
-    var Storage = utils.Storage;
-    var uuid = utils.Storage.get(key);
+    var uuid = Storage$1.get(key);
     if (!uuid) {
       uuid = utils.getUUID22();
-      Storage.set(key, uuid);
+      Storage$1.set(key, uuid);
     }
     return uuid;
   };
+
   /* 
     data： 任意对象
     rules: 校验规则，数组
@@ -1171,10 +1237,12 @@
       RoomId: roomId,
       Token: token,
       ClientType: type,
-      ClientVersion: 1,
-      UserId: userId
+      ClientVersion: SDK_VERSION
     };
     var liveMode = RTC_MODE.LIVE;
+    if (option.setUserId) {
+      headers.UserId = userId;
+    }
     if (option.mode === liveMode) {
       headers.RoomType = liveMode;
     }
@@ -1197,7 +1265,7 @@
       'App-Key': appKey,
       RoomType: roomType,
       ClientType: type,
-      ClientVersion: 1,
+      ClientVersion: SDK_VERSION,
       UserId: userId,
       RoomId: userId
     };
@@ -1215,6 +1283,7 @@
     var customLayout = utils.handleObjKeys(config.customLayout, utils.humpToLine); // 驼峰转化为下划线
     var liveConfig = utils.extend(LIVE_CONFIG, {
       host_user_id: config.hostUserId,
+      host_stream_id: config.hostStreamId,
       mode: config.layoutMode || LIVE_LAYOUT_MODE.SUSPENSION,
       output: {
         video: {
@@ -1388,6 +1457,47 @@
     });
   };
 
+  var formatProtocolPath = function formatProtocolPath(path) {
+    path = path || '';
+    var flag = PROTOCOL_SUFFIX;
+    var hasProtocol = utils.isContain(path, flag);
+    var protocol = '';
+    if (utils.isEqual(location.protocol, 'https:')) {
+      protocol = PROTOCOL.HTTPS;
+      if (hasProtocol) {
+        var domainSplitIndex = path.indexOf(flag) + flag.length;
+        path = path.substring(domainSplitIndex);
+      }
+    } else {
+      if (!hasProtocol) {
+        protocol = PROTOCOL.HTTP;
+      }
+    }
+
+    return utils.tplEngine('{protocol}{domain}', {
+      protocol: protocol,
+      domain: path
+    });
+  };
+
+  /* 
+    1. http 下, 全部认为有效
+    2. https 下, 没有协议头(请求时会自动拼接)或协议头为 https 认为有效
+   */
+  var isValidMediaServer = function isValidMediaServer(url) {
+    if (utils.isEqual(location.protocol, 'http:')) {
+      return true;
+    }
+    var flag = PROTOCOL_SUFFIX;
+    var hasProtocol = utils.isContain(url, flag);
+    if (hasProtocol) {
+      var protocol = url.substring(0, url.indexOf(flag) + flag.length);
+      return protocol === PROTOCOL.HTTPS;
+    } else {
+      return true;
+    }
+  };
+
   function Logger() {
     var observer = new utils.Observer();
     var write = function write(level, tag, meta) {
@@ -1508,6 +1618,18 @@
 
         return client.exec({
           event: UpEvent.ROOM_GET,
+          type: 'room',
+          args: [room]
+        });
+      }
+    }, {
+      key: 'getSessionId',
+      value: function getSessionId() {
+        var room = this.room,
+            client = this.client;
+
+        return client.exec({
+          event: UpEvent.ROOM_GET_SESSONID,
           type: 'room',
           args: [room]
         });
@@ -1735,8 +1857,8 @@
       // 仅直播模式此方法有效
 
     }, {
-      key: 'setConfig',
-      value: function setConfig(config) {
+      key: 'setMixConfig',
+      value: function setMixConfig(config) {
         var client = this.client;
         var rongRTC = client.rongRTC;
         var mode = rongRTC.option.mode;
@@ -1954,36 +2076,87 @@
 
   function request$1() {
     var config = {
-      urls: []
+      errorUrls: [],
+      urls: [],
+      timeout: REQUEST_TIMEOUT
     };
-    // 正在使用的 URL 下标，每次请求在 urls 中取对应的地址发送请求
-    var indexTools = new utils.Index();
 
     var prosumer = new utils.Prosumer();
     var eventEmitter = new EventEmitter();
+
+    var getUrl = function getUrl() {
+      var errorUrls = config.errorUrls;
+
+      var urls = utils.clone(config.urls);
+      urls = utils.filter(urls, function (url) {
+        return !utils.isInclude(errorUrls, url);
+      });
+      if (utils.isEmpty(urls)) {
+        urls = config.urls;
+      }
+      return utils.isEmpty(urls) ? '' : urls[0];
+    };
+
+    var setUrls = function setUrls(urls) {
+      if (utils.isEmpty(urls) || !utils.isArray(urls)) {
+        return;
+      }
+
+      urls = utils.map(urls, function (url) {
+        // 检验格式
+        return formatProtocolPath(url);
+      });
+      config.urls = utils.merge(config.urls, urls, { isReverse: true }); // 反向合并
+    };
+
     var setOption = function setOption(_config) {
+      _config = _config || {};
+      var urls = _config.urls;
+      if (!utils.isEmpty(urls)) {
+        // 将 urls 设置提出, 统一在 setUrls 内校验格式
+        setUrls(urls);
+        delete _config.urls;
+      }
       utils.extend(config, _config);
     };
+
     var getOption = function getOption() {
       return config;
     };
+
+    var addUrls = function addUrls(mediaServerList) {
+      setUrls(mediaServerList);
+    };
+
+    var addUrl = function addUrl(mediaServer) {
+      setUrls([mediaServer]);
+    };
+    var isUrlsExisted = function isUrlsExisted(urls) {
+      if (!utils.isArray(urls)) {
+        urls = [urls];
+      }
+      var isExisted = true;
+      utils.forEach(urls, function (url) {
+        var formatedUrl = formatProtocolPath(url);
+        if (!utils.isInclude(config.urls, formatedUrl)) {
+          isExisted = false;
+        }
+      });
+      return isExisted;
+    };
     var postProcess = function postProcess(option) {
-      var urls = config.urls;
       var path = option.path,
           body = option.body;
 
       var tpl = '{domain}{path}';
 
-      urls = option.urls || urls;
-
       return utils.deferred(function (resolve, reject) {
         var doRequest = function doRequest(error) {
-          var index = indexTools.get();
-          var isRange = index >= urls.length;
-          if (isRange) {
+          var domain = getUrl();
+          if (utils.isEmpty(domain)) {
             var Inner = ErrorType.Inner;
 
-            indexTools.reset();
+            config.errorUrls.length = 0;
             if (utils.isUndefined(error)) {
               error = Inner.NO_AUDIO_AND_VIDEO_SERVICE;
             } else {
@@ -1991,7 +2164,6 @@
             }
             return reject(error);
           }
-          var domain = urls[index];
           var url = utils.tplEngine(tpl, {
             domain: domain,
             path: path
@@ -2006,7 +2178,7 @@
           }
           utils.request(url, {
             method: 'POST',
-            timeout: REQUEST_TIMEOUT,
+            timeout: config.timeout || REQUEST_TIMEOUT,
             body: JSON.stringify(body),
             headers: headers
           }).then(function (result) {
@@ -2023,7 +2195,7 @@
             if (utils.isInclude([403], status)) {
               return reject(error);
             }
-            indexTools.add();
+            config.errorUrls.push(domain);
             doRequest(error);
           });
         };
@@ -2054,7 +2226,10 @@
     return {
       setOption: setOption,
       getOption: getOption,
-      post: post
+      post: post,
+      addUrls: addUrls,
+      addUrl: addUrl,
+      isUrlsExisted: isUrlsExisted
     };
   }
   var request$2 = request$1();
@@ -2810,7 +2985,7 @@
 
         if (pc) {
           pc.close();
-          im.emit(PeerConnectionEvent.PEERCONN_DESTROYED);
+          im.emit(CommonEvent.PEERCONN_DESTROYED);
         }
       }
     }]);
@@ -2824,6 +2999,7 @@
     STATE: 'RTCUserChangeMessage',
     ROOM_NOTIFY: 'RTCRoomDataNotifyMessage',
     USER_NOTIFY: 'RTCUserDataNotifyMessage',
+    KICK: 'RTCUserKickMessage'
   };
 
   var MessageName = {
@@ -2832,7 +3008,8 @@
     MODIFY: 'RCRTC:ModifyResource',
     STATE: 'RCRTC:state',
     ROOM_NOTIFY: 'RCRTC:RoomNtf',
-    USER_NOTIFY: 'RCRTC:UserNtf'
+    USER_NOTIFY: 'RCRTC:UserNtf',
+    KICK: 'RCRTC:kick'
   };
   var Timeout = {
     TIME: 10 * 1000
@@ -2857,6 +3034,8 @@
         return MessageName.ROOM_NOTIFY;
       case Message.USER_NOTIFY:
         return MessageName.USER_NOTIFY;
+      case Message.KICK:
+        return MessageName.KICK;
     }
   };
   var IM = function (_EventEmitter) {
@@ -2887,9 +3066,9 @@
           context.rePing();
         }
         var urls = context.getMSUrl();
-        request$2.setOption({
-          urls: urls
-        });
+        var timeout = context.getRequestTimeout();
+        !request$2.isUrlsExisted(urls) && request$2.addUrls(urls);
+        request$2.setOption({ timeout: timeout });
         context.registerMessage();
       };
       var connectState = -1;
@@ -2941,6 +3120,7 @@
               });
               context.emit(DownEvent.ROOM_USER_LEFT, { id: id });
               break;
+
             default:
               Logger$1.warn('UserState: unkown state ' + state);
           }
@@ -3008,6 +3188,9 @@
         switch (type) {
           case Message.STATE:
             roomEventHandler(users);
+            break;
+          case Message.KICK:
+            context.emit(DownEvent.ROOM_USER_KICK, { msg: ErrorType.Inner.ROOM_USER_KICK });
             break;
           case Message.PUBLISH:
             user = { id: id, uris: uris };
@@ -3083,6 +3266,10 @@
           type: Message.USER_NOTIFY,
           name: getMsgName(Message.USER_NOTIFY),
           props: ['content']
+        }, {
+          type: Message.KICK,
+          name: getMsgName(Message.KICK),
+          props: ['content']
         }];
         utils.forEach(messages, function (message) {
           register(message);
@@ -3117,8 +3304,8 @@
               });
               utils.forEach(tempUsers, function (tUser, userId) {
                 tUser = tUser || {};
-                // 过滤自己和为空的用户
-                if (utils.isEmpty(tUser) || utils.isEqual(currentUserId, tUser.id)) {
+                // 过滤自己 utils.isEmpty(tUser) ||
+                if (utils.isEqual(currentUserId, userId)) {
                   delete users[userId];
                 } else {
                   var user = users[userId];
@@ -3242,8 +3429,8 @@
         return sessionId;
       }
     }, {
-      key: 'getMSUrl',
-      value: function getMSUrl() {
+      key: 'getNaviRTCInfo',
+      value: function getNaviRTCInfo() {
         var im = this.im;
 
         var navi = im.getInstance().getNavi();
@@ -3255,6 +3442,25 @@
         var engine = utils.filter(engines, function (e) {
           return e.engineType === 4;
         })[0] || {};
+        return engine;
+      }
+    }, {
+      key: 'getRequestTimeout',
+      value: function getRequestTimeout() {
+        var engine = this.getNaviRTCInfo();
+        var timeOut = engine.timeOut;
+
+        if (timeOut && utils.isNumber(timeOut)) {
+          timeOut = timeOut * 1000; // navi 下发单位为 s
+        } else {
+          timeOut = REQUEST_TIMEOUT;
+        }
+        return timeOut;
+      }
+    }, {
+      key: 'getMSUrl',
+      value: function getMSUrl() {
+        var engine = this.getNaviRTCInfo();
         var urls = engine.backupMediaServer,
             mediaServer = engine.mediaServer;
 
@@ -3264,6 +3470,9 @@
         if (!utils.isUndefined(mediaServer)) {
           urls.unshift(mediaServer);
         }
+        urls = utils.filter(urls, function (url) {
+          return isValidMediaServer(url);
+        });
         return urls;
       }
     }, {
@@ -3755,6 +3964,21 @@
         },
         clear: function clear() {
           self.subCache.clear();
+        },
+        setState: function setState(userId, option) {
+          option = option || {};
+          var _option = option,
+              type = _option.type,
+              state = _option.state;
+
+          var subs = self.SubscribeCache.get(userId);
+          utils.forEach(subs, function (sub, index) {
+            var subType = sub.type;
+
+            if (utils.isEqual(type, subType)) {
+              subs[index].state = state;
+            }
+          });
         }
       };
 
@@ -3840,6 +4064,11 @@
 
         var streamId = pc.getStreamId(user);
         var stream = StreamCache.get(streamId);
+        self.SubscribeCache.setState(user.id, {
+          type: StreamType.VIDEO,
+          state: StreamState.DISBALE
+        });
+        if (!stream) return;
         var videoTracks = stream.getVideoTracks();
         utils.forEach(videoTracks, function (track) {
           track.enabled = false;
@@ -3852,11 +4081,31 @@
 
         var streamId = pc.getStreamId(user);
         var stream = StreamCache.get(streamId);
+        self.SubscribeCache.setState(user.id, {
+          type: StreamType.VIDEO,
+          state: StreamState.ENABLE
+        });
+        if (!stream) return;
         var videoTracks = stream.getVideoTracks();
         utils.forEach(videoTracks, function (track) {
           track.enabled = true;
         });
       });
+
+      im.on(DownEvent.STREAM_MUTED, function (error, user) {
+        self.SubscribeCache.setState(user.id, {
+          type: StreamType.AUDIO,
+          state: StreamState.DISABLE
+        });
+      });
+
+      im.on(DownEvent.STREAM_UNMUTED, function (error, user) {
+        self.SubscribeCache.setState(user.id, {
+          type: StreamType.AUDIO,
+          state: StreamState.ENABLE
+        });
+      });
+
       // im.on(DownEvent.STREAM_MUTED, (error, user) => {
       //   let { pc, StreamCache } = self;
       //   let streamId = pc.getStreamId(user);
@@ -3911,7 +4160,9 @@
 
             var isVideo = utils.isEqual(StreamType.VIDEO, type);
             var isDisabled = utils.isEqual(state, StreamState.DISBALE);
-            if (isVideo && isDisabled) {
+            var isId = utils.isEqual(stream.id, uri.msid);
+            if (isVideo && isDisabled && isId) {
+              // if (isVideo && isDisabled) {
               var videoTracks = stream.getVideoTracks();
               utils.forEach(videoTracks, function (track) {
                 track.enabled = false;
@@ -4364,13 +4615,14 @@
                 tag = stream.tag;
 
             type = utils.isEqual(uris.length, 1) ? type : StreamType.AUDIO_AND_VIDEO;
-            return self.unpublish({
+            var currentUser = {
               id: id,
               stream: {
                 tag: tag,
                 type: type
               }
-            });
+            };
+            return self.unpublish(currentUser); // 会议内已有自己, 先 unpublish
           }
           utils.forEach(uris, function (uri) {
             var type = uri.mediaType,
@@ -4727,7 +4979,9 @@
                 headers: headers
               }).then(function (response) {
                 var publishList = response.publishList,
-                    urls = response.urls;
+                    urls = response.urls,
+                    clusterId = response.clusterId;
+
 
                 var result = {};
                 urls = urls || {};
@@ -4742,6 +4996,8 @@
                 });
                 self.exchangeHandler(response, user, Message.PUBLISH, desc);
                 result = utils.extend(result, urls);
+                clusterId && request$2.addUrl(clusterId);
+
                 urls.configUrl && request$2.setOption({
                   mcuUrls: [getMCUConfigUrl(urls.configUrl)] // 目前 server 要求加入 8080
                 });
@@ -4820,6 +5076,7 @@
 
           PublishStreamCache.remove(streamId);
         });
+        StreamCache.remove(streamId);
         var trackIds = getTrackIds(user);
         im.emit(CommonEvent.SEND_REPORT, {
           type: STAT_NAME.R2,
@@ -4851,7 +5108,6 @@
                 user: user,
                 response: response
               });
-              StreamCache.remove(streamId);
               self.exchangeHandler(response, user, Message.UNPUBLISH, desc);
             }, function (error) {
               Logger$1.log(LogTag.STREAM_HANDLER, {
@@ -5170,14 +5426,14 @@
         return screen ? getScreen(constraints) : getMS(constraints);
       }
     }, {
-      key: 'setConfig',
-      value: function setConfig(config) {
+      key: 'setMixConfig',
+      value: function setMixConfig(config) {
         var im = this.im,
             option = this.option;
 
         var domains = request$2.getOption().mcuUrls || [];
         if (utils.isEmpty(domains)) {
-          return utils.Defer.reject(ErrorType.Inner.MUST_PUBLISHED_BEFORE_SETCONFIG);
+          return utils.Defer.reject(ErrorType.Inner.MUST_PUBLISHED_BEFORE_SETMIXCONFIG);
         }
 
         var url = Path.LIVE_CONFIG;
@@ -5191,7 +5447,7 @@
         var body = formatLiveConfig(config);
 
         Logger$1.log(LogTag.STREAM_HANDLER, {
-          msg: 'setConfig:request',
+          msg: 'setMixConfig:request',
           headers: headers,
           body: body
         });
@@ -5202,7 +5458,7 @@
           headers: headers
         }).then(function (response) {
           Logger$1.log(LogTag.STREAM_HANDLER, {
-            msg: 'setConfig:response',
+            msg: 'setMixConfig:response',
             headers: headers,
             body: body,
             response: response
@@ -5210,7 +5466,7 @@
           return response;
         }, function (error) {
           Logger$1.log(LogTag.STREAM_HANDLER, {
-            msg: 'setConfig:error',
+            msg: 'setMixConfig:error',
             headers: headers,
             body: body,
             error: error
@@ -5349,7 +5605,7 @@
         self.clear();
         if (pc) {
           pc.close();
-          im.emit(PeerConnectionEvent.PEERCONN_DESTROYED);
+          im.emit(CommonEvent.PEERCONN_DESTROYED);
         }
       }
     }]);
@@ -5482,7 +5738,7 @@
               reject(error);
             });
           case UpEvent.LIVE_CONFIG:
-            return (_stream11 = stream).setConfig.apply(_stream11, toConsumableArray(args)).then(function (result) {
+            return (_stream11 = stream).setMixConfig.apply(_stream11, toConsumableArray(args)).then(function (result) {
               next();
               resolve(result);
             }).catch(function (error) {
@@ -5625,6 +5881,11 @@
     var get$$1 = function get$$1() {
       return im.getRoom();
     };
+    var getSessionId = function getSessionId() {
+      // let sessionId = im.getSessionId();
+      // return utils.Defer.resolve(sessionId);
+      return im.getSessionId();
+    };
     var dispatch = function dispatch(event, args) {
       switch (event) {
         case UpEvent.ROOM_JOIN:
@@ -5633,6 +5894,8 @@
           return leave.apply(undefined, toConsumableArray(args));
         case UpEvent.ROOM_GET:
           return get$$1.apply(undefined, toConsumableArray(args));
+        case UpEvent.ROOM_GET_SESSONID:
+          return getSessionId.apply(undefined, toConsumableArray(args));
         default:
           Logger$1.warn(LogTag.ROOM_HANDLER, {
             event: event,
@@ -11487,9 +11750,7 @@
           var error = Inner.ENGINE_ERROR;
           return context.emit(DownEvent.RTC_ERROR, error);
         }
-        request$2.setOption({
-          urls: urls
-        });
+        !request$2.isUrlsExisted(urls) && request$2.addUrls(urls);
         context.emit(DownEvent.RTC_MOUNTED);
       });
       im.on(CommonEvent.LEFT, function () {
@@ -11616,7 +11877,8 @@
           type: EventType.REQUEST,
           args: args
         });
-        return RequestHandler[type].dispatch(event, args).then(function (result) {
+        var defer = RequestHandler[type].dispatch(event, args);
+        return utils.isPromise(defer) ? defer.then(function (result) {
           Logger$1.log(type, {
             func: event,
             type: EventType.RESPONSE,
@@ -11633,7 +11895,7 @@
             resultCode: 'code'
           });
           throw error;
-        });
+        }) : defer;
       }
     }, {
       key: 'isDestroyed',
@@ -11660,7 +11922,7 @@
     return Client;
   }(EventEmitter);
 
-  var Storage$1 = function () {
+  var Storage$2 = function () {
     function Storage(_option) {
       classCallCheck(this, Storage);
 
@@ -11919,6 +12181,7 @@
         mode: RTC_MODE.RTC,
         liveRole: LIVE_ROLE.ANCHOR,
         liveType: LIVE_TYPE.AUDIO_AND_VIDEO,
+        setUserId: true,
         created: function created() {},
         mounted: function mounted() {},
         unmounted: function unmounted() {},
@@ -11942,11 +12205,15 @@
       utils.extend(context, {
         Room: Room,
         Stream: Stream,
-        Storage: Storage$1,
+        Storage: Storage$2,
         StreamType: StreamType,
         StreamSize: StreamSize,
         StorageType: StorageType,
         Mode: RTC_MODE,
+        ROLE: LIVE_ROLE,
+        LiveType: LIVE_TYPE,
+        LayoutMode: LIVE_LAYOUT_MODE,
+        RenderMode: LIVE_RENDER_MODE,
         Message: Message$1,
         Device: Device,
         Report: Report,
@@ -11955,7 +12222,7 @@
         option: option
       });
       var client = new Client(option, context);
-      utils.forEach([Room, Stream, Storage$1, Message$1, Device, Report, Monitor], function (module) {
+      utils.forEach([Room, Stream, Storage$2, Message$1, Device, Report, Monitor], function (module) {
         module.prototype.getClient = function () {
           return client;
         };
@@ -12043,8 +12310,10 @@
     StreamSize: StreamSize,
     StorageType: StorageType,
     Mode: RTC_MODE,
-    LIVE_ROLE: LIVE_ROLE,
-    LIVE_TYPE: LIVE_TYPE
+    ROLE: LIVE_ROLE,
+    LiveType: LIVE_TYPE,
+    LayoutMode: LIVE_LAYOUT_MODE,
+    RenderMode: LIVE_RENDER_MODE
   });
 
   return RongRTC;

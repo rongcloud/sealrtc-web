@@ -511,30 +511,41 @@
       setClass(this.dom, OptClassName.OPEN_SCREENSHARE, false);
     }
     function openFlibScreenShare() {
-      this.dom.childNodes[1].style.transform = 'none';
+      var node = this.dom.querySelector('.rong-video');
+      node.style.transform = 'none';
     }
     function closeFlibScreenShare() {
-      this.dom.childNodes[1].style.transform = 'rotateY(180deg)';
+      var node = this.dom.querySelector('.rong-video');
+      node.style.transform = 'rotateY(180deg)';
     }
     function disabledVideoBySelf() {
-      var selfOptDom = this.dom.childNodes[9]
-      selfOptDom.childNodes[1].style.display = 'none';
-      selfOptDom.childNodes[3].style.display = 'inline-block';
+      var node = this.dom.querySelector('.rong-opt-video')
+      var disabledNode = this.dom.querySelector('.rong-opt-video-disabled')
+      node.style.display = 'none';
+      disabledNode.style.display = 'inline-block';
     }
     function disabledAudioBySelf() {
-      var selfOptDom = this.dom.childNodes[9]
-      selfOptDom.childNodes[5].style.display = 'none';
-      selfOptDom.childNodes[7].style.display = 'inline-block';
+      var node = this.dom.querySelector('.rong-opt-audio')
+      var disabledNode = this.dom.querySelector('.rong-opt-audio-disabled')
+      node.style.display = 'none';
+      disabledNode.style.display = 'inline-block';
     }
     function setCustomVideoUI(videoTitle) {
-      var videoBoxChild = this.dom.children;
-      videoBoxChild[1].style.display = 'none';
-      videoBoxChild[4].style.display = 'none';
-      videoBoxChild[5].style.display = 'block';
-      videoBoxChild[5].innerText = videoTitle;
+      var streamTopDom = this.dom.querySelector('.rong-stream-top')
+      var optDom = this.dom.querySelector('.rong-stream-opt')
+      var customVideoDom = this.dom.querySelector('.rong-custom-video')
+      Dom.hide(streamTopDom);
+      Dom.hide(optDom);
+      Dom.show(customVideoDom);
+      customVideoDom.innerText = videoTitle;
     }
     function hideCustomAudioBox() {
       this.dom.style.display = 'none';
+    }
+    function setName(name) {
+      var node = this.dom.querySelector('.rong-user-name');
+      node.innerText = name;
+      this.userName = name;
     }
     return function (id, params, temp) {
       params = params || {};
@@ -600,6 +611,7 @@
       self.hideSoundGif = hideSoundGif;
       self.setCustomVideoUI = setCustomVideoUI;
       self.hideCustomAudioBox = hideCustomAudioBox;
+      self.setName = setName;
 
       StreamBoxList[id] = self;
 

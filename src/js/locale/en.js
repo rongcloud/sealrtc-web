@@ -13,7 +13,7 @@
       userIdEmpty: 'User ID can not be empty',
       roomIdIllegal: 'Room ID can only enter letters and numbers',
       networkError: 'Network is disconnected',
-      userNameEnglishOnly:'User name can only be entered in English or numbers',
+      userNameEnglishOnly: 'User name can only be entered in English or numbers',
       getTokenError: 'Get token failed',
       rtcError: 'Init RTC failed',
       joinError: 'Join room failed',
@@ -22,7 +22,7 @@
       addScreenError: 'Add screenshare failed',
       closeScreenError: 'Close screenshare failed',
       publishError: 'Publish stream failed',
-      getLocalStreamError: 'Failed to get local video stream,resource is occupied or has no permissions',
+      getLocalStreamError: 'Collection of camera equipment failed, please check:<br> 1. Whether the computer is connected and turned on the camera device; <br>2. Whether the camera has been authorized to capture the camera;<br>',
       subscriptError: 'Subscription failed',
       closeVideoError: 'Failed to close the camera',
       openVideoError: 'Failed to open the camera',
@@ -33,7 +33,9 @@
       isManage: 'You are currently an administrator',
       newManage: ' become a new administrator',
       joinMeeting: ' Join the meeting',
-      removeUser: 'Are you sure you want to remove user {0} from your room?'
+      removeUser: 'Are you sure you want to remove user {0} from your room?',
+      50065: 'You have been removed from the room！',
+      40021: 'You are not allowed to join the room！'
     },
     placeholder: {
       roomId: 'Please enter the RoomId',
@@ -49,7 +51,7 @@
       bitrateMIN: 'bitrateMIN',
       bitrateMAX: 'bitrateMAX',
       url: 'MediaServer URL',
-      userLoginId:'userId',
+      userLoginId: 'userId',
       screenshareBusy: 'Screen Sharing',
       videoClosed: 'You have turned off the camera',
       otherVideoClosed: 'He/she has turned off the camera',

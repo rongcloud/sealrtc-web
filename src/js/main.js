@@ -207,12 +207,29 @@
       sealAlert(localeData.publishError + ' ' + JSON.stringify(error));
     }
   }
+  function userKickMsg(errorCode) {
+    if (errorCode) {
+      let params = {};
+      params.confirmCallback = ()=>{
+        location.reload()
+      }
+      sealAlert(localeData[errorCode], params);
+    }
+  }
 
   function rtcTokenError(error) {
     sealAlert(localeData.getTokenError + ' ' + error.toString());
   }
 
   function joinRoomError(error) {
+    if(error.code === 40021){
+      let params = {};
+      params.confirmCallback = ()=>{
+        location.reload()
+      }
+      sealAlert(localeData[error.code],params);
+      return;
+    }
     sealAlert(localeData.joinError + ' ' + JSON.stringify(error));
   }
 
@@ -356,7 +373,6 @@
       setStreamBox(userId, ms);
       streamBox.closeFlibScreenShare();
     } else {
-      console.log('有人订阅了----')
       user.stream.size = rongRTC.StreamSize.MIN;
       rongRTCStream.subscribe(user).then(function (user) {
         showUserStream(user);
@@ -440,7 +456,6 @@
       };
       return rongRTCStream.publish(user);
     }, getScreenShareError).then(function () {
-
       addUserStream(user);
       var streamBox = StreamBox.get(loginUserId);
       streamBox.openScreenShare();
@@ -580,10 +595,12 @@
       utils.Dom.addClass(streamBox.dom, 'rong-is-self');
       streamBox.zoom(user);
     } else {
+      getJoinUserName(user, function (name) {
+        streamBox.setName(name)
+      })
       addUserStream(user);
     }
     var childDom = streamBox.childDom;
-
     childDom.videoBtn.onclick = function (e) {
       streamBox.isVideoOpenedBySelf ? closeVideo(user) : openVideo(user);
       e.stopPropagation();
@@ -625,6 +642,10 @@
     var userNameStr = Dom.getById('rongUserName').innerText;
     return userNameStr.substring(5, userNameStr.length);
   }
+  // function publishStream() {
+  //   publishSelfMediaStream(true, true, {width: 640, height: 480}, null).then(
+  //     addUserStream, publishStreamError);
+  // }
   function hasCustomFileVideo() {
     var userBoxList = streamList.streamBoxList;
     hasCustomVideoTag = false
@@ -839,6 +860,12 @@
     removeRtcUserInfos(user.id, null);
   }
 
+  function userKick(res){
+    console.info('userKick',res)
+    userKickMsg(res.msg.code)
+    hangup()
+  }
+
   function removeUnpublishUser(user) {
     currentUserLists.remove(user.id);
     if (user.stream.tag === CustomizeTag.NORMAL || user.stream.tag === CustomizeTag.SCREENSHARE) {
@@ -925,6 +952,7 @@
         common.UI.backLoginPage();
       })
     }).catch(function () {
+      rongRTCRoom.leave().then(function () {})
       common.UI.backLoginPage();
       RongSeal.videoTimer.stop();
       RongSeal.userStreams.clearUsers();
@@ -1056,6 +1084,7 @@
         }
       }
       getRtcUserInfos([]).then(function (infos) {
+        console.warn('Rong log: Open User List ', infos)
         var userList = [];
         var realUsers = {};
         videoBoxList.forEach(function (item) {
@@ -1139,7 +1168,7 @@
       //   }
       // }
       user.name = username;
-      callback();
+      callback(username);
     })
   }
   function addVideoViewBox(user) {
@@ -1154,9 +1183,8 @@
     }
     if (user.stream.tag === CustomizeTag.NORMAL) {
       // currentUserLists.add(user.id,'addVideoViewBox');
-      getJoinUserName(user, function () {
-        addUserBox(user);
-      })
+      
+      addUserBox(user);
     } else {
       addCustomVideoBox(user);
       return;
@@ -1170,7 +1198,7 @@
     addUserBox({ id: loginUserId });
     var streamBox = StreamBox.get(loginUserId);
     if (peopleNum < LimitNum.SRJoinNumAV) {
-      if (params.videoEnable == false) {
+      if (params.videoEnable === false) {
         unpublishedVideoUI();
         streamBox.disabledVideoBySelf();
       }
@@ -1207,6 +1235,7 @@
           frameRate = params.frameRate,
           resolution = params.resolution;
         RTCJoinConfirm(peopleNum, params)
+        // document.getElementById('rongUserName').onclick = publishStream;
         publishSelfMediaStream(videoEnable, audioEnable, resolution, frameRate).then(
           addUserStream, publishStreamError);
       } else if (peopleNum >= LimitNum.SRJoinNumAV && peopleNum < LimitNum.SRJoinNumAudioOnly) {
@@ -1271,7 +1300,7 @@
   function userListSortByDesc(list) {
     for (var i = 0; i < list.length; i++) {
       for (var j = 0; j < list.length - 1; j++) {
-        if (list[j].joinTime < list[j + 1].joinTime) {
+        if (list[j].joinTime > list[j + 1].joinTime) {
           var temp = list[j + 1]; //元素交换
           list[j + 1] = list[j];
           list[j] = temp;
@@ -1298,6 +1327,7 @@
   function setRtcUserInfos() {
     RongSeal.rongStorage.get([]).then(function (infos) {
       delete infos.rongRTCWhite;
+      console.warn('Rong log: Join Room Or Receive Msg Update User List ', infos)
       userInfos = {};
       var userList = [];
       for (var key in infos) {
@@ -1332,6 +1362,7 @@
         getRtcUserInfos([]).then(function (infos) {
           var userList = [];
           delete infos[leftUserId];
+          console.warn('Rong log: User Left Update User List ', infos, leftUserId)
           for (var key in infos) {
             var userInfo = JSON.parse(infos[key]);
             userList.push(userInfo);
@@ -1421,12 +1452,14 @@
         }
         // backLoginPage();
         sealToast.destroy();
+        console.log('RTC Error:', err);
       }
     });
     rongRTCRoom = new rongRTC.Room({
       id: params.roomId,
       joined: addUserList,
-      left: removeUserBox
+      left: removeUserBox,
+      kick: userKick
     });
     rongRTCStream = new rongRTC.Stream({
       // published: addUserStream,
@@ -1486,11 +1519,14 @@
       totalUiTable = null;
       showMonitor = false;
       var num = 0, timer = 0, dom = document.getElementById('RongMonitor');
-      document.body.onclick = function () {
-        num += 1;
+      document.getElementsByClassName('rong-room-title')[0].onclick = function () {
         clearTimeout(timer);
+        num += 1;
+        timer = setTimeout(()=>{
+          num = 0;
+        },800);
         if (num < 5) {
-          timer = setTimeout(function () { num = 0 }, 1000);
+          // timer = setTimeout(function () { num = 0 }, 1000);
           return;
         }
         showMonitor = !showMonitor;
@@ -1596,6 +1632,7 @@
   RongSeal.sealToast = sealToast;
   RongSeal.userStreams = userStreams;
   RongSeal.currentUserLists = currentUserLists;
+  RongSeal.quitRTCRoom = quit;
 
 })({
   win: window,

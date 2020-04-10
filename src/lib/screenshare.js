@@ -24,6 +24,8 @@
 
   var checkTimeout = 1500;
 
+  var get;
+
   var sendToPlugin = function (key) {
     win.postMessage({
       type: key
@@ -49,7 +51,7 @@
         mandatory: {
           chromeMediaSource: 'screen',
           chromeMediaSourceId: sourceId,
-          maxWidth:1280,
+          maxWidth: 1280,
           maxHeight: 720,
           minFrameRate: 15, 
           maxFrameRate: 15
@@ -97,7 +99,7 @@
     });
   };
 
-  var get = function (callback) {
+  var getScreenByPlugin = function (callback) {
     return new Promise(function (resolve, reject) {
       var getCallback = function (data) {
         var data = data.data || {};
@@ -124,9 +126,25 @@
     });
   };
 
+  var getDisplayMedia = function() {
+    return win.navigator.mediaDevices.getDisplayMedia();
+  }
+
+  var init = function () {
+    var bro = win.navigator.userAgent.match( /Chrome\/([\d.]+)/);
+    var version = parseInt(bro[1]);
+    if(version > 71) {
+      get = getDisplayMedia;
+    }else {
+      get = getScreenByPlugin;
+    }
+  }
+
   var clearChooseBox = function () {
     sendToPlugin(Keys.CLEAR_BOX);
   };
+
+  init();
 
   return {
     check,

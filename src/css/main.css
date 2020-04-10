@@ -485,6 +485,8 @@ input[type="number"]{
   position: absolute;
   left: 36px;
   cursor: pointer;
+  background-color: #d6d5d5ad;
+  border-radius: 50%;
 }
 
 .rong-stream-list .rong-case-next {
@@ -497,6 +499,8 @@ input[type="number"]{
   position: absolute;
   right: 36px;
   cursor: pointer;
+  background-color: #d6d5d5ad;
+  border-radius: 50%;
 }
 /* .rong-stream-wrap .rong-stream-list::-webkit-scrollbar {
   display:none;
@@ -760,15 +764,15 @@ input[type="number"]{
   position: absolute;
   background: #fffefe;
   width: 255px;
-  height: 100%;
-  z-index: 15;
+  height: calc(100% - 53px);
+  z-index: 17;
   right: 0;
   top: 53px;
   box-shadow: 0 0 1px #ccc;
 }
 .rong-user-list .user-list-main {
   overflow-y: scroll;
-  height: 100%;
+  height: calc(100% - 40px);
   font-size: 13px;
 }
 .rong-user-list .user-list-item {

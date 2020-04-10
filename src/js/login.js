@@ -10,9 +10,9 @@
     getDomById = Dom.getById,
     Cache = utils.Cache, _5min = 5 * 60,
     Config = RongSeal.Config,
-    SessionCache = utils.SessionCache;
+    LocalCache = utils.LocalCache;
   // var randomUserId;
-  var userId, rongIMToken, IMUserId;
+  var rongIMToken;
   // console.log('randomUserId: ', typeof randomUserId);
 
   var locale = RongSeal.locale[common.lang],
@@ -38,7 +38,7 @@
     UserInfoKey: 'rong-user-info',
     VideoEnable: 'video-enable',
     BystanderEnable: 'bystander-enable',
-    UserId:'rong-user-id',
+    UserId: 'rong-user-id',
     TabIdKey: 'rong-tab-id'
   };
 
@@ -47,17 +47,17 @@
   var platform = 'web';
   //生成 tabId 并存储
   var generateTabId = function() {
-    var tabId = SessionCache.get(StorageKeys.TabIdKey);
+    var tabId = LocalCache.get(StorageKeys.TabIdKey);
     var randomStr = utils.getRandomStr()
     if(!tabId){
-      SessionCache.set(StorageKeys.TabIdKey, randomStr)
+      LocalCache.set(StorageKeys.TabIdKey, randomStr)
     }
   }
   generateTabId();
   // 处理清除缓存未生成 tabId
   var handleNullTabId = function() {
     var randomStr = utils.getRandomStr()
-    SessionCache.set(StorageKeys.TabIdKey, randomStr)
+    LocalCache.set(StorageKeys.TabIdKey, randomStr)
     return randomStr;
   }
   var sealToast = new common.SealToast();
@@ -195,6 +195,9 @@
         region: 86
       }
       getSmsCode(params).then(function (data) {
+        if (data.code !== 200) {
+          sealAlert(data.message || '服务器错误');
+        }
         console.log('data', data)
       }).catch(function (err) {
         console.log('getSMSCodeERR:', err)
@@ -211,7 +214,7 @@
     }
     verifyLoginClickTimes++;
     var tel = telDom.value,
-        tabId = SessionCache.get(StorageKeys.TabIdKey) ? SessionCache.get(StorageKeys.TabIdKey) : handleNullTabId(),
+      tabId = LocalCache.get(StorageKeys.TabIdKey) ? LocalCache.get(StorageKeys.TabIdKey) : handleNullTabId(),
       code = verifyCodeDom.value;
     var imTokenKey = utils.tplEngine('{IMTokenKey}_{tel}{tabId}_{platform}', {
       IMTokenKey: StorageKeys.IMToken,
@@ -241,8 +244,6 @@
             if (rongIMToken) {
               Cache.set(imTokenKey, rongIMToken);
               Cache.remove(StorageKeys.UserId); //移除之前用的 登录 UserId
-              userLoginIdDom.value = loginUserId;
-              
               startRTC(rongIMToken);
             } else {
               console.log('IM token 为空----');
@@ -257,6 +258,7 @@
             verifyLoginClickTimes = 0;
             sealAlert(localeData.verifyCodeIncorrect)
           } else {
+            verifyLoginClickTimes = 0;
             sealAlert(data.message)
           }
         }).catch(function (err) {
@@ -288,7 +290,7 @@
   }
   var hasIMToken = function () {
     var roomTel = roomTelNumDom.value,
-    tabId = SessionCache.get(StorageKeys.TabIdKey);
+      tabId = LocalCache.get(StorageKeys.TabIdKey);
     var imTokenKey = utils.tplEngine('{IMTokenKey}_{tel}{tabId}_{platform}', {
       IMTokenKey: StorageKeys.IMToken,
       tel: roomTel,
@@ -459,7 +461,7 @@
     var currentTimestamp = new Date().getTime();
     var userId = utils.tplEngine('{tel}_{userName}_{platform}', {
       tel: roomTelNumDom.value,
-      userName: SessionCache.get(StorageKeys.TabIdKey),
+      userName: LocalCache.get(StorageKeys.TabIdKey),
       platform: platform
     });
     var userInfo = {
@@ -545,7 +547,7 @@
     }
     RongSeal.im.connect(user, {
       connected: function (IMUserId) {
-        IMUserId = IMUserId;
+        userLoginIdDom.value = IMUserId;
         var option = getRTCOption();
         console.log(option);
         var resolution = option.resolution;
@@ -576,7 +578,7 @@
         sealAlert(tips, {
           confirmCallback: function () {
             // common.UI.backLoginPage();
-            clear();
+            // clear();
             sealToast.destroy();
             // RongSeal.im.disconnect();
             win.location.reload();
@@ -585,7 +587,6 @@
       }
     });
   };
-
   
   var startRTC = function (imToken) {
     var checkContent = checkRTCValue();
@@ -597,7 +598,7 @@
     // var userId = roomTelNumDom.value;
     var userId = utils.tplEngine('{tel}_{userName}_{platform}', {
       tel: roomTelNumDom.value,
-      userName: SessionCache.get(StorageKeys.TabIdKey),
+      userName: LocalCache.get(StorageKeys.TabIdKey),
       platform: platform
     });
     connect({
