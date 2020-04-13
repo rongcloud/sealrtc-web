@@ -113,16 +113,6 @@
   }
   var clickTimes = 0, customAudioClickTimes = 0;
 
-  function getSecretOption() {
-    var peopleNumOpt = location.href.split('?');
-    if (peopleNumOpt[1]) {
-      var limitNumArr = peopleNumOpt[1].split('&&');
-      LimitNum.SRJoinNumAV = limitNumArr[0];
-      LimitNum.SRJoinNumAudioOnly = limitNumArr[1];
-    }
-  }
-  getSecretOption();
-
   function streamBoxSroll(event) {
     var direction = event.target.className;
     var streamListBox = Dom.get('.rong-stream-list');
