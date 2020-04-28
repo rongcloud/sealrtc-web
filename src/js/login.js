@@ -10,6 +10,7 @@
     getDomById = Dom.getById,
     Cache = utils.Cache, _5min = 5 * 60,
     Config = RongSeal.Config,
+    RongRTC = win.RongRTC,
     LocalCache = utils.LocalCache;
   // var randomUserId;
   var rongIMToken;
@@ -45,6 +46,31 @@
   var verifyLoginClickTimes = 0;
 
   var platform = 'web';
+
+  var resolution = function() {
+    let resolutionDefHtml = '<li lang-textContent="resolution"></li>';
+    
+    let resolutionObj = RongRTC.Resolution || {'176_132': 'RESOLUTION_176_132','256_144': 'RESOLUTION_256_144','320_180': 'RESOLUTION_320_180','240_240': 'RESOLUTION_240_240','320_240': 'RESOLUTION_320_240','480_360': 'RESOLUTION_480_360','640_360': 'RESOLUTION_640_360','480_480': 'RESOLUTION_480_480','640_480': 'RESOLUTION_640_480','720_480': 'RESOLUTION_720_480','1280_720': 'RESOLUTION_1280_720','1920_1080': 'RESOLUTION_1920_1080'};
+    // let html = resolutionDefHtml;
+    for (const key in resolutionObj) {
+      if (resolutionObj.hasOwnProperty(key)) {
+        let element = resolutionObj[key];
+        let check = '';
+        if(key == '640_480') {
+          check = 'checked';
+        }
+        element = element.split('_');
+        let resolutionHtml = `<li>
+          <input id='Rl-${element[1]}-${element[2]}' value='${element[1]}*${element[2]}' type='radio' name='resolution' ${check}>
+          <label for='Rl-${element[1]}-${element[2]}'></label>
+          <span>${element[1]}*${element[2]}</span>
+        </li>`
+        resolutionDefHtml += resolutionHtml;
+      }
+    }
+    document.getElementById('resolution').innerHTML = resolutionDefHtml;
+  }
+  resolution();
   //生成 tabId 并存储
   var generateTabId = function() {
     var tabId = LocalCache.get(StorageKeys.TabIdKey);
@@ -216,8 +242,9 @@
     var tel = telDom.value,
       tabId = LocalCache.get(StorageKeys.TabIdKey) ? LocalCache.get(StorageKeys.TabIdKey) : handleNullTabId(),
       code = verifyCodeDom.value;
-    var imTokenKey = utils.tplEngine('{IMTokenKey}_{tel}{tabId}_{platform}', {
+    var imTokenKey = utils.tplEngine('{IMTokenKey}_{appkey}_{tel}_{tabId}_{platform}', {
       IMTokenKey: StorageKeys.IMToken,
+      appkey: Config.APPKEY,
       tel: tel,
       tabId: tabId,
       platform: platform
@@ -291,8 +318,9 @@
   var hasIMToken = function () {
     var roomTel = roomTelNumDom.value,
       tabId = LocalCache.get(StorageKeys.TabIdKey);
-    var imTokenKey = utils.tplEngine('{IMTokenKey}_{tel}{tabId}_{platform}', {
+    var imTokenKey = utils.tplEngine('{IMTokenKey}_{appkey}_{tel}_{tabId}_{platform}', {
       IMTokenKey: StorageKeys.IMToken,
+      appkey: Config.APPKEY,
       tel: roomTel,
       tabId: tabId,
       platform: platform
@@ -411,14 +439,14 @@
     var videoEnable, bystanderEnable;
 
     var frameRate = getDomById('frameRate').value;
-    var bitrate = getDomById('bitrate').value;
-    var bitrateMIN = getDomById('bitrateMIN').value;
-    var bitrateMAX = getDomById('bitrateMAX').value;
-    var bitrateObj = {
-      max: parseInt(bitrateMAX) || 1000,
-      min: parseInt(bitrateMIN) || 100,
-      start: parseInt(bitrate) || 300
-    }
+    // var bitrate = getDomById('bitrate').value;
+    // var bitrateMIN = getDomById('bitrateMIN').value;
+    // var bitrateMAX = getDomById('bitrateMAX').value;
+    // var bitrateObj = {
+    //   max: parseInt(bitrateMAX) || 1000,
+    //   min: parseInt(bitrateMIN) || 100,
+    //   start: parseInt(bitrate) || 300
+    // }
     var url = getDomById('url').value || Config.MEDIA_SERVER;
     if (modeOption) {
       if (modeOption == 'closeVideo') {
@@ -435,6 +463,7 @@
     }
     var roomId = roomDom.value,
       userId = roomTelNumDom.value,
+      // resolution = resolutionDom.value;
       // userId = randomUserId,
       resolution = common.formatResolution(resolutionDom.value);// 格式如: { width: 640, height: 320 }
     // console.log(resolutionDom);
@@ -445,8 +474,8 @@
       resolution: resolution,
       videoEnable: videoEnable,
       audioEnable: true,
-      bystanderEnable: bystanderEnable,
-      bitrate: bitrateObj
+      bystanderEnable: bystanderEnable
+      // bitrate: bitrateObj
     };
     if(frameRate){
       option.frameRate = parseInt(frameRate);
@@ -491,6 +520,7 @@
     RongSeal.videoTimer.stop();
     RongSeal.userStreams.clearUsers();
     RongSeal.destroyRongRTCPage();
+    RongSeal.im.disconnect();
   };
   var isRTCError = false;
   var EventName = RongSeal.EventName;
@@ -660,5 +690,6 @@
 })({
   win: window,
   RongSeal: window.RongSeal,
+  RongRTC: window.RongRTC,
   globalConfig: window.RongSeal.Config
 });

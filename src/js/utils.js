@@ -371,7 +371,7 @@
   };
 
   var isNumberAndLetter = function (val) {
-    var reg = /^[A-Za-z0-9+=-_]+$/;
+    var reg = /^[A-Za-z0-9+=_-]+$/;
     return reg.test(val)
   };
 

@@ -11,7 +11,7 @@
     locale = RongSeal.locale[common.lang],
     localeData = locale.data;
 
-  var RongMedia = dependencies.RongMedia;
+  // var RongMedia = dependencies.RongMedia;
   var RongScreenShare = dependencies.RongScreenShare;
 
   var StreamBox = common.UI.StreamBox;
@@ -112,6 +112,16 @@
     SRJoinNumAudioOnly: 30
   }
   var clickTimes = 0, customAudioClickTimes = 0;
+
+  function getSecretOption() {
+    var peopleNumOpt = location.href.split('?');
+    if (peopleNumOpt[1]) {
+      var limitNumArr = peopleNumOpt[1].split('&&');
+      LimitNum.SRJoinNumAV = limitNumArr[0];
+      LimitNum.SRJoinNumAudioOnly = limitNumArr[1];
+    }
+  }
+  getSecretOption();
 
   function streamBoxSroll(event) {
     var direction = event.target.className;
@@ -240,21 +250,25 @@
     return type;
   }
 
-  function getSelfMediaStream(videoEnable, audioEnable, resolution, audioOnly) {
-    var videoConfig = videoEnable ? resolution : videoEnable;
+  function getSelfMediaStream(videoEnable, audioEnable, resolution) {
+    var videoConfig = videoEnable ? {} : videoEnable;
     videoConfig.frameRate = 15;
+    videoConfig.resolution = 'RESOLUTION_' + resolution.width + '_' + resolution.height;
     var constraints = {
       video: videoConfig,
       audio: audioEnable,
+      userId: loginUserId
       // frameRate: 15,
-      audioOnly: audioOnly,
+      // audioOnly: audioOnly,
     };
+    constraints.type = getStreamType(constraints.video, constraints.audio)
     return new Promise(function (resolve, reject) {
-      RongMedia.get(constraints).then(function (stream) {
+      rongRTCStream.publishDefault(constraints).then(function (stream) {
+        // console.info(stream);
         var user = {
           id: loginUserId,
           stream: {
-            mediaStream: stream,
+            mediaStream: stream.mediaStream,
             type: getStreamType(constraints.video, constraints.audio),
             tag: CustomizeTag.NORMAL
           }
@@ -360,7 +374,7 @@
         node && node.pause();
       }
       userStreams.add(user);
-      setStreamBox(userId, ms);
+      setStreamBox(userId, user.stream.type);
       streamBox.closeFlibScreenShare();
     } else {
       user.stream.size = rongRTC.StreamSize.MIN;
@@ -866,18 +880,18 @@
   }
   function publishSelfMediaStream(videoEnable, audioEnable, resolution, frameRate, audioOnly) {
     console.info(videoEnable,frameRate)
-    return new Promise(function (resolve, reject) {
+    return new Promise(function (resolve) {
       console.info(videoEnable,frameRate)
       if(!frameRate){
         frameRate = 15;
       }
       getSelfMediaStream(videoEnable, audioEnable, resolution, audioOnly,frameRate).then(function (user) {
-        rongRTCStream.publish(user).then(function () {
-          if (!videoEnable) {
-            closeVideo(user);
-          }
-          resolve(user);
-        }, reject);
+        // rongRTCStream.publish(user).then(function () {
+        //   if (!videoEnable) {
+        //     closeVideo(user);
+        //   }
+        resolve(user);
+        // }, reject);
       }, getSelfMediaStreamError);
     });
   }

@@ -1,6 +1,6 @@
 ## SealRTC-v3
 
-基于 RongRTC.3.2.1.js 的实时音视频会议 Demo
+基于 RongRTC.3.2.2.js 的实时音视频会议 Demo
 
 ## 使用说明
 

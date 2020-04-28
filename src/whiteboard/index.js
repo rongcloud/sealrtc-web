@@ -16,7 +16,7 @@
     body: JSON.stringify({
       name: '融云 White Board 房间',
       limit: 100, // 房间人数限制
-      mode: 'transitory'
+      mode: 'persistent'
     }),
   };
 

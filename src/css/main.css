@@ -1021,6 +1021,7 @@ input[type="number"]{
   color: #eae5e5;
   background: #150101;
   border-radius: 2px;
+  display: none;
 }
 
 

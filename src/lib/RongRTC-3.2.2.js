@@ -1,5 +1,5 @@
 /*
-* RongRTC.js v3.2.1
+* RongRTC.js v3.2.2
 * Copyright 2020 RongCloud
 * Released under the MIT License.
 */
@@ -719,6 +719,7 @@
     ROOM_GET_SESSONID: 'room_getsessionid',
 
     STREAM_PUBLISH: 'stream_publish',
+    STREAM_PUBLISH_DEFAULT: 'stream_publish_default',
     STREAM_UNPUBLISH: 'stream_UNPUBLISH',
     STREAM_SUBSCRIBE: 'stream_subscribe',
     STREAM_UNSUBSCRIBE: 'stream_unsubscribe',
@@ -1026,13 +1027,13 @@
     USER: 2
   };
 
-  var REGEXP_ROOM_ID = /[A-Za-z0-9+=-_]+$/;
+  var REGEXP_ROOM_ID = /[A-Za-z0-9+=_-]+$/;
 
   var LENGTH_ROOM_ID = 64;
 
   var DEFAULT_MS_PROFILE = {
-    height: 720,
-    width: 1280,
+    height: 480,
+    width: 640,
     frameRate: 15
   };
   var MIN_STREAM_SUFFIX = 'tiny';
@@ -1095,11 +1096,11 @@
 
     R3_ITEM: '{googTrackId}\t{googCodecName}\t{audioLevel}\t{samplingRate}\t{trackSent}\t{packLostSentRate}\t{frameRate}\t{resolution}\t{googRenderDelayMs}\t{googJitterSent}\t{googNacksSent}\t{googPlisSent}\t{googRtt}\t{googFirsSent}\t{codecImplementationName}\t{trackState}',
     R3: 'R3\t{totalRate}\t-1\t-1\t-1\t{networkType}\t{rtt}\t{localAddress}\t{receiveBand}\t{sendBand}\t{packetsLost}\t{deviceId}\r{tracks}',
-    R3_KEYS: ['mediaType', 'googTrackId', 'googCodecName', 'audioLevel', 'samplingRate', 'trackSent', 'packLostSentRate', 'frameRate', 'resolution', 'googRenderDelayMs', 'googJitterSent', 'googNacksSent', 'googPlisSent', 'googRtt', 'googFirsSent', 'codecImplementationName', 'trackState'],
+    R3_KEYS: ['mediaType', 'googTrackId', 'googCodecName', 'audioLevel', 'samplingRate', 'trackSent', 'packLostSentRate', 'frameRate', 'resolution', 'googRenderDelayMs', 'googJitterSent', 'googNacksSent', 'googPlisSent', 'googRtt', 'googFirsSent', 'codecImplementationName', 'trackState', 'googFirsReceived', 'googPlisReceived', 'googNacksReceived'],
 
     R4_ITEM: '{googTrackId}\t{googCodecName}\t{audioLevel}\t{samplingRate}\t{trackReceived}\t{packLostReceivedRate}\t{frameRate}\t{resolution}\t{googRenderDelayMs}\t{googJitterReceived}\t{googNacksReceived}\t{googPlisReceived}\t{googRtt}\t{googFirsReceived}\t{codecImplementationName}\t{trackState}',
     R4: 'R4\t{totalRate}\t-1\t-1\t-1\t{networkType}\t{rtt}\t{localAddress}\t{receiveBand}\t{sendBand}\t{packetsLost}\t{deviceId}\r{tracks}',
-    R4_KEYS: ['mediaType', 'googTrackId', 'googCodecName', 'audioLevel', 'samplingRate', 'trackReceived', 'packLostReceivedRate', 'frameRate', 'resolution', 'googRenderDelayMs', 'googJitterReceived', 'googNacksReceived', 'googPlisReceived', 'googRtt', 'googFirsReceived', 'codecImplementationName', 'trackState']
+    R4_KEYS: ['mediaType', 'googTrackId', 'googCodecName', 'audioLevel', 'samplingRate', 'trackReceived', 'packLostReceivedRate', 'frameRate', 'resolution', 'googRenderDelayMs', 'googJitterReceived', 'googNacksReceived', 'googPlisReceived', 'googRtt', 'googFirsReceived', 'codecImplementationName', 'trackState', 'googNacksSent', 'googFirsSent']
 
   };
 
@@ -1114,7 +1115,7 @@
     R4: 'r4'
   };
 
-  var SDK_VERSION = '3.2.1';
+  var SDK_VERSION = '3.2.2';
 
   var TRACK_STATE = {
     DISABLE: 0,
@@ -1130,7 +1131,127 @@
     HTTPS: 'https://'
   };
 
+  /* 实时日志上传 RTC Tag  */
+  var RTCLogTag = {
+    /* 加入房间相关 */
+    A_JR_T: 'A-joinRoom-T',
+    A_JR_R: 'A-joinRoom-R',
+    A_JR_E: 'A-joinRoom-E',
+    L_JR_T: 'L-joinRoom-T',
+    L_JR_R: 'L-joinRoom-R',
+    L_JR_E: 'L-joinRoom-E',
+    P_JRAGD_T: 'P-joinRoomAndGetData-T',
+    P_JRAGD_R: 'P-joinRoomAndGetData-R',
+    P_JRAGD_E: 'P-joinRoomAndGetData-E',
+    /* 断线后重新加入房间 Todo */
+    L_REJR_T: 'L-rejoinRoom-T',
+    L_REJR_R: 'L-rejoinRoom-R',
+    L_REJR_E: 'L-rejoinRoom-E',
+    /* 退出房间相关 */
+    A_LR_T: 'A-leaveRoom-T',
+    A_LR_R: 'A-leaveRoom-R',
+    A_LR_E: 'A-leaveRoom-E',
+    L_LR_T: 'L-leaveRoom-T',
+    L_LR_R: 'L-leaveRoom-R',
+    L_LR_E: 'L-leaveRoom-E',
+    L_MSLR_T: 'L-mediaLeaveRoom-T',
+    L_MSLR_R: 'L-mediaLeaveRoom-R',
+    L_MSLR_E: 'L-mediaLeaveRoom-E',
+    /* 发布资源相关 */
+    A_PAVS_T: 'A-publishAVStream-T',
+    A_PAVS_R: 'A-publishAVStream-R',
+    A_PAVS_E: 'A-publishAVStream-E',
+    /* 取消发布资源相关 */
+    A_UPAVS_T: 'A-unpublishAVStream-T',
+    A_UPAVS_R: 'A-unpublishAVStream-R',
+    A_UPAVS_E: 'A-unpublishAVStream-E',
+    /* MediaServer Exchange 接口 */
+    L_MSE_T: 'L-MSExchange-T',
+    L_MSE_R: 'L-MSExchange-R',
+    L_MSE_E: 'L-MSExchange-E',
+    /* 订阅资源相关 */
+    A_SAVS_T: 'A-subscribeAVStream-T',
+    A_SAVS_R: 'A-subscribeAVStream-R',
+    A_SAVS_E: 'A-subscribeAVStream-E',
+    /* 取消订阅资源相关 */
+    A_USAVS_T: 'A-unsubscribeAVStream-T',
+    A_USAVS_R: 'A-unsubscribeAVStream-R',
+    A_USAVS_E: 'A-unsubscribeAVStream-E',
+    /* MediaServer Subscribe 接口 */
+    L_MSS_T: 'L-MSSub-T',
+    L_MSS_R: 'L-MSSub-R',
+    L_MSS_E: 'L-MSSub-E',
+    /* 获取 RTC Token */
+    L_GRT_T: 'L-getRtcToken-T',
+    L_GRT_R: 'L-getRtcToken-R',
+    L_GRT_E: 'L-getRtcToken-E',
+    /* 订阅直播流 */
+    A_SLS_T: 'A-subscribeLiveStream-T',
+    A_SLS_R: 'A-subscribeLiveStream-R',
+    A_SLS_E: 'A-subscribeLiveStream-E',
+    L_MSSL_T: 'L-MSSubLive-T',
+    L_MSSL_R: 'L-MSSubLive-R',
+    L_MSSL_E: 'L-MSSubLive-E',
+    /* 取消订阅直播流 */
+    A_USLS_T: 'A-unsubscribeLiveStream-T',
+    A_USLS_R: 'A-unsubscribeLiveStream-R',
+    A_USLS_E: 'A-unsubscribeLiveStream-E',
+    L_MLL_T: 'L-mediaLiveLeave-T',
+    L_MLL_R: 'L-mediaLiveLeave-R',
+    L_MLL_E: 'L-mediaLiveLeave-E',
+    /* 设置MCU合流布局 */
+    A_SMC_T: 'A-setMixConfig-T',
+    A_SMC_R: 'A-setMixConfig-R',
+    A_SMC_E: 'A-setMixConfig-E',
+    /* 中间状态值 */
+    A_RTCC_S: 'A-RTCConfig-S',
+    A_UJ_S: 'A-userJoined-S',
+    A_UL_S: 'A-userLeft-S'
+  };
+
   var PROTOCOL_SUFFIX = '://';
+
+  var RongRTCVideoResolution = {
+    '176_132': 'RESOLUTION_176_132',
+    '256_144': 'RESOLUTION_256_144',
+    '320_180': 'RESOLUTION_320_180',
+    '240_240': 'RESOLUTION_240_240',
+    '320_240': 'RESOLUTION_320_240',
+    '480_360': 'RESOLUTION_480_360',
+    '640_360': 'RESOLUTION_640_360',
+    '480_480': 'RESOLUTION_480_480',
+    '640_480': 'RESOLUTION_640_480',
+    '720_480': 'RESOLUTION_720_480',
+    '1280_720': 'RESOLUTION_1280_720',
+    '1920_1080': 'RESOLUTION_1920_1080'
+  };
+
+  var RongRTCVideoBitRate = {
+    RESOLUTION_176_132: { width: 176, height: 132, maxBitRate: 150, minBitRate: 80 },
+    RESOLUTION_256_144: { width: 256, height: 144, maxBitRate: 240, minBitRate: 120 },
+    RESOLUTION_320_180: { width: 320, height: 180, maxBitRate: 280, minBitRate: 120 },
+    RESOLUTION_240_240: { width: 240, height: 240, maxBitRate: 280, minBitRate: 120 },
+    RESOLUTION_320_240: { width: 320, height: 240, maxBitRate: 400, minBitRate: 120 },
+    RESOLUTION_480_360: { width: 480, height: 360, maxBitRate: 650, minBitRate: 150 },
+    RESOLUTION_640_360: { width: 640, height: 360, maxBitRate: 800, minBitRate: 180 },
+    RESOLUTION_480_480: { width: 480, height: 480, maxBitRate: 800, minBitRate: 180 },
+    RESOLUTION_640_480: { width: 640, height: 480, maxBitRate: 900, minBitRate: 200 },
+    RESOLUTION_720_480: { width: 720, height: 480, maxBitRate: 1000, minBitRate: 200 },
+    RESOLUTION_1280_720: { width: 1280, height: 720, maxBitRate: 2200, minBitRate: 250 },
+    RESOLUTION_1920_1080: { width: 1920, height: 1080, maxBitRate: 4000, minBitRate: 400 }
+  };
+  var Multiplier = {
+    10: 1,
+    15: 1,
+    24: 1.5,
+    30: 1.5
+  };
+  var RongRTCVideoFps = {
+    10: 10,
+    15: 15,
+    24: 24,
+    30: 30
+  };
 
   var Storage$1 = utils.Storage;
 
@@ -1536,6 +1657,53 @@
   }
   var Logger$1 = Logger();
 
+  function logger() {
+    var Logger = void 0,
+        Level = void 0,
+        hasLogger = false;
+    var init = function init(imlib) {
+      if (imlib.Logger) {
+        hasLogger = true;
+        Logger = imlib.Logger;
+        Level = imlib.LoggerLevel;
+      }
+    };
+    var write = function write(level, tag, meta) {
+      Logger.writeLog({
+        level: level,
+        tag: tag,
+        content: meta,
+        type: 'RTC'
+      });
+    };
+
+    var fatal = function fatal(tag, meta) {
+      return hasLogger && write(Level.F, tag, meta);
+    };
+    var error = function error(tag, meta) {
+      return hasLogger && write(Level.E, tag, meta);
+    };
+    var warn = function warn(tag, meta) {
+      return hasLogger && write(Level.W, tag, meta);
+    };
+    var info = function info(tag, meta) {
+      return hasLogger && write(Level.I, tag, meta);
+    };
+    var debug = function debug(tag, meta) {
+      return hasLogger && write(Level.D, tag, meta);
+    };
+    return {
+      init: init,
+      fatal: fatal,
+      error: error,
+      warn: warn,
+      info: info,
+      debug: debug
+    };
+  }
+
+  var IMLogger = logger();
+
   var Room = function () {
     function Room(option) {
       classCallCheck(this, Room);
@@ -1564,6 +1732,14 @@
             event: type,
             user: user
           });
+          switch (type) {
+            case 'joined':
+              IMLogger.info(RTCLogTag.A_UJ_S, user);
+              break;
+            case 'left':
+              IMLogger.info(RTCLogTag.A_UL_S, user);
+              break;
+          }
         });
       });
       utils.extend(context, {
@@ -1578,12 +1754,15 @@
     createClass(Room, [{
       key: 'join',
       value: function join(user) {
+        IMLogger.info(RTCLogTag.A_JR_T, { user: user });
+
         var _check = check(user, ['id']),
             isIllegal = _check.isIllegal,
             name = _check.name;
 
         if (isIllegal) {
           var error = getError(name);
+          IMLogger.warn(RTCLogTag.A_JR_E, { desc: error });
           return utils.Defer.reject(error);
         }
         var room = this.room,
@@ -1592,6 +1771,7 @@
         utils.extend(room, {
           user: user
         });
+        IMLogger.info(RTCLogTag.A_JR_R, { user: user });
         return client.exec({
           event: UpEvent.ROOM_JOIN,
           type: 'room',
@@ -1604,6 +1784,10 @@
         var room = this.room,
             client = this.client;
 
+        IMLogger.info(RTCLogTag.A_LR_T, {
+          roomId: room.id,
+          uid: room.user.id
+        });
         return client.exec({
           event: UpEvent.ROOM_LEAVE,
           type: 'room',
@@ -1740,12 +1924,15 @@
     createClass(Stream, [{
       key: 'publish',
       value: function publish(user) {
+        IMLogger.info(RTCLogTag.A_PAVS_T, { user: user });
+
         var _check = check(user, ['id', 'stream.tag', 'stream.mediaStream', 'stream.type']),
             isIllegal = _check.isIllegal,
             name = _check.name;
 
         if (isIllegal) {
           var error = getError(name);
+          IMLogger.warn(RTCLogTag.A_PAVS_E, { desc: error });
           return utils.Defer.reject(error);
         }
         var client = this.client;
@@ -1764,6 +1951,7 @@
         // if (isLiveAudience(rongRTC)) {
         //   return utils.Defer.reject(error);
         // }
+        IMLogger.info(RTCLogTag.A_UPAVS_T, { user: user });
 
         var _check2 = check(user, ['id', 'stream.tag', 'stream.type']),
             isIllegal = _check2.isIllegal,
@@ -1771,6 +1959,7 @@
 
         if (isIllegal) {
           var error = getError(name);
+          IMLogger.warn(RTCLogTag.A_UPAVS_E, { desc: error });
           return utils.Defer.reject(error);
         }
         var client = this.client;
@@ -1788,18 +1977,26 @@
         var rongRTC = client.rongRTC;
 
 
-        var checkResult = void 0;
+        var checkResult = void 0,
+            logStartTag = void 0,
+            logErrorTag = void 0;
         if (isLiveAudience(rongRTC)) {
           checkResult = check(user, ['liveUrl']);
+          logStartTag = RTCLogTag.A_SLS_T;
+          logErrorTag = RTCLogTag.A_SLS_E;
         } else {
           checkResult = check(user, ['id', 'stream.tag', 'stream.type']);
+          logStartTag = RTCLogTag.A_SAVS_T;
+          logErrorTag = RTCLogTag.A_SAVS_E;
         }
+        IMLogger.info(logStartTag, { user: user });
         var _checkResult = checkResult,
             isIllegal = _checkResult.isIllegal,
             name = _checkResult.name;
 
         if (isIllegal) {
           var error = getError(name);
+          IMLogger.warn(logErrorTag, { desc: error });
           return utils.Defer.reject(error);
         }
         return client.exec({
@@ -1815,18 +2012,26 @@
         var rongRTC = client.rongRTC;
 
 
-        var checkResult = void 0;
+        var checkResult = void 0,
+            logStartTag = void 0,
+            logErrorTag = void 0;
         if (isLiveAudience(rongRTC)) {
           checkResult = check(user, []);
+          logStartTag = RTCLogTag.A_USLS_T;
+          logErrorTag = RTCLogTag.A_USLS_E;
         } else {
           checkResult = check(user, ['id', 'stream.tag', 'stream.type']);
+          logStartTag = RTCLogTag.A_USAVS_T;
+          logErrorTag = RTCLogTag.A_USAVS_E;
         }
+        IMLogger.info(logStartTag, { user: user });
         var _checkResult2 = checkResult,
             isIllegal = _checkResult2.isIllegal,
             name = _checkResult2.name;
 
         if (isIllegal) {
           var error = getError(name);
+          IMLogger.warn(logErrorTag, { desc: error });
           return utils.Defer.reject(error);
         }
         return client.exec({
@@ -1902,6 +2107,17 @@
           args: [constraints]
         });
       }
+    }, {
+      key: 'publishDefault',
+      value: function publishDefault(constraints) {
+        var client = this.client;
+
+        return client.exec({
+          event: UpEvent.STREAM_PUBLISH_DEFAULT,
+          type: 'stream',
+          args: [constraints]
+        });
+      }
     }]);
     return Stream;
   }();
@@ -1972,7 +2188,9 @@
     ADDED: 'p_stream_added',
     REMOVED: 'p_stream_removed',
     RECEIVED: 'p_stream_received',
-    CHANGED: 'p_ice_changed'
+    CHANGED: 'p_ice_changed',
+    TRACK_RECEIVED: 'p_track_received',
+    SIGNAL_STATE_CHANGE: 'p_signaling_state_change'
   };
 
   var ICEEvent = {
@@ -2037,7 +2255,9 @@
         var isOnline = false;
         var ajax = function ajax() {
           count = getCount();
-          utils.request(url).then(function () {}, function (_ref) {
+          utils.request(url).then(function () {
+            return callback(true);
+          }, function (_ref) {
             var status = _ref.status;
 
             if (utils.isEqual(status, 404)) {
@@ -2074,165 +2294,148 @@
     EXIT: '/exit'
   };
 
-  function request$1() {
-    var config = {
-      errorUrls: [],
-      urls: [],
-      timeout: REQUEST_TIMEOUT
-    };
+  var Config = {
+    urls: [],
+    errorUrls: [],
+    timeout: REQUEST_TIMEOUT
+  };
 
-    var prosumer = new utils.Prosumer();
-    var eventEmitter = new EventEmitter();
+  var tpl = '{domain}{path}';
+  var prosumer = new utils.Prosumer();
+  var eventEmitter = new EventEmitter();
 
-    var getUrl = function getUrl() {
-      var errorUrls = config.errorUrls;
+  var addErrorUrl = function addErrorUrl(url) {
+    Config.errorUrls.push(url);
+  };
 
-      var urls = utils.clone(config.urls);
-      urls = utils.filter(urls, function (url) {
-        return !utils.isInclude(errorUrls, url);
-      });
-      if (utils.isEmpty(urls)) {
-        urls = config.urls;
+  var clearErrorUrl = function clearErrorUrl() {
+    Config.errorUrls.length = 0;
+  };
+
+  var getValidUrl = function getValidUrl() {
+    var errorUrls = Config.errorUrls,
+        urls = Config.urls;
+
+    var validUrls = utils.filter(utils.clone(urls), function (url) {
+      var isError = utils.isInclude(errorUrls, url);
+      return !isError;
+    });
+    var isEmpty = utils.isEmpty(validUrls);
+    return isEmpty ? null : urls[0];
+  };
+
+  var addUrls = function addUrls(urls) {
+    if (utils.isEmpty(urls) || !utils.isArray(urls)) {
+      return;
+    }
+    urls = utils.map(urls, function (url) {
+      return formatProtocolPath(url); // 校验格式
+    });
+    // 反向合并. 比如已有 [4、5、6], 传入 [1、2、3], 结果 [1、2、3、4、5、6]
+    Config.urls = utils.merge(Config.urls, urls, {
+      isReverse: true
+    });
+  };
+
+  var addUrl = function addUrl(url) {
+    addUrls([url]);
+  };
+
+  var setOption = function setOption(_config) {
+    _config = _config || {};
+    var urls = _config.urls;
+    if (!utils.isEmpty(urls)) {
+      // 将 urls 设置提出, 统一在 setUrls 内校验格式
+      addUrls(urls);
+      delete _config.urls;
+    }
+    utils.extend(Config, _config);
+  };
+
+  var getOption = function getOption() {
+    return Config;
+  };
+
+  var isUrlsExisted = function isUrlsExisted(urls) {
+    if (!utils.isArray(urls)) {
+      urls = [urls];
+    }
+    var isExisted = true;
+    utils.forEach(urls, function (url) {
+      var formatedUrl = formatProtocolPath(url);
+      if (!utils.isInclude(Config.urls, formatedUrl)) {
+        isExisted = false;
       }
-      return utils.isEmpty(urls) ? '' : urls[0];
-    };
+    });
+    return isExisted;
+  };
 
-    var setUrls = function setUrls(urls) {
-      if (utils.isEmpty(urls) || !utils.isArray(urls)) {
-        return;
+  var postProcess = function postProcess(option) {
+    var domain = getValidUrl();
+    if (utils.isEmpty(domain)) {
+      // 没有可用的 mediaServer, 返回服务无效
+      clearErrorUrl();
+      return utils.Defer.reject(ErrorType.Inner.NO_AUDIO_AND_VIDEO_SERVICE);
+    }
+
+    var path = option.path,
+        body = option.body;
+
+    var url = utils.tplEngine(tpl, { domain: domain, path: path });
+    var headers = utils.extend({
+      'Content-Type': 'application/json;charset=UTF-8'
+    }, option.headers || {});
+
+    return utils.request(url, {
+      method: 'POST',
+      timeout: Config.timeout,
+      body: JSON.stringify(body),
+      headers: headers
+    }).then(function (result) {
+      var isSuccess = utils.isEqual(result.resultCode, MEDIASERVER_SUCCESS);
+      return isSuccess ? result : utils.Defer.reject(result);
+    }, function (error) {
+      var status = error.status;
+
+      if (utils.isInclude([403], status)) {
+        return utils.Defer.reject(error);
       }
+      addErrorUrl(domain);
+      return postProcess(); // 重新请求
+    });
+  };
 
-      urls = utils.map(urls, function (url) {
-        // 检验格式
-        return formatProtocolPath(url);
-      });
-      config.urls = utils.merge(config.urls, urls, { isReverse: true }); // 反向合并
-    };
+  eventEmitter.on(CommonEvent.REQUEST_CONSUME, function () {
+    prosumer.consume(function (_ref, next) {
+      var option = _ref.option,
+          resolve = _ref.resolve,
+          reject = _ref.reject;
 
-    var setOption = function setOption(_config) {
-      _config = _config || {};
-      var urls = _config.urls;
-      if (!utils.isEmpty(urls)) {
-        // 将 urls 设置提出, 统一在 setUrls 内校验格式
-        setUrls(urls);
-        delete _config.urls;
-      }
-      utils.extend(config, _config);
-    };
-
-    var getOption = function getOption() {
-      return config;
-    };
-
-    var addUrls = function addUrls(mediaServerList) {
-      setUrls(mediaServerList);
-    };
-
-    var addUrl = function addUrl(mediaServer) {
-      setUrls([mediaServer]);
-    };
-    var isUrlsExisted = function isUrlsExisted(urls) {
-      if (!utils.isArray(urls)) {
-        urls = [urls];
-      }
-      var isExisted = true;
-      utils.forEach(urls, function (url) {
-        var formatedUrl = formatProtocolPath(url);
-        if (!utils.isInclude(config.urls, formatedUrl)) {
-          isExisted = false;
-        }
-      });
-      return isExisted;
-    };
-    var postProcess = function postProcess(option) {
-      var path = option.path,
-          body = option.body;
-
-      var tpl = '{domain}{path}';
-
-      return utils.deferred(function (resolve, reject) {
-        var doRequest = function doRequest(error) {
-          var domain = getUrl();
-          if (utils.isEmpty(domain)) {
-            var Inner = ErrorType.Inner;
-
-            config.errorUrls.length = 0;
-            if (utils.isUndefined(error)) {
-              error = Inner.NO_AUDIO_AND_VIDEO_SERVICE;
-            } else {
-              error = utils.isEqual(error.status, 0) ? Inner.MEDIA_SERVER_ERROR : error;
-            }
-            return reject(error);
-          }
-          var url = utils.tplEngine(tpl, {
-            domain: domain,
-            path: path
-          });
-          var headers = {
-            'Content-Type': 'application/json;charset=UTF-8'
-          };
-          var _headers = option.headers;
-
-          if (utils.isObject(_headers)) {
-            utils.extend(headers, _headers);
-          }
-          utils.request(url, {
-            method: 'POST',
-            timeout: config.timeout || REQUEST_TIMEOUT,
-            body: JSON.stringify(body),
-            headers: headers
-          }).then(function (result) {
-            var code = result.resultCode;
-
-            if (utils.isEqual(code, MEDIASERVER_SUCCESS)) {
-              resolve(result);
-            } else {
-              reject(result);
-            }
-          }, function (error) {
-            var status = error.status;
-
-            if (utils.isInclude([403], status)) {
-              return reject(error);
-            }
-            config.errorUrls.push(domain);
-            doRequest(error);
-          });
-        };
-        doRequest();
-      });
-    };
-    eventEmitter.on(CommonEvent.REQUEST_CONSUME, function () {
-      prosumer.consume(function (_ref, next) {
-        var option = _ref.option,
-            resolve = _ref.resolve,
-            reject = _ref.reject;
-
-        postProcess(option).then(function (result) {
-          resolve(result);
-          next();
-        }, function (error) {
-          reject(error);
-          next();
-        });
+      postProcess(option).then(function (result) {
+        resolve(result);
+        next();
+      }, function (error) {
+        reject(error);
+        next();
       });
     });
-    var post = function post(option) {
-      return utils.deferred(function (resolve, reject) {
-        prosumer.produce({ option: option, resolve: resolve, reject: reject });
-        eventEmitter.emit(CommonEvent.REQUEST_CONSUME);
-      });
-    };
-    return {
-      setOption: setOption,
-      getOption: getOption,
-      post: post,
-      addUrls: addUrls,
-      addUrl: addUrl,
-      isUrlsExisted: isUrlsExisted
-    };
-  }
-  var request$2 = request$1();
+  });
+
+  var post = function post(option) {
+    return utils.deferred(function (resolve, reject) {
+      prosumer.produce({ option: option, resolve: resolve, reject: reject });
+      eventEmitter.emit(CommonEvent.REQUEST_CONSUME);
+    });
+  };
+
+  var request$1 = {
+    setOption: setOption,
+    getOption: getOption,
+    post: post,
+    addUrls: addUrls,
+    addUrl: addUrl,
+    isUrlsExisted: isUrlsExisted
+  };
 
   var globalPC = void 0; // pc 为单例, 可从 PeerConnection.getInstance 获取
 
@@ -2265,11 +2468,15 @@
 
           context.emit(PeerConnectionEvent.ADDED, stream);
         },
-        onremovestream: function onremovestream() {
-          var _event = event,
-              stream = _event.stream;
+        onremovestream: function onremovestream(event) {
+          var stream = event.stream;
 
           context.emit(PeerConnectionEvent.REMOVED, stream);
+        },
+        ontrack: function ontrack(event) {
+          var streams = event.streams;
+
+          context.emit(PeerConnectionEvent.TRACK_RECEIVED, streams);
         },
         ondatachannel: function ondatachannel(event) {
           //TODO: 具体返回参数
@@ -2282,6 +2489,10 @@
           });
           context.emit(PeerConnectionEvent.CHANGED, state);
           Logger$1.log(LogTag.ICE, { state: state });
+        },
+        onsignalingstatechange: function onsignalingstatechange() {
+          var streams = pc.getRemoteStreams();
+          context.emit(PeerConnectionEvent.SIGNAL_STATE_CHANGE, streams);
         }
       };
       utils.forEach(events, function (event, name) {
@@ -2349,10 +2560,10 @@
       value: function setRemoteAnwser(answer) {
         var context = this;
         var pc = context.pc;
+        // answer = context.setBitrate(answer);
 
-        answer = context.setBitrate(answer);
         return pc.setRemoteDescription(new RTCSessionDescription(answer)).then(function () {
-          pc.createAnswer().then(function (answer) {
+          return pc.createAnswer().then(function (answer) {
             return pc.setLocalDescription(answer);
           });
         });
@@ -2501,7 +2712,7 @@
         var pc = context.pc;
 
         var option = context.getOption();
-        option.iceRestart = false;
+        // option.iceRestart = false;
         var success = function success(desc) {
           desc = context.renameCodec(desc);
           callback && callback(desc);
@@ -2859,7 +3070,8 @@
                 room: room,
                 option: option
               });
-              request$2.post(option).then(function (response) {
+              IMLogger.info(RTCLogTag.L_MSSL_T, { room: room, option: option });
+              request$1.post(option).then(function (response) {
                 var answer = response.sdp;
 
                 pc.setOffer(offer);
@@ -2875,6 +3087,7 @@
                   room: room,
                   response: response
                 });
+                IMLogger.info(RTCLogTag.L_MSSL_R, { room: room, response: response });
                 self.setSubLiveUrl(liveUrl);
                 callback && callback();
               }, function (error) {
@@ -2883,6 +3096,7 @@
                   room: room,
                   error: error
                 });
+                IMLogger.info(RTCLogTag.L_MSSL_E, { room: room, error: error });
                 self.SubPromiseCache.reject(error);
               });
             });
@@ -2924,17 +3138,20 @@
               msg: 'unsubscribe:request',
               option: option
             });
-            request$2.post(option).then(function (response) {
+            IMLogger.info(RTCLogTag.L_MLL_T, { option: option });
+            request$1.post(option).then(function (response) {
               Logger$1.log(LogTag.LIVE_HANDLER, {
                 msg: 'unsubscribe:request:success',
                 response: response
               });
+              IMLogger.info(RTCLogTag.L_MLL_R, { response: response });
               self.clearSubLiveUrl();
             }, function (error) {
               Logger$1.log(LogTag.LIVE_HANDLER, {
                 msg: 'unsubscribe:request:error',
                 error: error
               });
+              IMLogger.error(RTCLogTag.L_MLL_E, { error: error });
               return error;
             });
           });
@@ -2991,6 +3208,415 @@
     }]);
     return LiveStream;
   }();
+
+  var isIMV3 = function isIMV3(option) {
+    var RongIMLib = option.RongIMLib;
+
+    return RongIMLib.SDK_VERSION; // im v3 可通过 SDK_VERSION 获取版本号
+  };
+
+  var getIMEventsByV2 = function getIMEventsByV2(option) {
+    var im = option.RongIMLib.RongIMClient,
+        RongIMLib = option.RongIMLib;
+
+    var instance = im.getInstance();
+
+    var isCompatibleIM = function isCompatibleIM(key) {
+      var imInstance = im.getInstance();
+      if (imInstance[key]) {
+        return true;
+      }
+      Logger$1.warn(LogTag.IM, {
+        msg: 'Low version IM SDK is not supported, please update IM SDK'
+      });
+      return false;
+    };
+
+    var registMessage = function registMessage(name, message) {
+      var isCounted = false,
+          isPersited = false;
+      var tag = new RongIMLib.MessageTag(isCounted, isPersited);
+      var content = message.content;
+
+      var props = utils.map(utils.toArray(content), function (columns) {
+        return columns[0];
+      });
+      im.registerMessageType(name, name, tag, props);
+    };
+
+    var getCurrentConnectionStatus = function getCurrentConnectionStatus() {
+      var connectState = -1;
+      try {
+        connectState = im.getInstance().getCurrentConnectionStatus();
+      } catch (error) {
+        Logger$1.error(LogTag.IM, {
+          content: error,
+          pos: 'new RongRTC'
+        });
+      }
+      return connectState;
+    };
+
+    return {
+      CONNECTION_STATUS: RongIMLib.ConnectionStatus,
+      isConnected: function isConnected() {
+        var connectState = getCurrentConnectionStatus();
+        return utils.isEqual(connectState, RongIMLib.ConnectionStatus.CONNECTED);
+      },
+      statusWatch: im.statusWatch,
+      messageWatch: function messageWatch(event) {
+        event = event || utils.noop;
+        im.messageWatch(function (message) {
+          var messageType = message.messageType;
+
+          var isCustom = utils.isEqual(im.MessageType.UnknownMessage, messageType);
+          var msg = utils.parse(utils.toJSON(message));
+          var content = {};
+          if (isCustom) {
+            var customMsg = msg.content;
+            content = customMsg.message.content;
+          } else {
+            content = msg.content;
+          }
+          utils.extend(msg, {
+            content: content
+          });
+          msg = {
+            name: msg.objectName,
+            uId: msg.messageUId,
+            senderId: msg.senderUserId,
+            content: msg.content
+          };
+          event(msg);
+        });
+      },
+      joinRTCRoom: function joinRTCRoom(room) {
+        return utils.deferred(function (resolve, reject) {
+          instance.joinRTCRoom(room, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
+      },
+      quitRTCRoom: function quitRTCRoom(room) {
+        return utils.deferred(function (resolve, reject) {
+          instance.quitRTCRoom(room, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
+      },
+      getRTCRoomInfo: function getRTCRoomInfo(room) {
+        return utils.deferred(function (resolve, reject) {
+          instance.getRTCRoomInfo(room, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
+      },
+      getRTCUserInfoList: function getRTCUserInfoList(room) {
+        return utils.deferred(function (resolve, reject) {
+          instance.getRTCUserInfoList(room, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
+      },
+      getRTCToken: function getRTCToken(room) {
+        return utils.deferred(function (resolve, reject) {
+          instance.getRTCToken(room, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
+      },
+      getNavi: function getNavi() {
+        return instance.getNavi();
+      },
+      getCurrentUserId: function getCurrentUserId() {
+        return instance.getCurrentUserId();
+      },
+      getCurrentConnectionStatus: getCurrentConnectionStatus,
+      setRTCUserInfo: function setRTCUserInfo(room, info) {
+        return utils.deferred(function (resolve, reject) {
+          instance.setRTCUserInfo(room, info, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
+      },
+      removeRTCUserInfo: function removeRTCUserInfo(room, info) {
+        return utils.deferred(function (resolve, reject) {
+          instance.removeRTCUserInfo(room, info, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
+      },
+      setRTCUserData: function setRTCUserData(id, key, value, isInner, message) {
+        return utils.deferred(function (resolve, reject) {
+          instance.setRTCUserData(id, key, value, isInner, {
+            onSuccess: resolve,
+            onError: reject
+          }, message);
+        });
+      },
+      getRTCUserData: function getRTCUserData(id, keys, isInner) {
+        return utils.deferred(function (resolve, reject) {
+          instance.getRTCUserData(id, keys, isInner, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
+      },
+      removeRTCUserData: function removeRTCUserData(id, keys, isInner, message) {
+        return utils.deferred(function (resolve, reject) {
+          instance.removeRTCUserData(id, keys, isInner, {
+            onSuccess: resolve,
+            onError: reject
+          }, message);
+        });
+      },
+      setRTCRoomData: function setRTCRoomData(id, key, value, isInner, message) {
+        return utils.deferred(function (resolve, reject) {
+          instance.setRTCRoomData(id, key, value, isInner, {
+            onSuccess: resolve,
+            onError: reject
+          }, message);
+        });
+      },
+      getRTCRoomData: function getRTCRoomData(id, keys, isInner) {
+        return utils.deferred(function (resolve, reject) {
+          instance.getRTCRoomData(id, keys, isInner, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
+      },
+      removeRTCRoomData: function removeRTCRoomData(id, keys, isInner, message) {
+        return utils.deferred(function (resolve, reject) {
+          instance.removeRTCRoomData(id, keys, isInner, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        }, message);
+      },
+      setRTCState: function setRTCState(room, content) {
+        if (!isCompatibleIM('setRTCState')) {
+          return '';
+        }
+        return utils.deferred(function (resolve, reject) {
+          instance.setRTCState(room, content, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
+      },
+      getRTCUserList: function getRTCUserList(room) {
+        return utils.deferred(function (resolve, reject) {
+          instance.getRTCUserList(room, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
+      },
+      getAppInfo: function getAppInfo() {
+        var appInfo = instance.getAppInfo();
+        return {
+          appKey: appInfo.appKey
+        };
+      },
+      RTCPing: function RTCPing(room) {
+        return utils.deferred(function (resolve, reject) {
+          instance.RTCPing(room, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
+      },
+      getIMVersion: function getIMVersion() {
+        if (!isCompatibleIM('getSDKInfo')) {
+          return '';
+        }
+        var info = im.getInstance().getSDKInfo();
+        return info.version || '';
+      },
+      isSupportRTC: function isSupportRTC() {
+        var isSupport = false;
+        if (utils.isFunction(im.prototype.RTCPing)) {
+          isSupport = true;
+        }
+        return isSupport;
+      },
+      sendMessage: function sendMessage(message, roomId) {
+        var name = message.name,
+            content = message.content;
+
+        var conversationType = 12;
+        var isRegisted = im.RegisterMessage[name];
+        !isRegisted && registMessage(message);
+        var msg = new im.RegisterMessage[name](content);
+        return utils.deferred(function (resolve, reject) {
+          instance.sendMessage(conversationType, roomId, msg, {
+            onSuccess: resolve,
+            onError: reject
+          });
+        });
+      }
+    };
+  };
+
+  var getIMEventsByV3 = function getIMEventsByV3(option) {
+    var RongIMLib = option.RongIMLib;
+
+    var im = RongIMLib.getInstance();
+    var CONNECTION_STATUS = RongIMLib.CONNECTION_STATUS;
+
+    im.unwatch(); // 取消所有监听事件, 防止多次 new RongRTC, 消息、状态重复抛出
+
+    return {
+      CONNECTION_STATUS: CONNECTION_STATUS,
+      isConnected: function isConnected() {
+        var connectionStatus = im.getConnectionStatus();
+        return utils.isEqual(connectionStatus, CONNECTION_STATUS.CONNECTED);
+      },
+      statusWatch: function statusWatch(event) {
+        im.watch({
+          status: function status(_ref) {
+            var _status = _ref.status;
+
+            event(_status);
+          }
+        });
+      },
+      messageWatch: function messageWatch(event) {
+        event = event || utils.noop;
+        im.watch({
+          message: function message(_ref2) {
+            var _message = _ref2.message;
+            var name = _message.messageType,
+                type = _message.type;
+
+            var isRTCMsg = utils.isEqual(type, RongIMLib.CONVERSATION_TYPE.RTC_ROOM);
+            isRTCMsg && event({
+              name: name,
+              uId: _message.messageUId,
+              senderId: _message.senderUserId,
+              content: _message.content
+            });
+          }
+        });
+      },
+      joinRTCRoom: function joinRTCRoom(room) {
+        var rtc = new im.RTC(room);
+        return rtc.join();
+      },
+      quitRTCRoom: function quitRTCRoom(room) {
+        var rtc = new im.RTC(room);
+        return rtc.quit();
+      },
+      getRTCRoomInfo: function getRTCRoomInfo(room) {
+        var rtc = new im.RTC(room);
+        return rtc.getRoomInfo();
+      },
+      getRTCUserInfoList: function getRTCUserInfoList(room) {
+        var rtc = new im.RTC(room);
+        return rtc.getUserInfoList();
+      },
+      getRTCToken: function getRTCToken(room) {
+        var rtc = new im.RTC(room);
+        return rtc.getToken();
+      },
+      getNavi: function getNavi() {
+        var appInfo = im.getAppInfo();
+        return appInfo.navi;
+      },
+      getCurrentUserId: function getCurrentUserId() {
+        return im.getConnectionUserId();
+      },
+      getCurrentConnectionStatus: function getCurrentConnectionStatus() {
+        return im.getConnectionStatus();
+      },
+      setRTCUserInfo: function setRTCUserInfo(room, info) {
+        var rtc = new im.RTC(room);
+        return rtc.setUserInfo(info);
+      },
+      removeRTCUserInfo: function removeRTCUserInfo(room, info) {
+        var rtc = new im.RTC(room);
+        return rtc.removeUserInfo(info);
+      },
+      setRTCUserData: function setRTCUserData(id, key, value, isInner, message) {
+        var rtc = new im.RTC({ id: id });
+        return rtc.setUserData(key, value, isInner, message);
+      },
+      getRTCUserData: function getRTCUserData(id, keys, isInner) {
+        var rtc = new im.RTC({ id: id });
+        return rtc.getUserData(keys, isInner);
+      },
+      removeRTCUserData: function removeRTCUserData(id, keys, isInner, message) {
+        var rtc = new im.RTC({ id: id });
+        return rtc.removeUserData(keys, isInner, message);
+      },
+      setRTCRoomData: function setRTCRoomData(id, key, value, isInner, message) {
+        var rtc = new im.RTC({ id: id });
+        return rtc.setRoomData(key, value, isInner, message);
+      },
+      getRTCRoomData: function getRTCRoomData(id, keys, isInner) {
+        var rtc = new im.RTC({ id: id });
+        return rtc.getRoomData(keys, isInner);
+      },
+      removeRTCRoomData: function removeRTCRoomData(id, keys, isInner, message) {
+        var rtc = new im.RTC({ id: id });
+        return rtc.removeRoomData(keys, isInner, message);
+      },
+      setRTCState: function setRTCState(room, content) {
+        var rtc = new im.RTC(room);
+        return rtc.setState(content);
+      },
+      getRTCUserList: function getRTCUserList(room) {
+        var rtc = new im.RTC(room);
+        return rtc.getUserList();
+      },
+      getAppInfo: function getAppInfo() {
+        var appInfo = im.getAppInfo();
+        return {
+          appKey: appInfo.appkey
+        };
+      },
+      RTCPing: function RTCPing(room) {
+        var rtc = new im.RTC(room);
+        return rtc.ping();
+      },
+      getIMVersion: function getIMVersion() {
+        return RongIMLib.SDK_VERSION;
+      },
+      isSupportRTC: function isSupportRTC() {
+        var isSupport = false;
+        if (im.RTC) {
+          isSupport = true;
+        }
+        return isSupport;
+      },
+      sendMessage: function sendMessage(message, roomId) {
+        var name = message.name,
+            content = message.content;
+
+        var rtc = new im.RTC({ id: roomId });
+        return rtc.send({
+          messageType: name,
+          content: content
+        });
+      }
+    };
+  };
+
+  var get$1 = function get(option) {
+    return isIMV3(option) ? getIMEventsByV3(option) : getIMEventsByV2(option);
+  };
+
+  var IMAdapt = {
+    get: get$1
+  };
 
   var Message = {
     PUBLISH: 'RTCPublishResourceMessage',
@@ -3058,43 +3684,30 @@
         v2Users: v2Users,
         option: option
       });
-      var im = option.RongIMLib.RongIMClient,
-          RongIMLib = option.RongIMLib;
-
+      var im = IMAdapt.get(option);
+      var CONNECTION_STATUS = im.CONNECTION_STATUS;
       var init = function init() {
         if (context.isJoinRoom) {
           context.rePing();
         }
         var urls = context.getMSUrl();
         var timeout = context.getRequestTimeout();
-        !request$2.isUrlsExisted(urls) && request$2.addUrls(urls);
-        request$2.setOption({ timeout: timeout });
-        context.registerMessage();
+        !request$1.isUrlsExisted(urls) && request$1.addUrls(urls);
+        request$1.setOption({ timeout: timeout });
       };
-      var connectState = -1;
-      try {
-        connectState = im.getInstance().getCurrentConnectionStatus();
-      } catch (error) {
-        Logger$1.error(LogTag.IM, {
-          content: error,
-          pos: 'new RongRTC'
-        });
-      }
-      var CONNECTED = RongIMLib.ConnectionStatus.CONNECTED;
-
+      var connectState = im.getCurrentConnectionStatus();
       utils.extend(context, {
         connectState: connectState,
-        im: im,
-        RongIMLib: RongIMLib
+        im: im
       });
       // 如果实例化 RongRTC 时，IM 已连接成功，主动触发内部 init
-      if (utils.isEqual(connectState, CONNECTED)) {
+      if (im.isConnected()) {
         init();
       }
       im.statusWatch = im.statusWatch || utils.noop;
       im.statusWatch(function (status) {
         switch (status) {
-          case CONNECTED:
+          case CONNECTION_STATUS.CONNECTED:
             init();
             context.emit(CommonEvent.CONNECTED);
             break;
@@ -3126,48 +3739,11 @@
           }
         });
       };
-      /**
-       * 收到 UnkownMessage 自动转为 ObjectName + "Message" 做为 MessageType
-       * 免去注册自定义消息逻辑
-       */
-      var renameMessage = function renameMessage(message) {
-        var messageType = message.messageType;
 
-        var isCustom = utils.isEqual(im.MessageType.UnknownMessage, messageType);
-        var clear = function clear(msg, content) {
-          delete content.objectName;
-          delete content.messageName;
-          delete msg.conversationType;
-          delete msg.messageId;
-          delete msg.offLineMessage;
-          delete msg.receivedStatus;
-          delete msg.messageType;
-          delete msg.targetId;
-          delete msg.messageDirection;
-        };
-        var msg = utils.parse(utils.toJSON(message));
-        var content = {};
-        if (isCustom) {
-          var customMsg = msg.content;
-          content = customMsg.message.content;
-        } else {
-          content = msg.content;
-        }
-        clear(msg, content);
-        utils.extend(msg, {
-          content: content
-        });
-        msg = utils.rename(msg, {
-          objectName: 'name',
-          messageUId: 'uId',
-          senderUserId: 'senderId'
-        });
-        return msg;
-      };
       im.messageWatch = im.messageWatch || utils.noop;
       im.messageWatch(function (message) {
-        var type = message.messageType,
-            id = message.senderUserId,
+        var name = message.name,
+            id = message.senderId,
             _message$content = message.content,
             uris = _message$content.uris,
             users = _message$content.users;
@@ -3185,14 +3761,14 @@
             return uri;
           });
         }
-        switch (type) {
-          case Message.STATE:
+        switch (name) {
+          case MessageName.STATE:
             roomEventHandler(users);
             break;
-          case Message.KICK:
+          case MessageName.KICK:
             context.emit(DownEvent.ROOM_USER_KICK, { msg: ErrorType.Inner.ROOM_USER_KICK });
             break;
-          case Message.PUBLISH:
+          case MessageName.PUBLISH:
             user = { id: id, uris: uris };
             if (utils.isInclude(id, '_')) {
               v2Users.set(id, true);
@@ -3201,13 +3777,13 @@
               context.emit(DownEvent.STREAM_PUBLISHED, user);
             });
             break;
-          case Message.UNPUBLISH:
+          case MessageName.UNPUBLISH:
             user = { id: id, uris: uris };
             dispatchStreamEvent(user, function (user) {
               context.emit(DownEvent.STREAM_UNPUBLISHED, user);
             });
             break;
-          case Message.MODIFY:
+          case MessageName.MODIFY:
             user = { id: id, uris: uris };
             dispatchStreamEvent(user, function (user) {
               dispatchOperationEvent(user, function (event, user) {
@@ -3216,7 +3792,7 @@
             });
             break;
           default:
-            context.emit(DownEvent.MESSAGE_RECEIVED, renameMessage(message));
+            context.emit(DownEvent.MESSAGE_RECEIVED, message);
         }
         Logger$1.log(LogTag.IM, {
           msg: 'receive:message',
@@ -3227,53 +3803,9 @@
     }
 
     createClass(IM, [{
-      key: 'registerMessage',
-      value: function registerMessage() {
-        var im = this.im,
-            RongIMLib = this.RongIMLib;
-
-        var register = function register(message) {
-          var type = message.type,
-              name = message.name,
-              props = message.props;
-
-          var isCounted = false;
-          var isPersited = false;
-          var tag = new RongIMLib.MessageTag(isCounted, isPersited);
-          im.registerMessageType(type, name, tag, props);
-        };
-        var messages = [{
-          type: Message.PUBLISH,
-          name: getMsgName(Message.PUBLISH),
-          props: ['uris']
-        }, {
-          type: Message.UNPUBLISH,
-          name: getMsgName(Message.UNPUBLISH),
-          props: ['uris']
-        }, {
-          type: Message.MODIFY,
-          name: getMsgName(Message.MODIFY),
-          props: ['uris']
-        }, {
-          type: Message.STATE,
-          name: getMsgName(Message.STATE),
-          props: ['users']
-        }, {
-          type: Message.ROOM_NOTIFY,
-          name: getMsgName(Message.ROOM_NOTIFY),
-          props: ['content']
-        }, {
-          type: Message.USER_NOTIFY,
-          name: getMsgName(Message.USER_NOTIFY),
-          props: ['content']
-        }, {
-          type: Message.KICK,
-          name: getMsgName(Message.KICK),
-          props: ['content']
-        }];
-        utils.forEach(messages, function (message) {
-          register(message);
-        });
+      key: 'isConnected',
+      value: function isConnected() {
+        return this.im.isConnected();
       }
     }, {
       key: 'joinRoom',
@@ -3285,53 +3817,61 @@
           room: room,
           isJoinRoom: true
         });
-        return utils.deferred(function (resolve, reject) {
-          im.getInstance().joinRTCRoom(room, {
-            onSuccess: function onSuccess(_ref) {
-              var users = _ref.users,
-                  token = _ref.token,
-                  sessionId = _ref.sessionId;
+        IMLogger.info(RTCLogTag.P_JRAGD_T, {
+          room: room
+        });
+        return im.joinRTCRoom(room).then(function (_ref) {
+          var users = _ref.users,
+              token = _ref.token,
+              sessionId = _ref.sessionId;
 
-              context.rtcPing(room);
+          context.rtcPing(room);
 
-              var _context$getUser = context.getUser(),
-                  currentUserId = _context$getUser.id;
+          var _context$getUser = context.getUser(),
+              currentUserId = _context$getUser.id;
 
-              var tempUsers = utils.clone(users);
-              Logger$1.log(LogTag.IM, {
-                msg: 'join:room:inner:success',
-                users: tempUsers
-              });
-              utils.forEach(tempUsers, function (tUser, userId) {
-                tUser = tUser || {};
-                // 过滤自己 utils.isEmpty(tUser) ||
-                if (utils.isEqual(currentUserId, userId)) {
-                  delete users[userId];
-                } else {
-                  var user = users[userId];
-                  var uris = user.uris;
+          var tempUsers = utils.clone(users);
+          Logger$1.log(LogTag.IM, {
+            msg: 'join:room:inner:success',
+            users: tempUsers
+          });
+          utils.forEach(tempUsers, function (tUser, userId) {
+            tUser = tUser || {};
+            // 过滤自己 utils.isEmpty(tUser) ||
+            if (utils.isEqual(currentUserId, userId)) {
+              delete users[userId];
+            } else {
+              var user = users[userId];
+              var uris = user.uris;
 
-                  context.v2Users.set(userId, true);
-                  if (!utils.isUndefined(uris)) {
-                    uris = utils.parse(uris);
-                    utils.extend(user, {
-                      uris: uris
-                    });
-                  }
-                }
-              });
-              utils.extend(room, {
-                rtcToken: token,
-                users: users,
-                sessionId: sessionId
-              });
-              resolve(users);
-              context.emit(CommonEvent.JOINED, room);
-            },
-            onError: function onError(code) {
-              return reject(errorHandler(code));
+              context.v2Users.set(userId, true);
+              if (!utils.isUndefined(uris)) {
+                uris = utils.isString(uris) ? utils.parse(uris) : uris;
+                utils.extend(user, {
+                  uris: uris
+                });
+              }
             }
           });
+          utils.extend(room, {
+            rtcToken: token,
+            users: users,
+            sessionId: sessionId
+          });
+          context.emit(CommonEvent.JOINED, room);
+          IMLogger.info(RTCLogTag.P_JRAGD_R, {
+            roomId: room.id,
+            users: users,
+            rtcToken: token,
+            sessionId: sessionId
+          });
+          return users;
+        }).catch(function (code) {
+          IMLogger.warn(RTCLogTag.P_JRAGD_E, {
+            roomId: room.id,
+            code: code
+          });
+          return utils.Defer.reject(errorHandler(code));
         });
       }
     }, {
@@ -3347,15 +3887,8 @@
           isJoinRoom: false
         });
         context.emit(CommonEvent.LEFT, room);
-        return utils.deferred(function (resolve, reject) {
-          im.getInstance().quitRTCRoom(room, {
-            onSuccess: function onSuccess() {
-              resolve();
-            },
-            onError: function onError(code) {
-              return reject(errorHandler(code));
-            }
-          });
+        return im.quitRTCRoom(room).catch(function (code) {
+          return utils.Defer.reject(errorHandler(code));
         });
       }
     }, {
@@ -3364,13 +3897,8 @@
         var im = this.im,
             room = this.room;
 
-        return utils.deferred(function (resolve, _reject) {
-          im.getInstance().getRTCRoomInfo(room, {
-            onSuccess: resolve,
-            reject: function reject(code) {
-              return _reject(errorHandler(code));
-            }
-          });
+        return im.getRTCRoomInfo(room).catch(function (code) {
+          return utils.Defer.reject(errorHandler(code));
         });
       }
     }, {
@@ -3379,13 +3907,8 @@
         var im = this.im,
             room = this.room;
 
-        return utils.deferred(function (resolve, reject) {
-          im.getInstance().getRTCUserInfoList(room, {
-            onSuccess: resolve,
-            onError: function onError(code) {
-              return reject(errorHandler(code));
-            }
-          });
+        return im.getRTCUserInfoList(room).catch(function (code) {
+          return utils.Defer.reject(errorHandler(code));
         });
       }
     }, {
@@ -3403,15 +3926,21 @@
             mode = _option.mode,
             liveType = _option.liveType;
 
-        return utils.deferred(function (resolve, reject) {
-          im.getInstance().getRTCToken({
-            id: id,
-            mode: mode,
-            broadcastType: liveType
-          }, {
-            onSuccess: resolve,
-            onError: reject
+        return im.getRTCToken({
+          id: id,
+          mode: mode,
+          broadcastType: liveType
+        }).then(function (result) {
+          IMLogger.info(RTCLogTag.L_GRT_R, {
+            result: result
           });
+          return result;
+        }).catch(function (error) {
+          IMLogger.info(RTCLogTag.L_GRT_E, {
+            error: error,
+            desc: 'get rtc token asyn'
+          });
+          return utils.Defer.reject(error);
         });
       }
     }, {
@@ -3433,7 +3962,7 @@
       value: function getNaviRTCInfo() {
         var im = this.im;
 
-        var navi = im.getInstance().getNavi();
+        var navi = im.getNavi();
         var rtcInfo = navi.voipCallInfo;
 
         rtcInfo = rtcInfo || '{"callEngine": [{}]}';
@@ -3487,8 +4016,7 @@
       value: function getUserId() {
         var im = this.im;
 
-        var instance = im.getInstance();
-        return instance.getCurrentUserId();
+        return im.getCurrentUserId();
       }
     }, {
       key: 'setUserInfo',
@@ -3501,12 +4029,7 @@
           key: key,
           value: value
         };
-        return utils.deferred(function (resolve, reject) {
-          im.getInstance().setRTCUserInfo(room, info, {
-            onSuccess: resolve,
-            onError: reject
-          });
-        });
+        return im.setRTCUserInfo(room, info);
       }
     }, {
       key: 'removeUserInfo',
@@ -3517,12 +4040,7 @@
         var info = {
           keys: keys
         };
-        return utils.deferred(function (resolve, reject) {
-          im.getInstance().removeRTCUserInfo(room, info, {
-            onSuccess: resolve,
-            onError: reject
-          });
-        });
+        return im.removeRTCUserInfo(room, info);
       }
     }, {
       key: 'setUserData',
@@ -3537,19 +4055,14 @@
           value: value,
           message: message
         });
-        return utils.deferred(function (resolve, reject) {
-          im.getInstance().setRTCUserData(id, key, value, isInner, {
-            onSuccess: function onSuccess() {
-              Logger$1.log(LogTag.STREAM_HANDLER, {
-                msg: 'setUserData:after',
-                roomId: id,
-                value: value,
-                message: message
-              });
-              resolve();
-            },
-            onError: reject
-          }, message);
+        return im.setRTCUserData(id, key, value, isInner, message).then(function () {
+          Logger$1.log(LogTag.STREAM_HANDLER, {
+            msg: 'setUserData:after',
+            roomId: id,
+            value: value,
+            message: message
+          });
+          return;
         });
       }
     }, {
@@ -3561,14 +4074,7 @@
         if (!utils.isArray(keys)) {
           keys = [keys];
         }
-        return utils.deferred(function (resolve, reject) {
-          im.getInstance().getRTCUserData(id, keys, isInner, {
-            onSuccess: resolve,
-            onError: function onError(error) {
-              reject(error);
-            }
-          });
-        });
+        return im.getRTCUserData(id, keys, isInner);
       }
     }, {
       key: 'removeUserData',
@@ -3579,12 +4085,7 @@
         if (!utils.isArray(keys)) {
           keys = [keys];
         }
-        return utils.deferred(function (resolve, reject) {
-          im.getInstance().removeRTCUserData(id, keys, isInner, {
-            onSuccess: resolve,
-            onError: reject
-          }, message);
-        });
+        return im.removeRTCUserData(id, keys, isInner, message);
       }
     }, {
       key: 'setRoomData',
@@ -3592,12 +4093,7 @@
         var id = this.room.id,
             im = this.im;
 
-        return utils.deferred(function (resolve, reject) {
-          im.getInstance().setRTCRoomData(id, key, value, isInner, {
-            onSuccess: resolve,
-            onError: reject
-          }, message);
-        });
+        return im.setRTCRoomData(id, key, value, isInner, message);
       }
     }, {
       key: 'getRoomData',
@@ -3608,14 +4104,7 @@
         if (!utils.isArray(keys)) {
           keys = [keys];
         }
-        return utils.deferred(function (resolve, reject) {
-          im.getInstance().getRTCRoomData(id, keys, isInner, {
-            onSuccess: function onSuccess(data) {
-              resolve(data);
-            },
-            onError: reject
-          });
-        });
+        return im.getRTCRoomData(id, keys, isInner);
       }
     }, {
       key: 'removeRoomData',
@@ -3626,12 +4115,7 @@
         if (!utils.isArray(keys)) {
           keys = [keys];
         }
-        return utils.deferred(function (resolve, reject) {
-          im.getInstance().removeRTCRoomData(id, keys, isInner, {
-            onSuccess: resolve,
-            onError: reject
-          }, message);
-        });
+        return im.removeRTCRoomData(id, keys, isInner, message);
       }
     }, {
       key: 'getExistUsers',
@@ -3639,66 +4123,32 @@
         var im = this.im,
             room = this.room;
 
-        return utils.deferred(function (resolve, reject) {
-          im.getInstance().getRTCUserList(room, {
-            onSuccess: resolve,
-            onError: function onError(code) {
-              return reject(errorHandler(code));
-            }
-          });
+        return im.getRTCUserList(room).catch(function (code) {
+          return utils.Defer.reject(errorHandler(code));
         });
       }
     }, {
       key: 'sendMessage',
       value: function sendMessage(message) {
         var im = this.im,
-            room = this.room,
-            RongIMLib = this.RongIMLib;
+            room = this.room;
 
-        return utils.deferred(function (resolve, reject) {
-          var conversationType = 12,
-              targetId = room.id;
-          var register = function register(name) {
-            var isCounted = false;
-            var isPersited = false;
-            var tag = new RongIMLib.MessageTag(isCounted, isPersited);
-            var content = message.content;
-
-            var props = utils.map(utils.toArray(content), function (columns) {
-              return columns[0];
-            });
-            im.registerMessageType(name, name, tag, props);
-          };
-          var create = function create() {
-            var name = message.name,
-                content = message.content;
-
-            if (utils.isUndefined(im.RegisterMessage[name])) {
-              register(name);
-            }
-            return new im.RegisterMessage[name](content);
-          };
-          var msg = create();
+        Logger$1.log(LogTag.IM, {
+          msg: 'send:before',
+          message: message
+        });
+        return im.sendMessage(message, room.id).then(function () {
           Logger$1.log(LogTag.IM, {
-            msg: 'send:before',
+            msg: 'send:after',
             message: message
           });
-          im.getInstance().sendMessage(conversationType, targetId, msg, {
-            onSuccess: function onSuccess() {
-              Logger$1.log(LogTag.IM, {
-                msg: 'send:after',
-                message: message
-              });
-              resolve(room);
-            },
-            onError: function onError(code) {
-              Logger$1.log(LogTag.IM, {
-                msg: 'send:after',
-                error: code
-              });
-              reject(code);
-            }
+          return room;
+        }).catch(function (code) {
+          Logger$1.log(LogTag.IM, {
+            msg: 'send:after',
+            error: code
           });
+          return utils.Defer.reject(code);
         });
       }
     }, {
@@ -3715,9 +4165,9 @@
       key: 'isIMReady',
       value: function isIMReady() {
         var context = this;
-        var CONNECTED = context.RongIMLib.ConnectionStatus.CONNECTED;
+        var im = context.im;
 
-        return context.connectState === CONNECTED;
+        return context.connectState === im.CONNECTION_STATUS.CONNECTED;
       }
     }, {
       key: 'getAppInfo',
@@ -3725,7 +4175,7 @@
         var context = this;
         var im = context.im;
 
-        return im.getInstance().getAppInfo();
+        return im.getAppInfo();
       }
     }, {
       key: 'isJoined',
@@ -3739,11 +4189,7 @@
         var context = this;
         var im = context.im;
 
-        var isSupport = false;
-        if (utils.isFunction(im.prototype.RTCPing)) {
-          isSupport = true;
-        }
-        return isSupport;
+        return im.isSupportRTC();
       }
     }, {
       key: 'rePing',
@@ -3794,59 +4240,27 @@
             Status.sum();
           }
           isPinging = true;
-          im.getInstance().RTCPing(room, {
-            onSuccess: function onSuccess() {
-              Status.reset();
-            },
-            onError: function onError(code) {
-              Logger$1.error(LogTag.IM, {
-                msg: 'RTC Ping Error' + code
-              });
-            }
+          im.RTCPing(room).then(function () {
+            Status.reset();
+          }).catch(function (code) {
+            Logger$1.error(LogTag.IM, {
+              msg: 'RTC Ping Error' + code
+            });
           });
         }, true);
       }
     }, {
       key: 'getIMVersion',
       value: function getIMVersion() {
-        var context = this;
-        var im = context.im;
-
-        if (!context.isCompatibleIM('getSDKInfo')) {
-          return '';
-        }
-        var info = im.getInstance().getSDKInfo();
-        return info.version || '';
+        return this.im.getIMVersion();
       }
     }, {
       key: 'setRTCState',
       value: function setRTCState(content) {
-        var context = this;
-        var im = context.im,
-            room = context.room;
+        var im = this.im,
+            room = this.room;
 
-        if (!context.isCompatibleIM('setRTCState')) {
-          return '';
-        }
-        return im.getInstance().setRTCState(room, content, {
-          onSuccess: function onSuccess() {},
-          onError: function onError() {}
-        });
-      }
-    }, {
-      key: 'isCompatibleIM',
-      value: function isCompatibleIM(key) {
-        var context = this;
-        var im = context.im;
-
-        var imInstance = im.getInstance();
-        if (imInstance[key]) {
-          return true;
-        }
-        Logger$1.warn(LogTag.IM, {
-          msg: 'Low version IM SDK is not supported, please update IM SDK'
-        });
-        return false;
+        return im.setRTCState(room, content);
       }
     }]);
     return IM;
@@ -3884,7 +4298,7 @@
     }
     constraints = {
       video: {
-        mandatory: {
+        getDisplayMedia: {
           chromeMediaSource: 'desktop',
           chromeMediaSourceId: desktopStreamId
         }
@@ -3904,7 +4318,12 @@
         video = _constraints2.video;
 
     if (utils.isObject(video)) {
-      video = utils.extend(DEFAULT_MS_PROFILE, video);
+      var isCustomResolution = !utils.isEmpty(video.resolution) && utils.isObject(RongRTCVideoBitRate[video.resolution]);
+      isCustomResolution ? video = utils.extend(video, RongRTCVideoBitRate[video.resolution]) : video = utils.extend(video, DEFAULT_MS_PROFILE);
+      // if (!utils.isEmpty(video.resolution) && utils.isObject(RongRTCVideoBitRate[video.resolution])) {
+      //   video = utils.extend(video, RongRTCVideoBitRate[video.resolution]);
+      // }
+      // video = utils.extend(video, DEFAULT_MS_PROFILE);
     }
     if (utils.isBoolean(video) && video) {
       video = DEFAULT_MS_PROFILE;
@@ -3953,12 +4372,18 @@
           var pc = self.pc;
           var userId = user.id;
 
-          var subs = self.subCache.get(userId) || [];
+          var stream = user.stream || {};
+          var isNoType = utils.isUndefined(stream.type);
+          var removeType = isNoType ? StreamType.AUDIO_AND_VIDEO : stream.type;
           var streamId = pc.getStreamId(user);
+          var subs = self.subCache.get(userId) || [];
           subs = utils.filter(subs, function (_ref) {
-            var msid = _ref.msid;
+            var msid = _ref.msid,
+                type = _ref.type;
 
-            return !utils.isEqual(streamId, msid);
+            var isStreamNeedRemove = utils.isEqual(streamId, msid);
+            var isTypeNeedRemove = utils.isEqual(type, removeType) || utils.isEqual(removeType, StreamType.AUDIO_AND_VIDEO);
+            return !(isStreamNeedRemove && isTypeNeedRemove);
           });
           self.subCache.set(userId, subs);
         },
@@ -4145,10 +4570,8 @@
             SubscribeCache = self.SubscribeCache,
             SubPromiseCache = self.SubPromiseCache;
 
-        pc.on(PeerConnectionEvent.ADDED, function (error, stream) {
-          if (error) {
-            throw error;
-          }
+
+        var onStreamAdded = function onStreamAdded(stream) {
           var id = stream.id;
 
           StreamCache.set(id, stream);
@@ -4188,6 +4611,13 @@
             tracks: stream.getTracks()
           });
           promise.resolve(user);
+        };
+
+        pc.on(PeerConnectionEvent.ADDED, function (error, stream) {
+          if (error) {
+            throw error;
+          }
+          onStreamAdded(stream);
         });
         pc.on(PeerConnectionEvent.REMOVED, function (error, stream) {
           if (error) {
@@ -4196,6 +4626,20 @@
           var id = stream.id;
 
           StreamCache.remove(id);
+        });
+        pc.on(PeerConnectionEvent.TRACK_RECEIVED, function (error, streams) {
+          if (error) {
+            throw error;
+          }
+          utils.isArray(streams) && utils.forEach(streams, onStreamAdded);
+        });
+        pc.on(PeerConnectionEvent.SIGNAL_STATE_CHANGE, function (error, streams) {
+          // 当订阅对方音视频后, 取消订阅视频或音频, 再重新订阅时, ontrack、onaddstream 都不会触发. 因取消订阅不会移除 track, 只会使其失效
+          // 所以在此增加监听, 避免上述情况 subscribe 无回调
+          if (error) {
+            throw error;
+          }
+          utils.isArray(streams) && utils.forEach(streams, onStreamAdded);
         });
         pc.on(PeerConnectionEvent.CHANGED, function () {
 
@@ -4305,6 +4749,8 @@
 
         var videoTrack = DataCache.get(videoTrackId);
         var audioTrack = DataCache.get(audioTrackId);
+        isEmtpyVideo = isEmtpyVideo || utils.isEmpty(videoTrack);
+        isEmptyAudio = isEmptyAudio || utils.isEmpty(audioTrack);
 
         if (isEmtpyVideo) {
           type = StreamType.AUDIO;
@@ -4344,15 +4790,12 @@
       key: 'getSubPromiseUId',
       value: function getSubPromiseUId(user) {
         var id = user.id,
-            _user$stream = user.stream,
-            tag = _user$stream.tag,
-            type = _user$stream.type;
+            tag = user.stream.tag;
 
-        var tpl = '{id}_{tag}_{type}';
+        var tpl = '{id}_{tag}'; // 不同 type, 都为一道流, 可只根据 tag、id 辨别
         return utils.tplEngine(tpl, {
           id: id,
-          tag: tag,
-          type: type
+          tag: tag
         });
       }
 
@@ -4363,9 +4806,9 @@
       value: function getUId(user, tpl) {
         tpl = tpl || '{userId}_{tag}_{type}';
         var userId = user.id,
-            _user$stream2 = user.stream,
-            tag = _user$stream2.tag,
-            type = _user$stream2.type;
+            _user$stream = user.stream,
+            tag = _user$stream.tag,
+            type = _user$stream.type;
 
         if (utils.isEmpty(tag)) {
           tpl = '{userId}_{type}';
@@ -4672,6 +5115,52 @@
         });
       }
     }, {
+      key: 'setBitrate',
+      value: function setBitrate(user, type) {
+        var context = this;
+        var bitrate = context.option.bitrate;
+        var streams = user.stream;
+
+        if (!utils.isArray(streams)) {
+          streams = [streams];
+        }
+        utils.forEach(streams, function (stream) {
+          var customBitrate = stream.bitrate;
+          var mediaStream = stream.mediaStream;
+          var streamInfo = {};
+          var max = 0;
+          var min = 0;
+
+          if (!utils.isEmpty(mediaStream.getVideoTracks())) {
+            streamInfo = mediaStream.getVideoTracks()[0].getConstraints();
+          }
+          var key = 'RESOLUTION_' + streamInfo.width + '_' + streamInfo.height;
+          var resolution = RongRTCVideoBitRate[key];
+
+          if (utils.isEmpty(resolution)) {
+            resolution = RongRTCVideoBitRate['RESOLUTION_640_480'];
+          }
+
+          if (!utils.isEmpty(customBitrate)) {
+            max = customBitrate.max || resolution.maxBitRate;
+            min = customBitrate.min || resolution.minBitRate;
+            bitrate.max += max;
+            bitrate.min += min;
+            bitrate.start = (bitrate.start + max) * 0.7;
+            return;
+          }
+
+          if (!utils.isEmpty(resolution) && utils.isObject(resolution)) {
+            var multiplier = Multiplier[streamInfo.frameRate] || 1;
+            max = resolution.maxBitRate * multiplier * type;
+            min = resolution.minBitRate * multiplier * type;
+            bitrate.max += max;
+            bitrate.min += min;
+            bitrate.start = (bitrate.start + max) * 0.7;
+          }
+        });
+      }
+    }, {
       key: 'exchangeHandler',
       value: function exchangeHandler(result, user, type, offer) {
         var self = this;
@@ -4868,7 +5357,7 @@
           var headers = getHeaders(im, option);
           var offer = body.sdp;
 
-          return request$2.post({
+          return request$1.post({
             path: url,
             body: body,
             headers: headers
@@ -4973,7 +5462,8 @@
                 body: body
               });
               var headers = getHeaders(im, option);
-              return request$2.post({
+              IMLogger.info(RTCLogTag.L_MSE_T, { url: url, roomId: roomId, body: body });
+              return request$1.post({
                 path: url,
                 body: body,
                 headers: headers
@@ -4982,7 +5472,7 @@
                     urls = response.urls,
                     clusterId = response.clusterId;
 
-
+                self.setBitrate(user, 1);
                 var result = {};
                 urls = urls || {};
                 if (utils.isArray(publishList)) {
@@ -4994,11 +5484,12 @@
                   user: user,
                   response: response
                 });
+                IMLogger.info(RTCLogTag.L_MSE_R, { roomId: roomId, response: response });
                 self.exchangeHandler(response, user, Message.PUBLISH, desc);
                 result = utils.extend(result, urls);
-                clusterId && request$2.addUrl(clusterId);
+                clusterId && request$1.addUrl(clusterId);
 
-                urls.configUrl && request$2.setOption({
+                urls.configUrl && request$1.setOption({
                   mcuUrls: [getMCUConfigUrl(urls.configUrl)] // 目前 server 要求加入 8080
                 });
                 resolve(result);
@@ -5009,6 +5500,7 @@
                   user: user,
                   error: error
                 });
+                IMLogger.error(RTCLogTag.L_MSE_E, { roomId: roomId, error: error });
                 reject(error);
               });
             });
@@ -5097,7 +5589,8 @@
               body: body
             });
             var headers = getHeaders(im, option);
-            return request$2.post({
+            IMLogger.info(RTCLogTag.L_MSE_T, { url: url, roomId: roomId, body: body });
+            return request$1.post({
               path: url,
               body: body,
               headers: headers
@@ -5108,6 +5601,9 @@
                 user: user,
                 response: response
               });
+              IMLogger.info(RTCLogTag.L_MSE_R, { roomId: roomId, response: response });
+
+              self.setBitrate(user, -1);
               self.exchangeHandler(response, user, Message.UNPUBLISH, desc);
             }, function (error) {
               Logger$1.log(LogTag.STREAM_HANDLER, {
@@ -5116,8 +5612,36 @@
                 user: user,
                 error: error
               });
+              IMLogger.error(RTCLogTag.L_MSE_E, { roomId: roomId, error: error });
             });
           });
+        });
+      }
+    }, {
+      key: 'publishDefault',
+      value: function publishDefault(constraints) {
+        var self = this;
+        return getMS(constraints).then(function (_ref13) {
+          var mediaStream = _ref13.mediaStream;
+
+          var user = {
+            id: constraints.userId,
+            stream: {
+              tag: 'RongCloudRTC',
+              type: constraints.type,
+              mediaStream: mediaStream
+            }
+          };
+          return self.publish(user).then(function () {
+            return utils.Defer.resolve({ mediaStream: mediaStream });
+          });
+        }, function (error) {
+          Logger$1.log(LogTag.STREAM_HANDLER, {
+            msg: 'publishDefault:error',
+            constraints: constraints,
+            error: error
+          });
+          return utils.Defer.reject(error);
         });
       }
     }, {
@@ -5131,9 +5655,9 @@
             SubPromiseCache = self.SubPromiseCache,
             DataCache = self.DataCache;
         var userId = user.id,
-            _user$stream3 = user.stream,
-            tag = _user$stream3.tag,
-            type = _user$stream3.type;
+            _user$stream2 = user.stream,
+            tag = _user$stream2.tag,
+            type = _user$stream2.type;
 
         var subs = SubscribeCache.get(userId) || [];
         var types = [StreamType.VIDEO, StreamType.AUDIO];
@@ -5231,15 +5755,16 @@
               roomId: roomId,
               reqOption: reqOption
             });
-            request$2.post(reqOption).then(function (response) {
+            IMLogger.info(RTCLogTag.L_MSS_T, { url: url, roomId: roomId, reqOption: reqOption });
+            request$1.post(reqOption).then(function (response) {
               // pc.setOffer(offer);
               var answer = response.sdp;
 
               if (!isOnlySubscribe) {
                 pc.setOffer(offer);
-                pc.setAnwser(answer);
+                pc.setAnwser(answer).then(callback).catch(callback); // Promise finally Chrome 63+ 才支持
               } else {
-                pc.setRemoteAnwser(answer);
+                pc.setRemoteAnwser(answer).then(callback).catch(callback); // Promise finally Chrome 63+ 才支持
               }
               Logger$1.log(LogTag.STREAM_HANDLER, {
                 msg: 'subscribe:response:stream:not:arrive',
@@ -5247,7 +5772,7 @@
                 user: user,
                 response: response
               });
-              callback();
+              IMLogger.info(RTCLogTag.L_MSS_R, { roomId: roomId, response: response });
             }, function (error) {
               Logger$1.log(LogTag.STREAM_HANDLER, {
                 msg: 'subscribe:response:error',
@@ -5255,6 +5780,7 @@
                 user: user,
                 error: error
               });
+              IMLogger.error(RTCLogTag.L_MSS_E, { roomId: roomId, error: error });
               var uid = self.getSubPromiseUId(user);
               var promise = SubPromiseCache.get(uid);
               if (!utils.isUndefined(promise)) {
@@ -5303,9 +5829,10 @@
             user: user,
             body: body
           });
+          IMLogger.info(RTCLogTag.L_MSS_T, { url: url, roomId: roomId, body: body });
           var headers = getHeaders(im, option);
           // let { sdp: offer } = body;
-          return request$2.post({
+          return request$1.post({
             path: url,
             body: body,
             headers: headers
@@ -5316,11 +5843,12 @@
               user: user,
               response: response
             });
+            IMLogger.info(RTCLogTag.L_MSS_R, { roomId: roomId, response: response });
             // self.negotiate(offer, response);
 
             var answer = response.sdp;
 
-            pc.setRemoteAnwser(answer);
+            return pc.setRemoteAnwser(answer);
           }, function (error) {
             Logger$1.error(LogTag.STREAM_HANDLER, {
               msg: 'unsubscribe:response:error',
@@ -5328,6 +5856,7 @@
               user: user,
               error: error
             });
+            IMLogger.error(RTCLogTag.L_MSS_E, { roomId: roomId, error: error });
           }).catch(function (error) {
             Logger$1.error(LogTag.STREAM_HANDLER, {
               msg: 'unsubscribe:response:error',
@@ -5376,10 +5905,10 @@
             });
             return utils.Defer.reject(error);
           }
-          var uri = stream.uri;
+          var msid = stream.msid;
 
           utils.forEach(body.subscribeList, function (stream) {
-            if (utils.isEqual(stream.uri, uri)) {
+            if (utils.isEqual(stream.msid, msid)) {
               utils.extend(stream, {
                 simulcast: size
               });
@@ -5395,7 +5924,7 @@
             body: body
           });
           var headers = getHeaders(im, option);
-          return request$2.post({
+          return request$1.post({
             path: url,
             body: body,
             headers: headers
@@ -5431,7 +5960,7 @@
         var im = this.im,
             option = this.option;
 
-        var domains = request$2.getOption().mcuUrls || [];
+        var domains = request$1.getOption().mcuUrls || [];
         if (utils.isEmpty(domains)) {
           return utils.Defer.reject(ErrorType.Inner.MUST_PUBLISHED_BEFORE_SETMIXCONFIG);
         }
@@ -5451,7 +5980,8 @@
           headers: headers,
           body: body
         });
-        return request$2.post({
+        IMLogger.info(RTCLogTag.A_SMC_T, { url: url, body: body });
+        return request$1.post({
           urls: domains,
           path: url,
           body: body,
@@ -5463,6 +5993,7 @@
             body: body,
             response: response
           });
+          IMLogger.info(RTCLogTag.A_SMC_R, { response: response });
           return response;
         }, function (error) {
           Logger$1.log(LogTag.STREAM_HANDLER, {
@@ -5471,6 +6002,7 @@
             body: body,
             error: error
           });
+          IMLogger.error(RTCLogTag.A_SMC_E, { error: error });
           return error;
         });
       }
@@ -5478,11 +6010,14 @@
       key: 'trackHandler',
       value: function trackHandler(user, type, isEnable) {
         var self = this;
+        var streamConfig = user.stream;
+
+        streamConfig = streamConfig || {};
         var pc = self.pc,
             im = self.im,
             StreamCache = self.StreamCache;
 
-        var streamId = pc.getStreamId(user);
+        var streamId = pc.getStreamId(user, streamConfig.size);
         var stream = StreamCache.get(streamId);
         if (stream) {
           var isAudio = utils.isEqual(type, StreamType.AUDIO);
@@ -5646,9 +6181,14 @@
       }
     });
 
+    im.on(CommonEvent.ERROR, function () {
+      // 监听到 rtc 不可用时, 销毁 stream、peerconnection
+      stream && stream.destroy();
+    });
+
     eventEmitter.on(CommonEvent.CONSUME, function () {
       prosumer.consume(function (_ref, next) {
-        var _stream, _stream2, _stream3, _stream4, _stream5, _stream6, _stream7, _stream8, _stream9, _stream10, _stream11;
+        var _stream, _stream2, _stream3, _stream4, _stream5, _stream6, _stream7, _stream8, _stream9, _stream10, _stream11, _stream12;
 
         var event = _ref.event,
             args = _ref.args,
@@ -5664,8 +6204,16 @@
               next();
               reject(error);
             });
+          case UpEvent.STREAM_PUBLISH_DEFAULT:
+            return (_stream2 = stream).publishDefault.apply(_stream2, toConsumableArray(args)).then(function (result) {
+              next();
+              resolve(result);
+            }).catch(function (error) {
+              next();
+              reject(error);
+            });
           case UpEvent.STREAM_UNPUBLISH:
-            return (_stream2 = stream).unpublish.apply(_stream2, toConsumableArray(args)).then(function (result) {
+            return (_stream3 = stream).unpublish.apply(_stream3, toConsumableArray(args)).then(function (result) {
               next();
               resolve(result);
             }).catch(function (error) {
@@ -5673,7 +6221,8 @@
               reject(error);
             });
           case UpEvent.STREAM_SUBSCRIBE:
-            return (_stream3 = stream).subscribe.apply(_stream3, toConsumableArray(args).concat([function () {
+            // 此处使用 callback 返回是因为, http 请求成功后即可返回. 若等到 promise 执行(onaddstream), 可能会延迟较大
+            return (_stream4 = stream).subscribe.apply(_stream4, toConsumableArray(args).concat([function () {
               next();
             }])).then(function (result) {
               resolve(result);
@@ -5682,7 +6231,7 @@
               reject(error);
             });
           case UpEvent.STREAM_UNSUBSCRIBE:
-            return (_stream4 = stream).unsubscribe.apply(_stream4, toConsumableArray(args)).then(function (result) {
+            return (_stream5 = stream).unsubscribe.apply(_stream5, toConsumableArray(args)).then(function (result) {
               next();
               resolve(result);
             }).catch(function (error) {
@@ -5690,7 +6239,7 @@
               reject(error);
             });
           case UpEvent.STREAM_RESIZE:
-            return (_stream5 = stream).resize.apply(_stream5, toConsumableArray(args)).then(function (result) {
+            return (_stream6 = stream).resize.apply(_stream6, toConsumableArray(args)).then(function (result) {
               next();
               resolve(result);
             }).catch(function (error) {
@@ -5698,7 +6247,7 @@
               reject(error);
             });
           case UpEvent.STREAM_GET:
-            return (_stream6 = stream).get.apply(_stream6, toConsumableArray(args)).then(function (result) {
+            return (_stream7 = stream).get.apply(_stream7, toConsumableArray(args)).then(function (result) {
               next();
               resolve(result);
             }).catch(function (error) {
@@ -5706,7 +6255,7 @@
               reject(error);
             });
           case UpEvent.AUDIO_MUTE:
-            return (_stream7 = stream).mute.apply(_stream7, toConsumableArray(args)).then(function (result) {
+            return (_stream8 = stream).mute.apply(_stream8, toConsumableArray(args)).then(function (result) {
               next();
               resolve(result);
             }).catch(function (error) {
@@ -5714,7 +6263,7 @@
               reject(error);
             });
           case UpEvent.AUDIO_UNMUTE:
-            return (_stream8 = stream).unmute.apply(_stream8, toConsumableArray(args)).then(function (result) {
+            return (_stream9 = stream).unmute.apply(_stream9, toConsumableArray(args)).then(function (result) {
               next();
               resolve(result);
             }).catch(function (error) {
@@ -5722,7 +6271,7 @@
               reject(error);
             });
           case UpEvent.VIDEO_DISABLE:
-            return (_stream9 = stream).disable.apply(_stream9, toConsumableArray(args)).then(function (result) {
+            return (_stream10 = stream).disable.apply(_stream10, toConsumableArray(args)).then(function (result) {
               next();
               resolve(result);
             }).catch(function (error) {
@@ -5730,7 +6279,7 @@
               reject(error);
             });
           case UpEvent.VIDEO_ENABLE:
-            return (_stream10 = stream).enable.apply(_stream10, toConsumableArray(args)).then(function (result) {
+            return (_stream11 = stream).enable.apply(_stream11, toConsumableArray(args)).then(function (result) {
               next();
               resolve(result);
             }).catch(function (error) {
@@ -5738,7 +6287,7 @@
               reject(error);
             });
           case UpEvent.LIVE_CONFIG:
-            return (_stream11 = stream).setMixConfig.apply(_stream11, toConsumableArray(args)).then(function (result) {
+            return (_stream12 = stream).setMixConfig.apply(_stream12, toConsumableArray(args)).then(function (result) {
               next();
               resolve(result);
             }).catch(function (error) {
@@ -5771,6 +6320,10 @@
         msg: 'join:before',
         room: room
       });
+      IMLogger.info(RTCLogTag.L_JR_T, {
+        roomId: room.id,
+        userId: room.user.id
+      });
       var Inner = ErrorType.Inner;
 
       if (im.isJoined()) {
@@ -5778,12 +6331,22 @@
           msg: 'join:after',
           extra: 'repeate join room'
         });
+        IMLogger.warn(RTCLogTag.L_JR_E, {
+          desc: 'repeate join room',
+          roomId: room.id,
+          userId: room.user.id
+        });
         return utils.Defer.reject(Inner.ROOM_REPEAT_JOIN);
       }
       if (!im.isIMReady()) {
         Logger$1.log(LogTag.ROOM_HANDLER, {
           msg: 'im:connected',
           extra: 'IM not connected'
+        });
+        IMLogger.warn(RTCLogTag.L_JR_E, {
+          desc: 'IM not connected',
+          roomId: room.id,
+          userId: room.user.id
         });
         return utils.Defer.reject(Inner.IM_NOT_CONNECTED);
       }
@@ -5811,6 +6374,7 @@
             name: UpEvent.ROOM_JOIN,
             content: {}
           });
+          IMLogger.info(RTCLogTag.L_JR_R, { remoteUids: users });
           resolve({
             users: users
           });
@@ -5819,6 +6383,12 @@
             msg: 'join:after:error',
             room: room,
             error: error
+          });
+          IMLogger.error(RTCLogTag.L_JR_E, {
+            code: error,
+            desc: 'join:after:error',
+            roomId: room.id,
+            userId: room.user.id
           });
           reject(error);
         });
@@ -5832,6 +6402,7 @@
         roomId: roomId,
         user: user
       });
+
       var token = im.getRTCToken();
       var url = utils.tplEngine(Path.EXIT, {
         roomId: roomId
@@ -5841,11 +6412,19 @@
         isJoinRoom: false
       });
       var leaveRoom = function leaveRoom(resolve, reject) {
+        IMLogger.info(RTCLogTag.L_LR_T, {
+          roomId: roomId,
+          uid: user.id
+        });
         im.leaveRoom().then(function () {
           Logger$1.log(LogTag.ROOM_HANDLER, {
             msg: 'leave:after',
             roomId: roomId,
             user: user
+          });
+          IMLogger.info(RTCLogTag.L_LR_R, {
+            roomId: roomId,
+            uid: user.id
           });
           resolve();
         }, function (error) {
@@ -5855,17 +6434,28 @@
             error: error,
             user: user
           });
+          IMLogger.warn(RTCLogTag.L_LR_E, {
+            msg: 'leave:im:error',
+            roomId: roomId,
+            error: error,
+            uid: user.id
+          });
           reject(error);
         });
       };
       return utils.deferred(function (resolve, reject) {
-        request$2.post({
+        IMLogger.info(RTCLogTag.L_MSLR_T, {
+          roomId: roomId,
+          mediaUrl: url
+        });
+        request$1.post({
           path: url,
           headers: headers,
           body: {
             token: token
           }
         }).then(function () {
+          IMLogger.warn(RTCLogTag.L_MSLR_R, { roomId: roomId });
           leaveRoom(resolve, reject);
         }, function (error) {
           Logger$1.log(LogTag.ROOM_HANDLER, {
@@ -5873,6 +6463,12 @@
             roomId: roomId,
             error: error,
             user: user
+          });
+          IMLogger.warn(RTCLogTag.L_MSLR_E, {
+            msg: 'leave:ms:error',
+            roomId: roomId,
+            error: error,
+            uid: user.id
           });
           leaveRoom(resolve, reject);
         });
@@ -6088,7 +6684,7 @@
       }]
     */
     var send = function send(report) {
-      if (!isSafari()) {
+      if (!isSafari() && im.isConnected()) {
         im.setRTCState(report);
         Logger$1.log(LogTag.STAT, report);
       }
@@ -6259,6 +6855,7 @@
             if (rate.toString() === 'NaN') {
               return 0;
             }
+            rate = rate > 1 ? 1 : rate;
             return rate.toFixed(2);
           };
           var _mediaType = mediaType.toUpperCase();
@@ -6475,10 +7072,36 @@
         clearInterval(statTimer);
       }
     };
+    // 过滤重复的用户
+    var filterInValidReports = function filterInValidReports(reportsData) {
+      try {
+        for (var key in reportsData) {
+          var reportData = reportsData[key] || {};
+          if (reportData.tracks) {
+            reportData.tracks = utils.uniq(reportData.tracks, function (data) {
+              return {
+                key: data.googTrackId,
+                value: data
+              };
+            });
+            reportData.tracks = utils.filter(reportData.tracks, function (_ref) {
+              var googTrackId = _ref.googTrackId;
+
+              return googTrackId && !utils.isEqual(googTrackId, STAT_NONE); // 过滤没有 googTrackId 的值
+            });
+            reportsData[key].tracks = reportData.tracks;
+          }
+        }
+      } catch (e) {
+        // do nothing
+      }
+      return reportsData;
+    };
     var take = function take(pc) {
       statTimer = setInterval(function () {
         pc.getStats(function (stats) {
           var reports = format(stats);
+          reports.reports = filterInValidReports(reports.reports);
           sendReport(reports.data);
           if (reports.reports) {
             im.emit(DownEvent.MONITOR_STATS, reports.reports);
@@ -11742,7 +12365,7 @@
         var customUrl = option.url;
 
         if (!utils.isEmpty(customUrl)) {
-          urls = [customUrl];
+          request$1.addUrl(customUrl);
         }
         if (utils.isEmpty(urls)) {
           var Inner = ErrorType.Inner;
@@ -11750,7 +12373,7 @@
           var error = Inner.ENGINE_ERROR;
           return context.emit(DownEvent.RTC_ERROR, error);
         }
-        !request$2.isUrlsExisted(urls) && request$2.addUrls(urls);
+        !request$1.isUrlsExisted(urls) && request$1.addUrls(urls);
         context.emit(DownEvent.RTC_MOUNTED);
       });
       im.on(CommonEvent.LEFT, function () {
@@ -12174,9 +12797,9 @@
         url: '',
         debug: false,
         bitrate: {
-          max: 1000,
-          min: 100,
-          start: 300
+          max: 0,
+          min: 0,
+          start: 0
         },
         mode: RTC_MODE.RTC,
         liveRole: LIVE_ROLE.ANCHOR,
@@ -12214,6 +12837,8 @@
         LiveType: LIVE_TYPE,
         LayoutMode: LIVE_LAYOUT_MODE,
         RenderMode: LIVE_RENDER_MODE,
+        Resolution: RongRTCVideoResolution,
+        RongRTCVideoFps: RongRTCVideoFps,
         Message: Message$1,
         Device: Device,
         Report: Report,
@@ -12221,6 +12846,10 @@
         ErrorType: Outer,
         option: option
       });
+      IMLogger.init(_option.RongIMLib);
+      var RTCConfig = utils.clone(option);
+      delete RTCConfig.RongIMLib;
+      IMLogger.info(RTCLogTag.A_RTCC_S, RTCConfig);
       var client = new Client(option, context);
       utils.forEach([Room, Stream, Storage$2, Message$1, Device, Report, Monitor], function (module) {
         module.prototype.getClient = function () {
@@ -12313,7 +12942,9 @@
     ROLE: LIVE_ROLE,
     LiveType: LIVE_TYPE,
     LayoutMode: LIVE_LAYOUT_MODE,
-    RenderMode: LIVE_RENDER_MODE
+    RenderMode: LIVE_RENDER_MODE,
+    Resolution: RongRTCVideoResolution,
+    RongRTCVideoFps: RongRTCVideoFps
   });
 
   return RongRTC;
