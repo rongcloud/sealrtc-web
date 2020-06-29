@@ -52,6 +52,7 @@ defaultRTCS: Demo Server
 **3、常见问题**
 
 >Q1: 是 root 用户，npm install 安装依赖仍出现权限问题
+
 >A1: 使用 npm install --unsafe -perm 
 
 
