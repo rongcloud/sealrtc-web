@@ -1,0 +1,28 @@
+@startuml plan
+
+actor User
+participant SealRTCClient as C
+participant SealRTCServer as S
+
+User -> C: http[s]://domain/sealrtc[?skip-validate=true]
+
+== 页面初始化 ==
+
+C --> S: /api/configure?index=<index>
+S --> S: 查找配置
+S --> C: appkey
+
+== 登录 ==
+
+alt skip-validate == true
+    C --> C: 跳过短信验证
+else 有参数
+    C --> C: 普通登录
+end
+
+C --> S: 获取 token
+S --> C: TOKEN
+
+== End ==
+
+@enduml

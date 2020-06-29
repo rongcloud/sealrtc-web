@@ -1,17 +1,21 @@
 {
-  "name": "seal-rtc-v2",
-  "version": "2.0.0",
+  "name": "seal-rtc",
+  "version": "3.2.5",
   "description": "SealRTC Demo",
   "main": "index.js",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "eslint": "eslint .",
-    "eslint-fix": "eslint . --fix",
-    "precommit": "npm run eslint"
+    "dev": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint --no-fix .",
+    "lint:fix": "vue-cli-service lint ."
   },
-  "precommit": [
-    "npm run precommit"
-  ],
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint",
+      "commit-msg": "validate-commit-msg"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git@gitlab2.rongcloud.net:public-web/seal-rtc-v2.git"
@@ -24,11 +28,33 @@
   "author": "RongCloud",
   "license": "MIT",
   "devDependencies": {
-    "eslint": "^5.6.1",
-    "husky": "^1.2.0",
-    "precommit": "^1.2.2"
+    "@babel/core": "^7.8.4",
+    "@typescript-eslint/eslint-plugin": "^2.19.2",
+    "@typescript-eslint/parser": "^2.19.2",
+    "@vue/cli-plugin-eslint": "^4.2.2",
+    "@vue/cli-plugin-router": "^4.2.2",
+    "@vue/cli-plugin-typescript": "^4.2.2",
+    "@vue/cli-service": "^4.2.2",
+    "@vue/eslint-config-standard": "^5.1.1",
+    "@vue/eslint-config-typescript": "^5.0.1",
+    "babel-loader": "^8.0.6",
+    "eslint": "^6.8.0",
+    "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-node": "^11.0.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
+    "eslint-plugin-vue": "^6.1.2",
+    "husky": "^4.2.3",
+    "lodash": "^4.17.15",
+    "node-sass": "^4.13.1",
+    "sass-loader": "^8.0.2",
+    "typescript": "^3.7.5",
+    "validate-commit-msg": "^2.14.0",
+    "vue-template-compiler": "^2.6.11"
   },
   "dependencies": {
-    "yargs": "^15.0.2"
+    "@vue/composition-api": "^0.5.0",
+    "element-ui": "^2.13.2",
+    "vue": "^2.6.11"
   }
 }

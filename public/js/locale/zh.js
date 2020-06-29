@@ -1,0 +1,113 @@
+(function (win) {
+  var RongSeal = win.RongSeal = win.RongSeal || {};
+  RongSeal = RongSeal || {};
+  RongSeal.locale = RongSeal.locale || {};
+  RongSeal.locale.zh = {
+    data: {
+      installPrompt: '首次使用屏幕共享, 请下载并安装插件',
+      downloadTitle: '下载插件',
+      room: '会议室 ID',
+      user: '用户 ID',
+      userName: '用户名',
+      self: '自己',
+      roomIdEmpty: '会议室 ID 不能为空',
+      userNameEmpty: '用户名称不能为空',
+      userIdEmpty: '用户 ID 不能为空',
+      roomIdIllegal: '会议室 ID 只能包含大小写字母、阿拉伯数字、+、=、-、_ 且长度不能超过 64 个字符',
+      userNameIllegal: '用户名不能包含空格',
+      userNameEnglishOnly: '用户名只能输入英文和数字',
+      networkError: '网络已断开',
+      phoneNumberErr: '手机号格式非法',
+      verifyCodeErr: '请输入手机验证码',
+      verifyCodeIncorrect: '验证码错误',
+      verifyCodeExpired: '验证码过期',
+      tokenExpired: 'token 已失效，请重新获取',
+      kickedByOtherTips: '此用户已在其他窗口登录，可修改手机号后再尝试登录',
+      verifyCodeTips: '您还未验证过手机号，请先验证',
+      publishedCustomVideo: '已发布自定义媒体信息',
+      supportedBrowsers: '目前支持 Safari 和 Chrome 浏览器，推荐使用 Chrome',
+
+      getTokenError: '获取 token 失败',
+      rtcError: '初始化 RTC 失败',
+      joinError: '加入房间失败',
+      leftError: '离开房间失败',
+      getScreenError: '获取屏幕共享流失败',
+      addScreenError: '加入屏幕共享流失败',
+      closeScreenError: '关闭屏幕共享失败',
+      getWhiteboardError: '获取白板失败',
+      publishError: '推送流失败',
+      getLocalStreamError: '摄像设备采集失败，请检查：<br> 1.电脑是否已连接并开启摄像头设备；<br> 2.是否已给此窗口授权摄像头采集权限；<br>',
+      subscriptError: '订阅失败',
+      closeVideoError: '关闭摄像头失败',
+      openVideoError: '打开摄像头失败',
+      closeAudioError: '关闭麦克风失败',
+      openAudioError: '打开麦克风失败',
+      switchStreamError: '切换流失败',
+      sealRtcKickOﬀ: '你已经被管理员移出房间，请稍后再尝试加入',
+      isManage: '您当前是管理员',
+      newManage: ' 成为新管理员',
+      joinMeeting: ' 加入会议',
+      leaveMeeting: ' 离开会议',
+      removeUser: '确定从房间中移除用户 {0} 吗？',
+      50065: '您已被移出房间!',
+      40021: '您被禁止加入该房间!'
+    },
+    placeholder: {
+      roomId: '请输入会议室 ID',
+      userId: '请输入用户 ID',
+      userName: '请输入用户名称',
+      phoneNumber: '手机号',
+      verifyCode: '手机验证码'
+    },
+    textContent: {
+      closeVideo: '音频模式',
+      closeAudio: '加入时关闭麦克风',
+      bystanders: '旁听者模式',
+      setting: '通话设置',
+      resolution: '分辨率',
+      bitrate: '初始码率',
+      frameRate: '帧率设置',
+      bitrateMIN: '最小码率',
+      bitrateMAX: '最大码率',
+      url: 'MediaServer URL',
+      userLoginId: 'userId',
+      screenshareBusy: '正在分享屏幕',
+      videoClosed: '摄像头已关闭',
+      otherVideoClosed: '对方已关闭摄像头',
+      alertTitle: '提示',
+      phoneTips: '请输入手机号验证登录，目前只支持中国区',
+      btnLoading: '加载中...',
+      systemTips: '注：SealRTC v3.0.0 及以上版本与老版本不兼容，请使用新版本体验，Web 端推荐使用 Google Chrome 浏览器',
+      userListClose: '关闭',
+      copyright: 'Copyright 2020 RongCloud',
+      copyrightRecord: '京 ICP 备 15042119 号-1',
+      customVideo1: '视频文件1.mp4',
+      customVideo2: '视频文件2.mp4',
+      customVideo3: '视频文件3.mp4',
+      customAudio1: '音频文件1.mp3'
+    },
+    value: {
+      startRTC: '开始会议',
+      cancel: '取消',
+      conform: '确定',
+      sendVerifyCode: '发送验证码',
+      verifyLogin: '验证登录'
+    },
+    title: {
+      hangup: '挂断',
+      screenshare: '屏幕共享',
+      whiteboard: '白板',
+      userlist: '在线成员',
+      customvideo: '自定义视频流',
+      closecustomvideo: '关闭自定义视频流',
+      customaudio: '自定义音频流',
+      closecustomaudio: '关闭自定义音频流'
+    },
+    common: {
+      spectators: '旁听者',
+      video: '视频',
+      audio: '音频',
+      online: '在线人数 ( {0} ) 人'
+    }
+  };
+})(window);

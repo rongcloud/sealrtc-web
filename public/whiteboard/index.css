@@ -1,0 +1,140 @@
+body, h1, h2, h3, h4, h5, h6, hr, p, blockquote, dl, dt, dd, ul, ol, li, pre, form, fieldset, legend, button, input, textarea, th, td { margin:0; padding:0; } 
+body, button, input, select, textarea { font:12px/1.5tahoma, arial, \5b8b\4f53; } 
+h1, h2, h3, h4, h5, h6{ font-size:100%; } 
+ul, ol { list-style:none; } 
+a { text-decoration:none; } 
+a:hover { text-decoration:underline; } 
+fieldset, img { border:0; } 
+button, input, select, textarea { font-size:100%; } 
+table { border-collapse:collapse; border-spacing:0; }
+
+.rong-whiteboard {
+    width: 80%;
+    position: relative;
+    margin: 1vh auto 0;
+    box-shadow: 0 0 9px 2px #ccc;
+}
+.rong-whiteboard .white-tool-box {
+    position: absolute;
+    z-index: 10;
+    height: 60px;
+    right: 40px;
+    bottom: 30px;
+    border-radius: 45px;
+    background-color: #FCFCFC;
+    box-shadow: #1e4396 0px 0px 20px -7px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+.rong-whiteboard .white-tool-box .tool-box-cell {
+    width: 40px;
+    height: 42px;
+    float: left;
+    margin: 9px 10px;
+    font-size: 14px;
+    color: #3D4041;
+    text-align: center;
+    cursor: pointer;
+}
+.rong-whiteboard .tool-box-cell .cell-icon {
+    height: 20px;
+    width: 20px;
+    display: inline-block;
+}
+.rong-whiteboard .tool-box-cell .pencil {
+    background: url(./imgs/opt-icons.svg) 53px 1px;
+}
+.rong-whiteboard .tool-box-cell .pencil-color {
+    display: none;
+    width: 110px;
+    height: 110px;
+    background: #FCFCFC;
+    position: absolute;
+    top: -125px;
+    left: -10px;
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+#pencilColor::after {
+    content: '';
+    width: 0;
+    height: 0;
+    border-left: 13px solid transparent;
+    border-right: 13px solid transparent;
+    border-top: 15px solid #FCFCFC;
+    position: absolute;
+    left: 41px;
+    bottom: -14px;
+}
+.rong-whiteboard .tool-box-cell .pencil-color span {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    margin: 3px;
+}
+.rong-whiteboard .tool-box-cell .word {
+    background-size: 19px;
+    width: 19px;
+    height: 19px;
+    margin-top: 1px;
+    background: url(./imgs/word-pre.svg);
+}
+.rong-whiteboard .tool-box-cell .eraser {
+    background: url(./imgs/eraser-pre.svg);
+}
+.rong-whiteboard .tool-box-cell .clear {
+    background: url(./imgs/opt-icons.svg) -71px 1px;
+}
+.rong-whiteboard .tool-box-cell .pagination {
+    background: url(./imgs/opt-icons.svg) -139px 1px;
+}
+.rong-whiteboard .tool-box-cell .new {
+    background: url(./imgs/opt-icons.svg) 90px 1px;
+}
+.rong-whiteboard .tool-box-cell .delete {
+    background: url(./imgs/opt-icons.svg) 160px 1px;
+}
+.rong-whiteboard .pencil-color .color-red{ background: #FF0000}
+.rong-whiteboard .pencil-color .color-orange{ background: #FFA500}
+.rong-whiteboard .pencil-color .color-yellow{ background: #FFFF00}
+.rong-whiteboard .pencil-color .color-blue{ background: #0000FF}
+.rong-whiteboard .pencil-color .color-cyan{ background: #00FFFF}
+.rong-whiteboard .pencil-color .color-green{ background: #008000}
+.rong-whiteboard .pencil-color .color-black{ background: #000}
+.rong-whiteboard .pencil-color .color-purple{ background: #800080}
+.rong-whiteboard .pencil-color .color-gray{ background: #808080}
+
+.rong-whiteboard .pre-scene, .rong-whiteboard .next-scene {
+    position: absolute;
+    top: 45%;
+    width: 50px;
+    height: 50px;
+    border-radius: 3px;
+    background: #ccc;
+    line-height: 46px;
+    text-align: center;
+    cursor: pointer;
+}
+.rong-whiteboard .pre-scene {
+    left: -7%;
+}
+.rong-whiteboard .next-scene {
+    right: -7%;
+}
+.rong-whiteboard .pre-scene img,.rong-whiteboard .next-scene img {
+    vertical-align: middle;
+}
+.rong-whiteboard .close-white {
+    position: absolute;
+    top: 0;
+    right: -15px;
+    text-align: center;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    font-size: 14px;
+    color: #fff;
+    background: #333;
+    border-radius: 3px;
+    cursor: pointer;
+}

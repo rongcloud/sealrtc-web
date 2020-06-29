@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>whiteboard</title>
+  <link rel="stylesheet" href="https://sdk.herewhite.com/white-web-sdk/2.7.1.css">
+  <link rel="stylesheet" href="./index.css">
+</head>
+<body>
+  <div class="rong-whiteboard">
+    <div id="whiteboard" style="width: 100%; height: 98vh;"></div>
+    <div class="white-tool-box" id='toolsBox'>
+      <div class="tool-box-cell" id="toolsPencil">
+        <i class="cell-icon pencil"></i>
+        <p>画笔</p>
+        <div class="pencil-color" id="pencilColor">
+          <span class="color-red"></span>
+          <span class="color-orange"></span>
+          <span class="color-yellow"></span>
+          <span class="color-blue"></span>
+          <span class="color-cyan"></span>
+          <span class="color-green"></span>
+          <span class="color-black"></span>
+          <span class="color-purple"></span>
+          <span class="color-gray"></span>
+        </div>
+      </div>
+      <div class="tool-box-cell" id="toolsWord">
+        <i class="cell-icon word"></i>
+        <p>文字</p>
+      </div>
+      <div class="tool-box-cell" id="toolsEraser">
+        <i class="cell-icon eraser"></i>
+        <p>橡皮</p>
+      </div>
+      <div class="tool-box-cell" id="toolsClear">
+        <i class="cell-icon clear"></i>
+        <p>清空</p>
+      </div>
+      <!-- <div class="tool-box-cell">
+        <i class="cell-icon pagination"></i>
+        <p>分页</p>
+      </div> -->
+      <div class="tool-box-cell" id="toolsNewScene">
+        <i class="cell-icon new"></i>
+        <p>新建</p>
+      </div>
+      <div class="tool-box-cell" id="toolsDelete">
+        <i class="cell-icon delete"></i>
+        <p>删除</p>
+      </div>
+    </div>
+    <div class="pre-scene" id="preScene">
+      <img src="./imgs/btn_left.png">
+    </div>
+    <div class="next-scene" id="nextScene">
+        <img src="./imgs/btn_right.png">
+    </div>
+  </div>
+  <script src="https://sdk.herewhite.com/white-web-sdk/2.7.1.js"></script>
+  <script src="./index.js"></script>
+</body>
+</html>
