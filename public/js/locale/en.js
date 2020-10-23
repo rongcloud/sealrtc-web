@@ -35,6 +35,7 @@
       joinMeeting: ' Join the meeting',
       removeUser: 'Are you sure you want to remove user {0} from your room?',
       50065: 'You have been removed from the room！',
+      53013: 'You have been removed from the room！',
       40021: 'You are not allowed to join the room！'
     },
     placeholder: {

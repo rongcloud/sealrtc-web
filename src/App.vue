@@ -72,7 +72,7 @@ export default defineComponent({
     const videoDevices: MediaDeviceInfo[] = reactive([]);
 
     const datas = reactive({
-      resolution: options[0].value,
+      resolution: options[8].value,
       defaultRate: 300,
       maxRate: 1000,
       minRate: 100,

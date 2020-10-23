@@ -317,7 +317,7 @@
     if (IMToken || IMNavi) {
       return { token: IMToken, navi: IMNavi };
     } else {
-      return null;
+      return {};
     }
   }
   var RTCEnterLogic = function () {

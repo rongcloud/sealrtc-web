@@ -27,6 +27,7 @@
   const search = parseLocation();
   const appkey = search.appkey || defaultAppkey;
   const rtcs = search.rtcs || defaultRTCS;
+  const ms = search.ms || defaultMS;
 
   if (!appkey || !rtcs) {
     throw 'appkey 与 rtcs 不可为空!'
@@ -41,8 +42,7 @@
     // SealRTC Server 地址
     URL: rtcs,
     // media server 地址，无值时跟随导航分配
-    MEDIA_SERVER: search.ms,
-
+    MEDIA_SERVER: ms,
     // 屏幕共享插件下载地址，默认即可
     DOWNLOAD_SHARE_PLUGIN_URL: 'plugin/screenshare-addon.zip',
   };

@@ -375,19 +375,31 @@
         node && node.pause();
       }
       userStreams.add(user);
-      setStreamBox(userId, user.stream.type);
+      if(tag !== CustomizeTag.SCREENSHARE) setStreamBox(userId, user.stream.type);
       streamBox.closeFlibScreenShare();
     } else {
       user.stream.size = rongRTC.StreamSize.MIN;
       rongRTCStream.subscribe(user).then(function (user) {
+        if (user.stream.tag == 'screenshare') {
+          var streamBox = new StreamBox(`${user.id}screenshare`,{
+            resizeEvent: resizeStream
+          })
+          var targetBox = StreamBox.get(user.id)
+          streamList.insertBox(streamBox, targetBox)
+          var videoEl = streamBox.dom.children[0]
+          videoEl.srcObject = user.stream.mediaStream
+          streamBox.openFlibScreenShare();
+          getJoinUserName(user, function (name) {
+            streamBox.setCustomVideoUI(name)
+          })
+          streamBox
+          return 
+        }
         showUserStream(user);
         setStreamBox(user.id, user.stream.type);
         userStreams.add(user);
         if (user.stream.enable.video == false) {
           streamBox.closeVideoByOther();
-        }
-        if (user.stream.tag == 'screenshare') {
-          streamBox.openFlibScreenShare();
         }
       }, function (error) {
         sealAlert(localeData.subscriptError + JSON.stringify(error));
@@ -423,7 +435,7 @@
     var list = userStreams.getList(loginUserId);
     Dom.showByClass('rong-share-openicon');
     Dom.hideByClass('rong-share-closeicon');
-    list.forEach(function (user) {
+    list && list.forEach(function (user) {
       var stream = user.stream;
       var tag = stream.tag;
       if (tag === CustomizeTag.SCREENSHARE) {
@@ -693,10 +705,8 @@
           }
         }
         rongRTCStream.publish(user).then(function () {
-          console.log('pub success,customvideo');
           CustomVideoOpt.showCustomVideoCloseBtn();
         }, function (err) {
-          console.log('custom video pub err', err);
           removeCustomVideoBox({ id: loginUserId }, null);
         })
       }
@@ -823,6 +833,15 @@
       });
     }
   }
+  function removeScreenshareBox(userId) {
+    var screenshareVideoBox = StreamBox.get(userId + 'screenshare')
+    if (screenshareVideoBox) {
+      streamList.removeBox(screenshareVideoBox)
+      StreamBox.clearQuitUser(userId + 'screenshare');
+      var loginUserBox = StreamBox.get(loginUserId)
+      loginUserBox.zoom({id: loginUserId})
+    }
+  }
   function removeUserBox(user) {
     console.log('left user:', user);
     currentUserLists.remove(user.id)
@@ -833,6 +852,7 @@
       streamList.removeBox(customVideoBox);
       StreamBox.clearQuitUser(id + 'custom');
     }
+    removeScreenshareBox(id)
     if (streamBox) {
       sealTips(streamBox.userName + localeData.leaveMeeting, 3000);
       var isRemoveBoxZoom = streamBox.isZoom;
@@ -866,9 +886,11 @@
 
   function removeUnpublishUser(user) {
     currentUserLists.remove(user.id);
-    if (user.stream.tag === CustomizeTag.NORMAL || user.stream.tag === CustomizeTag.SCREENSHARE) {
+    if (user.stream.tag === CustomizeTag.NORMAL ) {
       removeUserStream(user)
-    } else {
+    } else if (user.stream.tag === CustomizeTag.SCREENSHARE) {
+      removeScreenshareBox(user.id)
+    }else {
       removeCustomVideoBox(user)
     }
   }
@@ -1181,7 +1203,6 @@
     }
     if (user.stream.tag === CustomizeTag.NORMAL) {
       // currentUserLists.add(user.id,'addVideoViewBox');
-
       addUserBox(user);
     } else {
       addCustomVideoBox(user);
