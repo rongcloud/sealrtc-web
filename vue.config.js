@@ -25,8 +25,8 @@ module.exports = {
   },
   configureWebpack (config) {
     config.plugins.push(
-      new DefinePlugin({ 
-        COMMIT_ID, 
+      new DefinePlugin({
+        COMMIT_ID,
         DEMO_VERSION: JSON.stringify(DEMO_VERSION),
       }),
     );

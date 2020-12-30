@@ -393,7 +393,7 @@
             streamBox.setCustomVideoUI(name)
           })
           streamBox
-          return 
+          return
         }
         showUserStream(user);
         setStreamBox(user.id, user.stream.type);
@@ -1470,6 +1470,7 @@
       url: params.url,
       bitrate: params.bitrate,
       // debug: true,
+      // polaris: false,
       logger: (/* log */) => {
         // console.log(JSON.stringify(log));
       },

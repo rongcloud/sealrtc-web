@@ -1,7 +1,7 @@
 /**
- * RongRTC.js v3.2.6
- * CodeVersion: 40ffd655008b7e36415979d1e4340fd27ecadf84
- * Release Date: Thu Sep 17 2020 16:03:57 GMT+0800 (GMT+08:00)
+ * RongRTC.js v3.2.7
+ * CodeVersion: e8e9506878b125a9b77241760312b43390d49e9c
+ * Release Date: Thu Dec 24 2020 19:28:12 GMT+0800 (GMT+08:00)
  * Copyright (c) 2020 RongCloud, Inc.
  */
 (function (global, factory) {
@@ -584,10 +584,11 @@
 
   var handleObjKeys = function handleObjKeys(obj, event) {
     obj = obj || {};
-    var newObj = {};
+    var newObj = isObject(obj) ? {} : [];
     forEach(obj, function (value, key) {
       var newKey = event ? event(key) : key;
-      newObj[newKey] = isObject(value) ? handleObjKeys(value, event) : value;
+      var isArrOrObj = isArray(value) || isObject(value);
+      newObj[newKey] = isArrOrObj ? handleObjKeys(value, event) : value;
     });
     return newObj;
   };
@@ -612,7 +613,7 @@
   };
 
   var humpToLine = function humpToLine(str) {
-    return str.replace(/([A-Z])/g, '_$1').toLowerCase();
+    return isString(str) ? str.replace(/([A-Z])/g, '_$1').toLowerCase() : str;
   };
 
   var getKeys = function getKeys(_object) {
@@ -659,6 +660,39 @@
     }
     /* eslint-enable no-console */
     return !!condition;
+  };
+
+  /**
+   * 获取视轨的分辨率宽高及帧率，可能为空值
+   * @param {MediaStreamTrack} track 
+   */
+  var getVideoTrackInfo = function getVideoTrackInfo(track) {
+    var _track$getConstraints = track.getConstraints(),
+        width = _track$getConstraints.width,
+        height = _track$getConstraints.height,
+        frameRate = _track$getConstraints.frameRate;
+
+    if (!width && !height && !frameRate) {
+      if (track.getCapabilities) {
+        var capabilities = track.getCapabilities();
+        return {
+          width: capabilities.width.max,
+          height: capabilities.height.max,
+          frameRate: capabilities.frameRate.max
+        };
+      }
+    } else {
+      if (width) {
+        width = isNumber(width) ? width : width.max;
+      }
+      if (height) {
+        height = isNumber(height) ? height : height.max;
+      }
+      if (frameRate) {
+        frameRate = isNumber(frameRate) ? frameRate : frameRate.max;
+      }
+    }
+    return { width: width, height: height, frameRate: frameRate };
   };
 
   var utils = {
@@ -708,7 +742,8 @@
     clearEselessFields: clearEselessFields,
     getKeys: getKeys,
     merge: merge,
-    assert: assert
+    assert: assert,
+    getVideoTrackInfo: getVideoTrackInfo
   };
 
   var DownEvent = {
@@ -953,6 +988,14 @@
       name: 'ROOM_USER_BLOCK',
       msg: 'You are not allowed to join the room！'
     }, {
+      code: 53015,
+      name: 'INVALID_PARAMS',
+      msg: 'Invalid params!'
+    }, {
+      code: 53016,
+      name: 'RTC_PING_ERROR',
+      msg: 'IM socket unavailable, or not in the room'
+    }, {
       code: 40001,
       name: 'NOT_IN_ROOM',
       msg: 'Not in the room'
@@ -1156,7 +1199,7 @@
     R4: 'r4'
   };
 
-  var SDK_VERSION = '3.2.5';
+  var SDK_VERSION = '3.2.7';
 
   var TRACK_STATE = {
     DISABLE: 0,
@@ -1473,6 +1516,9 @@
           pushurl: url
         };
       });
+    } else {
+      // 取消 cdn 时，如果 cdn 地址为空，output.cdn 需设置为空，MCU 根据此判断是否取消推流
+      liveConfig.output.cdn = [];
     }
     return utils.clearEselessFields(liveConfig);
   };
@@ -1678,6 +1724,43 @@
     } else {
       return true;
     }
+  };
+
+  /**
+  * 取最接近的视频分辨率配置
+  * @param {number} width 
+  * @param {number} height 
+  */
+  var getNearestResolution = function getNearestResolution(width, height) {
+    var area = width * height;
+    var d = Number.MAX_VALUE;
+    var conf = null;
+    for (var key in RongRTCVideoBitRate) {
+      var item = RongRTCVideoBitRate[key];
+      var d2 = Math.abs(item.width * item.height - area);
+      if (d2 < d) {
+        conf = item;
+        d = d2;
+      }
+    }
+    return conf;
+  };
+
+  /**
+   * 取相近的帧率对应的码率倍数
+   * @param {number} frameRate 
+   */
+  var getNearestMultiplierValue = function getNearestMultiplierValue(frameRate) {
+    var d = Number.MAX_VALUE;
+    var rate = 1;
+    for (var key in Multiplier) {
+      var d2 = Math.abs(frameRate - parseInt(key));
+      if (d2 < d) {
+        d = d2;
+        rate = Multiplier[key];
+      }
+    }
+    return rate;
   };
 
   function Logger() {
@@ -2176,7 +2259,7 @@
         }
 
         if (urls.length === 0) {
-          return;
+          return utils.Defer.reject(ErrorType.Inner.INVALID_PARAMS);
         }
         urls.forEach(function (url) {
           if (!/^rtmp:\/\//.test(url)) {
@@ -2187,7 +2270,7 @@
           }
           _this.publishUrls.push(url);
         });
-        this.setMixConfig(this.tmpConf);
+        return this.setMixConfig(this.tmpConf);
       }
       /**
        * 删除 CDN 推流地址
@@ -2204,7 +2287,7 @@
         }
 
         if (urls.length === 0) {
-          return;
+          return utils.Defer.reject(ErrorType.Inner.INVALID_PARAMS);
         }
         urls.forEach(function (url) {
           var index = _this2.publishUrls.indexOf(url);
@@ -2212,7 +2295,7 @@
             _this2.publishUrls.splice(index, 1);
           }
         });
-        this.setMixConfig(this.tmpConf);
+        return this.setMixConfig(this.tmpConf);
       }
       /**
        * 设置直播混流配置，仅直播模式此方法有效
@@ -2462,8 +2545,8 @@
     UNPUBLISH: '/exchange',
     RESIZE: '/exchange',
     SUBSCRIBE: '/exchange',
-    ONLY_SUBSCRIBE: '/subscribe',
-    UNSUBSCRIBE: '/subscribe',
+    ONLY_SUBSCRIBE: '/exchange',
+    UNSUBSCRIBE: '/exchange',
     LIVE_SUBSCRIBE: '/broadcast/subscribe', // 直播模式, 订阅接口
     LIVE_CONFIG: '/server/mcu/config', // 直播模式, 自定义更改配置接口
     LIVE_EXIT: '/broadcast/exit', // 直播模式, 退出接口
@@ -2476,6 +2559,9 @@
     clusterIdUrl: '',
     timeout: REQUEST_TIMEOUT
   };
+
+  var imInstance = null;
+  var liveStream = null;
 
   var tpl = '{domain}{path}';
   var prosumer = new utils.Prosumer();
@@ -2560,7 +2646,8 @@
   };
 
   var postProcess = function postProcess(option) {
-    // TODO: 错误，options 中有地址信息
+    var recursion = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
     var domain = option.urls && option.urls.length > 0 ? option.urls[0] : getValidUrl();
     if (utils.isEmpty(domain)) {
       // 没有可用的 mediaServer, 返回服务无效
@@ -2577,14 +2664,26 @@
       'Request-Id': Date.now().toString()
     });
 
-    utils.assert(!!headers.Token, '与 MediaServer 交互必须携带 Token 信息');
-
     return utils.request(url, {
       method: 'POST',
       timeout: Config.timeout,
       body: JSON.stringify(body),
       headers: headers
     }).then(function (result) {
+      if (result.resultCode === 42002 && !recursion) {
+        return imInstance.getRTCTokenAsyn(headers.RoomId).then(function (_ref) {
+          var rtcToken = _ref.rtcToken;
+
+          // 更新 token
+          option.headers.Token = rtcToken;
+          // 非观众端
+          if (imInstance.room) imInstance.room.rtcToken = rtcToken;
+          // 直播观众
+          if (liveStream) liveStream.rtcToken = rtcToken;
+          // 增加递归标记，避免逻辑死循环
+          return postProcess(option, true);
+        });
+      }
       var isSuccess = utils.isEqual(result.resultCode, MEDIASERVER_SUCCESS);
       return isSuccess ? result : utils.Defer.reject(result);
     }, function (error) {
@@ -2599,10 +2698,10 @@
   };
 
   eventEmitter.on(CommonEvent.REQUEST_CONSUME, function () {
-    prosumer.consume(function (_ref, next) {
-      var option = _ref.option,
-          resolve = _ref.resolve,
-          reject = _ref.reject;
+    prosumer.consume(function (_ref2, next) {
+      var option = _ref2.option,
+          resolve = _ref2.resolve,
+          reject = _ref2.reject;
 
       postProcess(option).then(function (result) {
         resolve(result);
@@ -2621,6 +2720,14 @@
     });
   };
 
+  var setIMInstance = function setIMInstance(im) {
+    imInstance = im;
+  };
+
+  var setLiveStream = function setLiveStream(live) {
+    liveStream = live;
+  };
+
   var request$1 = {
     setOption: setOption,
     getOption: getOption,
@@ -2628,7 +2735,9 @@
     addUrls: addUrls,
     addUrl: addUrl,
     isUrlsExisted: isUrlsExisted,
-    addClusterIdUrl: addClusterIdUrl
+    addClusterIdUrl: addClusterIdUrl,
+    setIMInstance: setIMInstance,
+    setLiveStream: setLiveStream
   };
 
   var globalPC = void 0; // pc 为单例, 可从 PeerConnection.getInstance 获取
@@ -2639,7 +2748,7 @@
 
   // sdp 信息行末可能会有遗留的空格，导致 Chrome 86 以上版本 SDP 信息设置失败
   var trimRight = function trimRight(sdp) {
-    return sdp.replace(/\s+\r\n/g, '\r\n');
+    return sdp.replace(/[\s\r\n]+\r\n/g, '\r\n');
   };
 
   var PeerConnection = function (_EventEmitter) {
@@ -2652,7 +2761,6 @@
 
       setGlobalPC(_this);
       var context = _this;
-      context.bandWidthCount = 0;
       var pc = new RTCPeerConnection({
         sdpSemantics: 'plan-b',
         // Chrome 49 Test
@@ -2750,109 +2858,58 @@
       key: 'setAnwser',
       value: function setAnwser(answer) {
         var context = this;
-        var pc = context.pc;
-
         answer = context.setBitrate(answer);
         answer.sdp = trimRight(answer.sdp);
-        return pc.setRemoteDescription(new RTCSessionDescription(answer));
+        return this.setAnwserOnly(answer);
       }
     }, {
       key: 'setAnwserOnly',
       value: function setAnwserOnly(answer) {
-        // 直播重复订阅仅设置，不修改 sdp, 防止 offer answer 不匹配
-        var context = this;
-        var pc = context.pc;
-
-        answer.sdp = trimRight(answer.sdp);
-        return pc.setRemoteDescription(new RTCSessionDescription(answer));
-      }
-    }, {
-      key: 'setRemoteAnwser',
-      value: function setRemoteAnwser(answer) {
-        var context = this;
-        var pc = context.pc;
-        // answer = context.setBitrate(answer);
-
-        answer.sdp = trimRight(answer.sdp);
-        return pc.setRemoteDescription(new RTCSessionDescription(answer)).then(function () {
-          return pc.createAnswer().then(function (answer) {
-            return pc.setLocalDescription(answer);
-          });
-        });
+        return this.pc.setRemoteDescription(new RTCSessionDescription(answer));
       }
     }, {
       key: 'setBitrate',
       value: function setBitrate(answer) {
         var context = this;
-        var bitrate = context.option.bitrate;
-        var sdp = answer.sdp;
+        var _context$option = context.option,
+            bitrate = _context$option.bitrate,
+            dynamicBitrate = _context$option.dynamicBitrate;
+        // 取用户设置的码率配置上下限，0 值视为无限制
 
-        var lineFeed = '\n';
-        // sdp = sdp.replace(/a=mid:video\n/g, ['a=mid:video', 'b=AS:' + bitrate.max + lineFeed].join(lineFeed));
-        // utils.extend(answer, {
-        //   sdp
-        // });
-        var sdpDetails = sdp.split(lineFeed);
-        var findIndex = function findIndex(keyword) {
-          var index = null;
-          for (var i = 0; i < sdpDetails.length; i++) {
-            var item = sdpDetails[i];
-            if (utils.isInclude(item, keyword)) {
-              index = i;
-              break;
-            }
-          }
-          return index;
-        };
+        var max = bitrate.max || Number.MAX_VALUE;
+        var min = bitrate.min || 0;
+        // 动态码率
+        var max2 = dynamicBitrate.max,
+            min2 = dynamicBitrate.min;
 
-        var midVideo = 'a=mid:video';
-        var midVideoIndex = findIndex(midVideo);
-        if (utils.isNull(midVideoIndex)) {
-          return answer;
-        }
-        sdpDetails[midVideoIndex] = [sdpDetails[midVideoIndex], 'b=AS:' + bitrate.max].join(lineFeed);
+        // 边界不能超出用户设置
 
-        var mVideo = 'm=video';
-        var mVideoIndex = findIndex(mVideo);
-        if (utils.isNull(mVideoIndex)) {
-          return answer;
-        }
-        var separator = ' ';
-        var videoDesc = sdpDetails[mVideoIndex];
-        // m=video 10 UDP/TLS/RTP/SAVPF
-        var videoDescDetails = videoDesc.split(separator);
-        var firstVideoCodec = videoDescDetails[3];
-        var codecDesc = 'a=fmtp:' + firstVideoCodec;
-        var codecDescIndex = findIndex(codecDesc);
-        if (utils.isNull(codecDescIndex)) {
-          return answer;
-        }
-        context.bandWidthCount++;
-        bitrate = JSON.parse(JSON.stringify(bitrate));
-        if (context.bandWidthCount % 2 == 0) {
-          bitrate.min = bitrate.min + 1;
-        }
-        var desc = ';x-google-min-bitrate=' + bitrate.min + ';x-google-max-bitrate=' + bitrate.max;
-        if (utils.isNumber(bitrate.start)) {
-          desc += ';x-google-start-bitrate=' + bitrate.start;
-        }
-        sdpDetails[codecDescIndex] = [sdpDetails[codecDescIndex].replace(/[\r\n]+$/, ''), desc].join('');
-        sdp = sdpDetails.join(lineFeed);
-        utils.extend(answer, {
-          sdp: sdp
+        var maxValue = Math.max(Math.min(max, max2), min);
+        var minValue = Math.min(Math.max(min, min2), max);
+
+        var start = Math.floor((maxValue + minValue) * .5);
+
+        // 通用码率上限描述
+        var maxBitrateLine = 'b=AS:' + maxValue;
+        answer.sdp = answer.sdp.replace(/[\r\n]+m=video[^\r\n]+/, function (matched) {
+          return matched + '\r\n' + maxBitrateLine;
+        });
+
+        // 针对各编码独立设置初始码率、最小码率、最大码率
+        var bitrateEndfix = [';x-google-min-bitrate=' + minValue, ';x-google-max-bitrate=' + maxValue, ';x-google-start-bitrate=' + start].join('');
+        // 在视频编码描述行后单独增加码率配置
+        answer.sdp = answer.sdp.replace(/[\r\n]+[^\r\n]+profile-level-id[^\r\n]+/g, function (matched) {
+          return matched + bitrateEndfix;
         });
         return answer;
       }
     }, {
       key: 'close',
       value: function close() {
-        var context = this;
-        var pc = context.pc;
-
-        context.bandWidthCount = 0;
-        pc.close();
-        context.pc = null;
-        delete context.pc;
+        if (this.pc) {
+          this.pc.close();
+          delete this.pc;
+        }
       }
     }, {
       key: 'isClosed',
@@ -2908,7 +2965,6 @@
             utils.extend(context, {
               desc: desc
             });
-            // desc = context.setBitrate(desc);
             resole(desc);
           }, function (error) {
             reject(error);
@@ -2917,7 +2973,7 @@
       }
     }, {
       key: 'getOffer',
-      value: function getOffer(callback) {
+      value: function getOffer() {
         var context = this;
         var pc = context.pc;
 
@@ -2925,8 +2981,6 @@
         // option.iceRestart = false;
         var success = function success(desc) {
           desc = context.renameCodec(desc);
-          callback && callback(desc);
-          // desc = context.setBitrate(desc);
           return desc;
         };
         return pc.createOffer(option).then(success);
@@ -3039,14 +3093,11 @@
           var videoTrack = mediaStream.getVideoTracks()[0];
           var simulcast = StreamSize.MAX;
           if (!utils.isUndefined(videoTrack)) {
-            var _videoTrack$getConstr = videoTrack.getConstraints(),
-                height = _videoTrack$getConstr.height,
-                width = _videoTrack$getConstr.width;
+            var trackInfo = utils.getVideoTrackInfo(videoTrack);
+            // 取不到真实的分辨率时，传 0
+            var width = trackInfo.width || 0;
+            var height = trackInfo.height || 0;
 
-            var videoTrackId = videoTrack.id;
-
-            height = height || 0; // 屏幕共享，取不到真实的分辨率时，传 0
-            width = width || 0;
             if (utils.isInclude(id, MIN_STREAM_SUFFIX)) {
               simulcast = StreamSize.MIN;
             }
@@ -3057,7 +3108,7 @@
             resolutions.push({
               simulcast: simulcast,
               resolution: resolution,
-              videoTrackId: videoTrackId
+              videoTrackId: videoTrack.id
             });
             ratio[id] = resolutions;
           }
@@ -3143,6 +3194,7 @@
       classCallCheck(this, LiveStream);
 
       var self = this;
+      request$1.setLiveStream(this);
       var detect = option.detect;
 
 
@@ -3264,6 +3316,10 @@
         //   return utils.Defer.reject(ErrorType.Inner.STREAM_SUBSCRIBED);
         //   // 如果已经订阅过，用户再次订阅视为切换流
         // }
+
+        if (!liveUrl) {
+          return utils.Defer.reject(getError('liveUrl'));
+        }
 
         return utils.deferred(function (resolve, reject) {
           return self.getRTCToken().then(function (result) {
@@ -4000,9 +4056,11 @@
         if (context.isJoinRoom) {
           context.rePing();
         }
-        var urls = context.getMSUrl();
+        if (!option.url) {
+          var urls = context.getMSUrl();
+          !request$1.isUrlsExisted(urls) && request$1.addUrls(urls);
+        }
         var timeout = context.getRequestTimeout();
-        !request$1.isUrlsExisted(urls) && request$1.addUrls(urls);
         request$1.setOption({ timeout: timeout });
       };
       var connectState = im.getCurrentConnectionStatus();
@@ -4189,10 +4247,12 @@
             });
             break;
           case MessageName.MODIFY:
-            user = { id: id, uris: uris };
-            dispatchStreamEvent(user, function (user) {
-              dispatchOperationEvent(user, function (event, user) {
-                context.emit(event, user);
+            // uris 中的媒体状态变化需分别通知
+            uris.length > 0 && uris.forEach(function (uri) {
+              dispatchStreamEvent({ id: id, uris: [uri] }, function (user) {
+                dispatchOperationEvent(user, function (event, user) {
+                  context.emit(event, user);
+                });
               });
             });
             break;
@@ -4498,16 +4558,7 @@
 
         // 发布全量 URI 资源
         var promise = im.setRTCUserTotalRes(id, message, valueInfo, MessageName.TOTAL_CONTENT_RESOURCE);
-        // 2020-07-15: 服务会代发旧版本 SDK 无需再发送
-        // ~~旧版本信令需照常发送，以适配老版本 SDK~~
-        // im.setRTCUserData(id, key, value, isInner, message).then(() => {
-        //   Logger.log(LogTag.STREAM_HANDLER, {
-        //     msg: 'setUserData:after',
-        //     roomId: id,
-        //     value,
-        //     message
-        //   });
-        // });
+
         return promise;
       }
     }, {
@@ -4679,7 +4730,7 @@
             });
             im.isJoinedRTCRoom = false;
             context.emit(CommonEvent.LEFT);
-            return context.emit(CommonEvent.ERROR, Inner.SOCKET_UNAVAILABLE);
+            return context.emit(CommonEvent.ERROR, Inner.RTC_PING_ERROR);
           }
           // 如果上次 Ping 没有结束，累计 Ping 次数
           if (isPinging) {
@@ -4704,8 +4755,12 @@
       key: 'setRTCState',
       value: function setRTCState(content) {
         var im = this.im,
-            room = this.room;
+            room = this.room,
+            option = this.option;
 
+        if (!option.polaris) {
+          return;
+        }
         return im.setRTCState(room, content);
       }
     }]);
@@ -4951,72 +5006,52 @@
         self.unsubscribe(user);
       });
 
-      im.on(DownEvent.STREAM_DISABLED, function (error, user) {
+      var changeTrack = function changeTrack(error, user, isAudio, state) {
+        var userId = user.id,
+            _user$stream = user.stream,
+            mediaType = _user$stream.mediaType,
+            tag = _user$stream.tag;
         var pc = self.pc,
             StreamCache = self.StreamCache;
 
         var streamId = pc.getStreamId(user);
         var stream = StreamCache.get(streamId);
+
+        var trackId = [userId, tag, mediaType].join('_');
+        var uri = self.DataCache.get(trackId);
+        if (uri) {
+          uri.state = state;
+        }
+
         self.SubscribeCache.setState(user.id, {
-          type: StreamType.VIDEO,
-          state: StreamState.DISBALE
+          type: isAudio ? StreamType.AUDIO : StreamType.VIDEO,
+          state: state
         });
-        if (!stream) return;
-        var videoTracks = stream.getVideoTracks();
-        utils.forEach(videoTracks, function (track) {
-          track.enabled = false;
+
+        // 音频不可更改 track enabled 值，值以本端操作为准，因为移动端有混音，关闭麦克不代表完全关闭音频
+        //视频需要修改，否则新加入房间可能存在音频不解码的问题
+        if (!stream || isAudio) return;
+
+        utils.forEach(stream.getVideoTracks(), function (track) {
+          track.enabled = !!state;
         });
+      };
+
+      im.on(DownEvent.STREAM_DISABLED, function (error, user) {
+        changeTrack(error, user, false, StreamState.DISBALE);
       });
 
       im.on(DownEvent.STREAM_ENABLED, function (error, user) {
-        var pc = self.pc,
-            StreamCache = self.StreamCache;
-
-        var streamId = pc.getStreamId(user);
-        var stream = StreamCache.get(streamId);
-        self.SubscribeCache.setState(user.id, {
-          type: StreamType.VIDEO,
-          state: StreamState.ENABLE
-        });
-        if (!stream) return;
-        var videoTracks = stream.getVideoTracks();
-        utils.forEach(videoTracks, function (track) {
-          track.enabled = true;
-        });
+        changeTrack(error, user, false, StreamState.ENABLE);
       });
 
       im.on(DownEvent.STREAM_MUTED, function (error, user) {
-        self.SubscribeCache.setState(user.id, {
-          type: StreamType.AUDIO,
-          state: StreamState.DISABLE
-        });
+        changeTrack(error, user, true, StreamState.DISBALE);
       });
 
       im.on(DownEvent.STREAM_UNMUTED, function (error, user) {
-        self.SubscribeCache.setState(user.id, {
-          type: StreamType.AUDIO,
-          state: StreamState.ENABLE
-        });
+        changeTrack(error, user, true, StreamState.ENABLE);
       });
-
-      // im.on(DownEvent.STREAM_MUTED, (error, user) => {
-      //   let { pc, StreamCache } = self;
-      //   let streamId = pc.getStreamId(user);
-      //   var stream = StreamCache.get(streamId);
-      //   let audioTracks = stream.getAudioTracks();
-      //   utils.forEach(audioTracks, (track) => {
-      //     track.enabled = false;
-      //   });
-      // });
-      // im.on(DownEvent.STREAM_UNMUTED, (error, user) => {
-      //   let { pc, StreamCache } = self;
-      //   let streamId = pc.getStreamId(user);
-      //   var stream = StreamCache.get(streamId);
-      //   let audioTracks = stream.getAudioTracks();
-      //   utils.forEach(audioTracks, (track) => {
-      //     track.enabled = true;
-      //   });
-      // });
     }
 
     createClass(DefaultStream, [{
@@ -5039,12 +5074,42 @@
             SubPromiseCache = self.SubPromiseCache;
 
 
+        var parseStreamId = function parseStreamId(streamId) {
+          var arr = streamId.split('_');
+          var tag = arr.pop();
+          return { userId: arr.join('_'), tag: tag };
+        };
+
         var onStreamAdded = function onStreamAdded(stream) {
           var id = stream.id;
 
           StreamCache.set(id, stream);
+
+          var _parseStreamId = parseStreamId(id),
+              userId = _parseStreamId.userId,
+              tag = _parseStreamId.tag;
+
+          var uid = self.getSubPromiseUId({ id: userId, stream: { tag: tag } });
+          var promise = SubPromiseCache.get(uid);
+
+          var videoTracks = stream.getVideoTracks();
+          var audioTracks = stream.getAudioTracks();
+          if (utils.isUndefined(promise) ||
+          // 需进一步检测接收到的 stream 内音视轨数据是否完整
+          // SIGNAL_STATE_CHANGE 会派发不完整的数据流
+          // 后续需完善对 SIGNAL_STATE_CHANGE 的事件处理逻辑
+          promise.type === StreamType.AUDIO && audioTracks.length === 0 || promise.type === StreamType.VIDEO && videoTracks.length === 0 || promise.type === StreamType.AUDIO_AND_VIDEO && (videoTracks.length === 0 || audioTracks.length === 0)) {
+            return Logger$1.log(LogTag.STREAM, {
+              msg: 'stream added-part',
+              user: { id: userId, stream: { tag: tag } },
+              tracks: stream.getTracks()
+            });
+          }
+
+          // TODO: getStreamUser 会修改 MediaStreamTrack 的 enable 值，需确认原因
           var user = self.getStreamUser(stream);
-          var uris = SubscribeCache.get(user.id) || [];
+
+          var uris = SubscribeCache.get(userId) || [];
           utils.forEach(uris, function (uri) {
             var state = uri.state,
                 type = uri.type;
@@ -5054,29 +5119,20 @@
             var isId = utils.isEqual(stream.id, uri.msid);
             if (isVideo && isDisabled && isId) {
               // if (isVideo && isDisabled) {
-              var videoTracks = stream.getVideoTracks();
-              utils.forEach(videoTracks, function (track) {
+              var _videoTracks = stream.getVideoTracks();
+              utils.forEach(_videoTracks, function (track) {
                 track.enabled = false;
               });
             }
           });
+
           im.emit(CommonEvent.PUBLISHED_STREAM, {
             mediaStream: stream,
             user: user
           });
-          var uid = self.getSubPromiseUId(user);
-          var promise = SubPromiseCache.get(uid);
-          if (utils.isUndefined(promise)) {
-            return Logger$1.log(LogTag.STREAM, {
-              msg: 'stream added-part',
-              user: user,
-              tracks: stream.getTracks()
-            });
-          }
+
           Logger$1.log(LogTag.STREAM, {
-            msg: 'stream added',
-            user: user,
-            tracks: stream.getTracks()
+            msg: 'stream added', user: user, tracks: stream.getTracks()
           });
           promise.resolve(user);
         };
@@ -5201,41 +5257,37 @@
         }
 
         var videoTracks = stream.getVideoTracks();
-        var audioTrakcks = stream.getAudioTracks();
+        var audioTracks = stream.getAudioTracks();
         var isEmtpyVideo = utils.isEmpty(videoTracks);
-        var isEmptyAudio = utils.isEmpty(audioTrakcks);
+        var isEmptyAudio = utils.isEmpty(audioTracks);
+
         var tpl = '{id}_{type}';
-        var videoTrackId = utils.tplEngine(tpl, {
-          id: id,
-          type: StreamType.VIDEO
-        });
-        var audioTrackId = utils.tplEngine(tpl, {
-          id: id,
-          type: StreamType.AUDIO
-        });
+        var videoTrackId = utils.tplEngine(tpl, { id: id, type: StreamType.VIDEO });
+        var audioTrackId = utils.tplEngine(tpl, { id: id, type: StreamType.AUDIO });
 
         var videoTrack = DataCache.get(videoTrackId);
         var audioTrack = DataCache.get(audioTrackId);
         isEmtpyVideo = isEmtpyVideo || utils.isEmpty(videoTrack);
         isEmptyAudio = isEmptyAudio || utils.isEmpty(audioTrack);
 
-        if (isEmtpyVideo) {
-          type = StreamType.AUDIO;
-        }
-        if (isEmptyAudio) {
-          type = StreamType.VIDEO;
-        }
-        var enableVideo = true;
-        var enableAudio = true;
+        var enableVideo = !isEmtpyVideo;
+        var enableAudio = !isEmptyAudio;
 
         if (!isEmptyAudio && !isEmtpyVideo) {
           type = StreamType.AUDIO_AND_VIDEO;
-          if (utils.isEqual(videoTrack.state, StreamState.DISBALE)) {
-            enableVideo = false;
-          } else if (utils.isEqual(audioTrack.state, StreamState.DISBALE)) {
-            enableAudio = false;
-          }
+          enableVideo = !utils.isEqual(videoTrack.state, StreamState.DISBALE);
+          enableAudio = !utils.isEqual(audioTrack.state, StreamState.DISBALE);
+        } else if (!isEmptyAudio) {
+          type = StreamType.AUDIO;
+        } else if (!isEmtpyVideo) {
+          type = StreamType.VIDEO;
+        } else {
+          type = StreamType.NODE;
         }
+
+        // 视轨数据需要根据 state 值修改 track.enabled，否则当 state 值为 false 时
+        // 意味着移动端无视频数据，track.enabled 值为 true 的情况下将造成音频不解码
+        if (videoTracks.length > 0) videoTracks[0].enabled = enableVideo;
 
         return {
           id: userId,
@@ -5273,9 +5325,9 @@
       value: function getUId(user, tpl) {
         tpl = tpl || '{userId}_{tag}_{type}';
         var userId = user.id,
-            _user$stream = user.stream,
-            tag = _user$stream.tag,
-            type = _user$stream.type;
+            _user$stream2 = user.stream,
+            tag = _user$stream2.tag,
+            type = _user$stream2.type;
 
         if (utils.isEmpty(tag)) {
           tpl = '{userId}_{type}';
@@ -5373,7 +5425,7 @@
       value: function getDeviceSwitchState(tag, mediaType) {
         var deviceSwitchCache = currentUserDeviceSwitchCache.get();
         var state = StreamState.ENABLE;
-        if (/RongCloudRTC/.test(tag)) {
+        if (/^RongCloudRTC/.test(tag)) {
           if (mediaType === StreamType.AUDIO) {
             state = deviceSwitchCache.audio;
           } else if (mediaType === StreamType.VIDEO) {
@@ -5598,17 +5650,16 @@
           });
         });
       }
-    }, {
-      key: 'setOptionBitrate',
-      value: function setOptionBitrate(max, min) {
-        var bitrate = this.option.bitrate;
 
-        bitrate.max += max;
-        bitrate.min += min;
-        bitrate.start = bitrate.max * 0.7;
-        bitrate.max = bitrate.max > RongRTCVideoBitRate['RESOLUTION_176_132'].maxBitRate ? bitrate.max : RongRTCVideoBitRate['RESOLUTION_176_132'].maxBitRate;
-        bitrate.min = bitrate.min > RongRTCVideoBitRate['RESOLUTION_176_132'].minBitRate ? bitrate.min : RongRTCVideoBitRate['RESOLUTION_176_132'].minBitRate;
-        bitrate.start = bitrate.start > bitrate.max * 0.7 ? bitrate.start : bitrate.max * 0.7;
+      // 修改动态码率
+
+    }, {
+      key: 'setDynamicBitrate',
+      value: function setDynamicBitrate(max, min) {
+        var dynamicBitrate = this.option.dynamicBitrate;
+
+        dynamicBitrate.max += max;
+        dynamicBitrate.min += min;
       }
     }, {
       key: 'setBitrate',
@@ -5621,35 +5672,31 @@
           streams = [streams];
         }
         utils.forEach(streams, function (stream) {
-          var customBitrate = stream.bitrate;
+          // 暂不再支持客户端发布时传码率，因不能保证用户取消订阅时传递相同码率，
+          // 且用户发布自定义资源流时，无法预测分享的视频文件的分辨率，容易出错
           var mediaStream = stream.mediaStream;
-          var streamInfo = {};
-          var max = 0;
-          var min = 0;
 
-          if (!utils.isEmpty(mediaStream.getVideoTracks())) {
-            streamInfo = mediaStream.getVideoTracks()[0].getConstraints();
-          }
-          var key = 'RESOLUTION_' + streamInfo.width + '_' + streamInfo.height;
-          var resolution = RongRTCVideoBitRate[key];
-
-          if (utils.isEmpty(resolution)) {
-            resolution = RongRTCVideoBitRate['RESOLUTION_640_480'];
-          }
-
-          if (!utils.isEmpty(customBitrate)) {
-            max = customBitrate.max || resolution.maxBitRate;
-            min = customBitrate.min || resolution.minBitRate;
-            context.setOptionBitrate(max, min);
+          var videoTrack = mediaStream.getVideoTracks()[0];
+          if (!videoTrack) {
             return;
           }
 
-          if (!utils.isEmpty(resolution) && utils.isObject(resolution)) {
-            var multiplier = Multiplier[streamInfo.frameRate] || 1;
-            max = resolution.maxBitRate * multiplier * type;
-            min = resolution.minBitRate * multiplier * type;
-            context.setOptionBitrate(max, min);
-          }
+          var trackInfo = utils.getVideoTrackInfo(videoTrack);
+          var width = trackInfo.width || 640;
+          var height = trackInfo.height || 480;
+          var frameRate = trackInfo.frameRate || 15;
+
+          // 取最接近的视频分辨率对应的码率
+
+          var _common$getNearestRes = getNearestResolution(width, height),
+              maxBitRate = _common$getNearestRes.maxBitRate,
+              minBitRate = _common$getNearestRes.minBitRate;
+          // 取最接近的帧率对应的码率倍数
+
+
+          var rate = getNearestMultiplierValue(frameRate);
+          // 更新码率配置
+          context.setDynamicBitrate(Math.round(maxBitRate * rate * type), Math.round(minBitRate * rate * type));
         });
       }
     }, {
@@ -6150,9 +6197,9 @@
             SubPromiseCache = self.SubPromiseCache,
             DataCache = self.DataCache;
         var userId = user.id,
-            _user$stream2 = user.stream,
-            tag = _user$stream2.tag,
-            type = _user$stream2.type;
+            _user$stream3 = user.stream,
+            tag = _user$stream3.tag,
+            type = _user$stream3.type;
 
         var subs = SubscribeCache.get(userId) || [];
         var types = [StreamType.VIDEO, StreamType.AUDIO];
@@ -6209,13 +6256,6 @@
         var url = utils.tplEngine(Path.SUBSCRIBE, {
           roomId: roomId
         });
-        var isOnlySubscribe = false;
-        if (SubscribeCache.getKeys().length > 0 || self.PublishStreamCache.getKeys().length > 0) {
-          url = utils.tplEngine(Path.ONLY_SUBSCRIBE, {
-            roomId: roomId
-          });
-          isOnlySubscribe = true;
-        }
 
         SubscribeCache.set(userId, subs);
 
@@ -6253,17 +6293,13 @@
             });
             IMLogger.info(RTCLogTag.L_MSS_T, { url: url, roomId: roomId, reqOption: reqOption });
             request$1.post(reqOption).then(function (response) {
-              // pc.setOffer(offer);
               var answer = response.sdp,
                   clusterId = response.clusterId;
 
               clusterId && request$1.addClusterIdUrl(clusterId);
-              if (!isOnlySubscribe) {
-                pc.setOffer(offer);
-                pc.setAnwser(answer).then(callback).catch(callback); // Promise finally Chrome 63+ 才支持
-              } else {
-                pc.setRemoteAnwser(answer).then(callback).catch(callback); // Promise finally Chrome 63+ 才支持
-              }
+              pc.setOffer(offer);
+              pc.setAnwser(answer).then(callback).catch(callback); // Promise finally Chrome 63+ 才支持
+
               Logger$1.log(LogTag.STREAM_HANDLER, {
                 msg: 'subscribe:response:stream:not:arrive',
                 roomId: roomId,
@@ -6344,9 +6380,11 @@
             IMLogger.info(RTCLogTag.L_MSS_R, { roomId: roomId, response: response });
             // self.negotiate(offer, response);
 
+            var offer = body.sdp;
             var answer = response.sdp;
 
-            return pc.setRemoteAnwser(answer);
+            pc.setOffer(offer);
+            return pc.setAnswer(answer);
           }, function (error) {
             Logger$1.error(LogTag.STREAM_HANDLER, {
               msg: 'unsubscribe:response:error',
@@ -6511,6 +6549,14 @@
           return error;
         });
       }
+
+      /**
+       * 修改 streamTrack.enabled 值
+       * @param {*} user 
+       * @param {*} type 
+       * @param {*} isEnable 
+       */
+
     }, {
       key: 'trackHandler',
       value: function trackHandler(user, type, isEnable) {
@@ -6578,18 +6624,18 @@
 
         var uris = self.getFitUris(user, type, state);
         // uris 为空表示没有发布资源，不需要修改
-        if (!utils.isEmpty(uris)) {
-          var id = user.id;
-
-          var fullUris = PubResourceCache.get(id);
-          var content = {
-            uris: uris
-          };
-          var message = im.getMessage(Message.MODIFY, content);
-          var isInner = true;
-          User.set(User.SET_USERINFO, fullUris, isInner, message);
+        if (utils.isEmpty(uris)) {
+          return utils.Defer.resolve();
         }
-        return utils.Defer.resolve();
+        var id = user.id;
+
+        var fullUris = PubResourceCache.get(id);
+        var content = {
+          uris: uris
+        };
+        var message = im.getMessage(Message.MODIFY, content);
+        var isInner = true;
+        return User.set(User.SET_USERINFO, fullUris, isInner, message);
       }
     }, {
       key: 'isCurrentUser',
@@ -6603,39 +6649,44 @@
       }
     }, {
       key: 'modifyTrack',
-      value: function modifyTrack(user, type, state, isEnabled) {
-        var self = this;
-        self.trackHandler(user, type, isEnabled);
-        if (self.isCurrentUser(user)) {
-          //缓存自己设备操作配置
-          currentUserDeviceSwitchCache.set(type, state);
-          self.saveModify(user, type, state);
+      value: function modifyTrack(user, mediaType, state) {
+        var _this2 = this;
+
+        var isEnabled = state === StreamState.ENABLE;
+
+        // 远程流直接修改 enabled 值
+        if (!this.isCurrentUser(user)) {
+          this.trackHandler(user, mediaType, isEnabled);
+          return utils.Defer.resolve();
         }
-        return utils.Defer.resolve();
+
+        currentUserDeviceSwitchCache.set(mediaType, state);
+
+        // 本地流先修改房间数据，成功后修改 track
+        return this.saveModify(user, mediaType, state).then(function () {
+          _this2.trackHandler(user, mediaType, isEnabled);
+          return utils.Defer.resolve();
+        });
       }
     }, {
       key: 'mute',
       value: function mute(user) {
-        var isEnabled = false;
-        return this.modifyTrack(user, StreamType.AUDIO, StreamState.DISBALE, isEnabled);
+        return this.modifyTrack(user, StreamType.AUDIO, StreamState.DISBALE);
       }
     }, {
       key: 'unmute',
       value: function unmute(user) {
-        var isEnabled = true;
-        return this.modifyTrack(user, StreamType.AUDIO, StreamState.ENABLE, isEnabled);
+        return this.modifyTrack(user, StreamType.AUDIO, StreamState.ENABLE);
       }
     }, {
       key: 'enable',
       value: function enable(user) {
-        var isEnabled = true;
-        return this.modifyTrack(user, StreamType.VIDEO, StreamState.ENABLE, isEnabled);
+        return this.modifyTrack(user, StreamType.VIDEO, StreamState.ENABLE);
       }
     }, {
       key: 'disable',
       value: function disable(user) {
-        var isEnabled = false;
-        return this.modifyTrack(user, StreamType.VIDEO, StreamState.DISBALE, isEnabled);
+        return this.modifyTrack(user, StreamType.VIDEO, StreamState.DISBALE);
       }
     }, {
       key: 'destroy',
@@ -7642,7 +7693,9 @@
           if (isNormalMode) {
             reports.reports = filterInValidReports(reports.reports);
           }
-          sendReport(reports.data);
+          if (option.polaris) {
+            sendReport(reports.data);
+          }
           if (reports.reports) {
             im.emit(DownEvent.MONITOR_STATS, reports.reports);
           }
@@ -12797,6 +12850,19 @@
       TrackStateCache.clear();
       clear();
     });
+    var removeUserCache = function removeUserCache(_, _ref2) {
+      var userId = _ref2.id;
+
+      TrackCache.getKeys().forEach(function (trackId) {
+        var user = TrackCache.get(trackId);
+        if (user.id === userId) {
+          TrackCache.remove(trackId);
+          TrackStateCache.remove(trackId);
+        }
+      });
+    };
+    im.on(DownEvent.ROOM_USER_JOINED, removeUserCache);
+    im.on(DownEvent.ROOM_USER_LEFT, removeUserCache);
     im.on(CommonEvent.PUBLISHED_STREAM, function (error, data) {
       if (error) {
         throw error;
@@ -12864,6 +12930,8 @@
       RTCAdapter.init();
       var context = _this;
       var im = new IM(option);
+      // 将 IM 实例引用给 request 以解决 42002 后重新拿 token 的问题，request 代码过于分散，目前不适宜大规模调整
+      request$1.setIMInstance(im);
       var RequestHandler = {
         room: RoomHandler(im, option),
         stream: StreamHandler(im, option, rongRTC),
@@ -12901,19 +12969,20 @@
       };
       utils.forEach(RoomEvents, bindEvent);
       im.on(CommonEvent.JOINED, function () {
-        var urls = im.getMSUrl();
         var customUrl = option.url;
 
         if (!utils.isEmpty(customUrl)) {
           request$1.addUrl(customUrl);
-        }
-        if (utils.isEmpty(urls)) {
-          var Inner = ErrorType.Inner;
+        } else {
+          var urls = im.getMSUrl();
+          if (utils.isEmpty(urls)) {
+            var Inner = ErrorType.Inner;
 
-          var error = Inner.ENGINE_ERROR;
-          return context.emit(DownEvent.RTC_ERROR, error);
+            var error = Inner.ENGINE_ERROR;
+            return context.emit(DownEvent.RTC_ERROR, error);
+          }
+          !request$1.isUrlsExisted(urls) && request$1.addUrls(urls);
         }
-        !request$1.isUrlsExisted(urls) && request$1.addUrls(urls);
         context.emit(DownEvent.RTC_MOUNTED);
       });
       im.on(CommonEvent.LEFT, function () {
@@ -13006,9 +13075,10 @@
         if (context.isDestroyed()) {
           return utils.Defer.reject(ErrorType.Inner.INSTANCE_IS_DESTROYED);
         }
-        if (!im.isSupportRTC()) {
-          return utils.Defer.reject(ErrorType.Inner.IM_SDK_VER_NOT_MATCH);
-        }
+        // im 必须 2.5.0 以上才可用，文档已注释
+        // if (!im.isSupportRTC()) {
+        //   return utils.Defer.reject(ErrorType.Inner.IM_SDK_VER_NOT_MATCH);
+        // }
         var type = params.type,
             args = params.args,
             event = params.event;
@@ -13333,14 +13403,25 @@
       classCallCheck(this, RongRTC);
 
       var context = this;
+
+      var _ref = _option.bitrate || {},
+          max = _ref.max,
+          min = _ref.min;
+
+      if (min && max && min > max) {
+        throw 'bitrate invalid.';
+      }
       var option = {
         url: '',
         debug: false,
+        // 北极星日志上传开关
+        polaris: true,
+        // 码率配置，目前仅 max 与 min 有效，0 视为无限制
         bitrate: {
           max: 0,
-          min: 0,
-          start: 0
+          min: 0
         },
+        dynamicBitrate: { max: 0, min: 0 },
         mode: RTC_MODE.RTC,
         liveRole: LIVE_ROLE.ANCHOR,
         liveType: LIVE_TYPE.AUDIO_AND_VIDEO,

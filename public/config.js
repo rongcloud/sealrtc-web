@@ -2,6 +2,7 @@
   // 便于运维上线生产环境时修改，使 location.search.appkey 失效
   const defaultAppkey = '';
   const defaultRTCS = '';
+  const defaultMS = ''
   /**
    * 解析 location.search 字段
    * 【必填】

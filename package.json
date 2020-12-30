@@ -1,6 +1,6 @@
 {
   "name": "seal-rtc",
-  "version": "3.2.5",
+  "version": "3.2.7",
   "description": "SealRTC Demo",
   "main": "index.js",
   "private": true,
